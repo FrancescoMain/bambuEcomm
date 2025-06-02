@@ -1,0 +1,19 @@
+{
+  "compilerOptions": {
+    "target": "es2020", // Specifica la versione di ECMAScript di destinazione
+    "module": "commonjs", // Specifica il sistema di moduli (CommonJS per Node.js)
+    "rootDir": "./src", // Specifica la directory radice dei file di input TypeScript
+    "outDir": "./dist", // Specifica la directory di output per i file JavaScript compilati
+    "esModuleInterop": true, // Abilita l'interoperabilità con i moduli CommonJS
+    "forceConsistentCasingInFileNames": true, // Forza la coerenza della maiuscole/minuscole nei nomi dei file
+    "strict": true, // Abilita tutte le opzioni di controllo di tipo stretto
+    "skipLibCheck": true, // Salta il controllo dei tipi dei file di dichiarazione delle librerie
+    "resolveJsonModule": true, // Permette l'importazione di file .json
+    "baseUrl": ".", // Directory base per risolvere i percorsi dei moduli non relativi
+    "paths": {
+      "@/*": ["src/*"] // Configura alias per i percorsi (opzionale ma utile)
+    }
+  },
+  "include": ["src/**/*"], // Specifica i file da includere nella compilazione
+  "exclude": ["node_modules", "**/*.spec.ts"] // Specifica i file da escludere
+}

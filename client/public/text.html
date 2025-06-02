@@ -1,0 +1,489 @@
+<html>
+  <head>
+    <link rel="preconnect" href="https://fonts.gstatic.com/" crossorigin="" />
+    <link
+      rel="stylesheet"
+      as="style"
+      onload="this.rel='stylesheet'"
+      href="https://fonts.googleapis.com/css2?display=swap&amp;family=Noto+Sans%3Awght%40400%3B500%3B700%3B900&amp;family=Plus+Jakarta+Sans%3Awght%40400%3B500%3B700%3B800"
+    />
+
+    <title>Stitch Design</title>
+    <link rel="icon" type="image/x-icon" href="data:image/x-icon;base64," />
+
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  </head>
+  <body>
+    <div
+      class="relative flex size-full min-h-screen flex-col bg-[#f8fbfa] group/design-root overflow-x-hidden"
+      style="font-family: 'Plus Jakarta Sans', 'Noto Sans', sans-serif"
+    >
+      <div class="layout-container flex h-full grow flex-col">
+        <header
+          class="flex items-center justify-between whitespace-nowrap border-b border-solid border-b-[#e8f2ec] px-10 py-3"
+        >
+          <div class="flex items-center gap-8">
+            <div class="flex items-center gap-4 text-[#0e1a13]">
+              <div class="size-4">
+                <svg
+                  viewBox="0 0 48 48"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    d="M4 4H17.3334V17.3334H30.6666V30.6666H44V44H4V4Z"
+                    fill="currentColor"
+                  ></path>
+                </svg>
+              </div>
+              <h2
+                class="text-[#0e1a13] text-lg font-bold leading-tight tracking-[-0.015em]"
+              >
+                Book Haven
+              </h2>
+            </div>
+            <div class="flex items-center gap-9">
+              <a
+                class="text-[#0e1a13] text-sm font-medium leading-normal"
+                href="#"
+                >Home</a
+              >
+              <a
+                class="text-[#0e1a13] text-sm font-medium leading-normal"
+                href="#"
+                >Categories</a
+              >
+              <a
+                class="text-[#0e1a13] text-sm font-medium leading-normal"
+                href="#"
+                >New Arrivals</a
+              >
+              <a
+                class="text-[#0e1a13] text-sm font-medium leading-normal"
+                href="#"
+                >Best Sellers</a
+              >
+              <a
+                class="text-[#0e1a13] text-sm font-medium leading-normal"
+                href="#"
+                >Sale</a
+              >
+            </div>
+          </div>
+          <div class="flex flex-1 justify-end gap-8">
+            <label class="flex flex-col min-w-40 !h-10 max-w-64">
+              <div class="flex w-full flex-1 items-stretch rounded-lg h-full">
+                <div
+                  class="text-[#51946b] flex border-none bg-[#e8f2ec] items-center justify-center pl-4 rounded-l-lg border-r-0"
+                  data-icon="MagnifyingGlass"
+                  data-size="24px"
+                  data-weight="regular"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="24px"
+                    height="24px"
+                    fill="currentColor"
+                    viewBox="0 0 256 256"
+                  >
+                    <path
+                      d="M229.66,218.34l-50.07-50.06a88.11,88.11,0,1,0-11.31,11.31l50.06,50.07a8,8,0,0,0,11.32-11.32ZM40,112a72,72,0,1,1,72,72A72.08,72.08,0,0,1,40,112Z"
+                    ></path>
+                  </svg>
+                </div>
+                <input
+                  placeholder="Search"
+                  class="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-lg text-[#0e1a13] focus:outline-0 focus:ring-0 border-none bg-[#e8f2ec] focus:border-none h-full placeholder:text-[#51946b] px-4 rounded-l-none border-l-0 pl-2 text-base font-normal leading-normal"
+                  value=""
+                />
+              </div>
+            </label>
+            <div class="flex gap-2">
+              <button
+                class="flex max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 bg-[#e8f2ec] text-[#0e1a13] gap-2 text-sm font-bold leading-normal tracking-[0.015em] min-w-0 px-2.5"
+              >
+                <div
+                  class="text-[#0e1a13]"
+                  data-icon="Heart"
+                  data-size="20px"
+                  data-weight="regular"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="20px"
+                    height="20px"
+                    fill="currentColor"
+                    viewBox="0 0 256 256"
+                  >
+                    <path
+                      d="M178,32c-20.65,0-38.73,8.88-50,23.89C116.73,40.88,98.65,32,78,32A62.07,62.07,0,0,0,16,94c0,70,103.79,126.66,108.21,129a8,8,0,0,0,7.58,0C136.21,220.66,240,164,240,94A62.07,62.07,0,0,0,178,32ZM128,206.8C109.74,196.16,32,147.69,32,94A46.06,46.06,0,0,1,78,48c19.45,0,35.78,10.36,42.6,27a8,8,0,0,0,14.8,0c6.82-16.67,23.15-27,42.6-27a46.06,46.06,0,0,1,46,46C224,147.61,146.24,196.15,128,206.8Z"
+                    ></path>
+                  </svg>
+                </div>
+              </button>
+              <button
+                class="flex max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 bg-[#e8f2ec] text-[#0e1a13] gap-2 text-sm font-bold leading-normal tracking-[0.015em] min-w-0 px-2.5"
+              >
+                <div
+                  class="text-[#0e1a13]"
+                  data-icon="ShoppingBag"
+                  data-size="20px"
+                  data-weight="regular"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="20px"
+                    height="20px"
+                    fill="currentColor"
+                    viewBox="0 0 256 256"
+                  >
+                    <path
+                      d="M216,40H40A16,16,0,0,0,24,56V200a16,16,0,0,0,16,16H216a16,16,0,0,0,16-16V56A16,16,0,0,0,216,40Zm0,160H40V56H216V200ZM176,88a48,48,0,0,1-96,0,8,8,0,0,1,16,0,32,32,0,0,0,64,0,8,8,0,0,1,16,0Z"
+                    ></path>
+                  </svg>
+                </div>
+              </button>
+            </div>
+            <div
+              class="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-10"
+              style="
+                background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuCyYqkvxBHMRZhQXlELKzPCtdW-vqwBt8jKo2Dt_lV4ZyRk4UUvREYy-74B4Y_9OW6EjNbruNBM0GrrrE9XCC86Kwa8zrQGuTKvKkFl6XDNgeu7qF0oZFJr-R8PyxEtdlkdcHCcxWp3MvDY-IRUvvNmVXjnqe1jbeaEY7UgbNWvmprGwfCp8SDyjfow3Qn4KRqTeS_e8_LO17l3Idp-ZCtYmEl30LF_YSEFL1XFYeXyfYR6DwETvFLdpGE6J-drwJYxm75_2L0IgIyZ');
+              "
+            ></div>
+          </div>
+        </header>
+        <div class="px-40 flex flex-1 justify-center py-5">
+          <div
+            class="layout-content-container flex flex-col max-w-[960px] flex-1"
+          >
+            <div class="px-4 py-3">
+              <label class="flex flex-col min-w-40 h-12 w-full">
+                <div class="flex w-full flex-1 items-stretch rounded-lg h-full">
+                  <div
+                    class="text-[#51946b] flex border-none bg-[#e8f2ec] items-center justify-center pl-4 rounded-l-lg border-r-0"
+                    data-icon="MagnifyingGlass"
+                    data-size="24px"
+                    data-weight="regular"
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="24px"
+                      height="24px"
+                      fill="currentColor"
+                      viewBox="0 0 256 256"
+                    >
+                      <path
+                        d="M229.66,218.34l-50.07-50.06a88.11,88.11,0,1,0-11.31,11.31l50.06,50.07a8,8,0,0,0,11.32-11.32ZM40,112a72,72,0,1,1,72,72A72.08,72.08,0,0,1,40,112Z"
+                      ></path>
+                    </svg>
+                  </div>
+                  <input
+                    placeholder="Search for books, stationery, and more"
+                    class="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-lg text-[#0e1a13] focus:outline-0 focus:ring-0 border-none bg-[#e8f2ec] focus:border-none h-full placeholder:text-[#51946b] px-4 rounded-l-none border-l-0 pl-2 text-base font-normal leading-normal"
+                    value=""
+                  />
+                </div>
+              </label>
+            </div>
+            <h2
+              class="text-[#0e1a13] text-[22px] font-bold leading-tight tracking-[-0.015em] px-4 pb-3 pt-5"
+            >
+              Featured Products
+            </h2>
+            <div
+              class="flex overflow-y-auto [-ms-scrollbar-style:none] [scrollbar-width:none] [&amp;::-webkit-scrollbar]:hidden"
+            >
+              <div class="flex items-stretch p-4 gap-3">
+                <div
+                  class="flex h-full flex-1 flex-col gap-4 rounded-lg min-w-40"
+                >
+                  <div
+                    class="w-full bg-center bg-no-repeat aspect-square bg-cover rounded-lg flex flex-col"
+                    style="
+                      background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuB2CT9lF0ZaSY14vKLy9Meb9o-vbeKTRDhff1CYlQZsfdy5JWijP6x4OzpfYGYZHFhmq11QiUgQC7KLSSnLX-9EwS7y6YPkLUCJ_jEJSZ5CaA-Kgat-9JuYIE7_sHjFvvKEGLbqs4Bxi5ckDdNUiZgiyY-6r9BMecpD7BzMKAjfRTm8Xo-AAwHGbu_4OlDLXcHQxQ1lwIvGicewgvfjRxKazvof9vKd7Xbi6LqMV8l4QOt_3fd3T8vmnaNNht0RFFTLrfkm9uO2CaXL');
+                    "
+                  ></div>
+                  <div>
+                    <p
+                      class="text-[#0e1a13] text-base font-medium leading-normal"
+                    >
+                      The Secret Garden
+                    </p>
+                    <p
+                      class="text-[#51946b] text-sm font-normal leading-normal"
+                    >
+                      Frances Burnett
+                    </p>
+                  </div>
+                </div>
+                <div
+                  class="flex h-full flex-1 flex-col gap-4 rounded-lg min-w-40"
+                >
+                  <div
+                    class="w-full bg-center bg-no-repeat aspect-square bg-cover rounded-lg flex flex-col"
+                    style="
+                      background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuCR4xO8tpYd9ig_z7QfeFlwe5S-DGPDHgqVW00teKlKKGiZ3ZzMsJpHglfm9fN6lXPMAHNB08aBOgZezobOfPPo6sSf49Beocnyw_urdjuDfoGP_ui8VrdVSPniZnm06R71f5IIQGFvA6U1bYD6fQEudoo9obSvOzFYk29ogCvWNBEX7bvMvX1kTjz40PbrlD52QNi7g4XZCqQptvLmzTttMNE5E3HKdOT0HUnwtHsSaWKn3rYdM2Z8MOfLkkVNz8QM5QleDx5P-SYP');
+                    "
+                  ></div>
+                  <div>
+                    <p
+                      class="text-[#0e1a13] text-base font-medium leading-normal"
+                    >
+                      Leather-bound Journal
+                    </p>
+                    <p
+                      class="text-[#51946b] text-sm font-normal leading-normal"
+                    >
+                      Premium Quality
+                    </p>
+                  </div>
+                </div>
+                <div
+                  class="flex h-full flex-1 flex-col gap-4 rounded-lg min-w-40"
+                >
+                  <div
+                    class="w-full bg-center bg-no-repeat aspect-square bg-cover rounded-lg flex flex-col"
+                    style="
+                      background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuAwqhFLDqdgub9OYZT5WM0Wo7Mz9pn-uqQJozRNXZ_wOAwIAW3T-Uoowikzy1miL3PK_xAtbOIIMCtQFHkdRtJIvvxslrFV0VnSGX56wBx736OQy4LTv9vSLGqPxIaHuDZF9WxuCu0KE_CcFk0UbjpfY3FiN1odMii7Vk6NMwqrSMEYT7tlc-L1FZCw_4OcdZ7nT_yHPDMzOiEZsGt0uxeIOc3A_a-CoEhVJg2BTm8sciUZfhWQo5TSIrf6JMMS0B4gL7EruO6Ubm5X');
+                    "
+                  ></div>
+                  <div>
+                    <p
+                      class="text-[#0e1a13] text-base font-medium leading-normal"
+                    >
+                      Calligraphy Pen Set
+                    </p>
+                    <p
+                      class="text-[#51946b] text-sm font-normal leading-normal"
+                    >
+                      Elegant Design
+                    </p>
+                  </div>
+                </div>
+                <div
+                  class="flex h-full flex-1 flex-col gap-4 rounded-lg min-w-40"
+                >
+                  <div
+                    class="w-full bg-center bg-no-repeat aspect-square bg-cover rounded-lg flex flex-col"
+                    style="
+                      background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuCwDhA6xfQM9ZgAgxN6yw8S7wVKs5sSeK4D46RYlRFyhlnxFe1fSmYd7VtVjIB0sOXB7UeJlTTYB6BynGq221uaYeAX3gxdpoJBF4dRH8ti9c38vm0fZTfIaMPQCBW5wqJli8cSuMw_3eFE3lh4S_1Vz-jZZWRMcZWTkNcpnAGkbZhncacqxVkYrm0mWuXoVzuasDFk9uooWnd6ceziiJYZtldOsd9vk6PqefIZglRjw6SFjFSzI212wHJPcBLhyjeFFIEGzqpcMfrY');
+                    "
+                  ></div>
+                  <div>
+                    <p
+                      class="text-[#0e1a13] text-base font-medium leading-normal"
+                    >
+                      Watercolor Paint Set
+                    </p>
+                    <p
+                      class="text-[#51946b] text-sm font-normal leading-normal"
+                    >
+                      Vibrant Colors
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <h2
+              class="text-[#0e1a13] text-[22px] font-bold leading-tight tracking-[-0.015em] px-4 pb-3 pt-5"
+            >
+              New Arrivals
+            </h2>
+            <div
+              class="grid grid-cols-[repeat(auto-fit,minmax(158px,1fr))] gap-3 p-4"
+            >
+              <div class="flex flex-col gap-3 pb-3">
+                <div
+                  class="w-full bg-center bg-no-repeat aspect-square bg-cover rounded-lg"
+                  style="
+                    background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuC1s5J7HlLkp_fgoCp2uw_m9cOF5pkXNfctEEfCokeAXZ52Ry05nAZA-VViKcm9dOWpNnMlAbip2Zv40SRPRgYLIbteL1Mpb1VOH_hrAzaYfoXqiZIBB7A3YDaGhx2FGtCPVHjpp3guIf9wM9cj0QfLcAn2gQFwZ2kWPr5cQ8KrN4dCbGkl1C0CEfU4TQgP_nDLUjnmnfPqg3rcEY1ePFytINhl3TPFZJzP3z40kg9TpC7GaggE7zJL8Pz3SL0LI72rkyeG4iEDE2Lg');
+                  "
+                ></div>
+                <div>
+                  <p
+                    class="text-[#0e1a13] text-base font-medium leading-normal"
+                  >
+                    The Midnight Library
+                  </p>
+                  <p class="text-[#51946b] text-sm font-normal leading-normal">
+                    Matt Haig
+                  </p>
+                </div>
+              </div>
+              <div class="flex flex-col gap-3 pb-3">
+                <div
+                  class="w-full bg-center bg-no-repeat aspect-square bg-cover rounded-lg"
+                  style="
+                    background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuB5qblvttfr9NqFaIhZoiAv3SDspv84_1xBj12nAByzp9Jk5iOWB_twV3LCc7Q8WQZew75tG72zSaGrxfaT7fhJQ8wMyHQMS-_0Lyj3inp5VhD7brkmYGCWZYGMpXtS0YD6l4CcplbXuf8nAT-R_DGk_IgYCqTbfIyEVOjIo8qn3qPXFzhiwCOALFGlRFPbRING4htB7ro7DqDc5MvBurkL0cvU0U2lAuPXijlaPkbXhuiR9Oxb3AUy5Hlc-JDQZUtalv7YxQuAsZjA');
+                  "
+                ></div>
+                <div>
+                  <p
+                    class="text-[#0e1a13] text-base font-medium leading-normal"
+                  >
+                    Atomic Habits
+                  </p>
+                  <p class="text-[#51946b] text-sm font-normal leading-normal">
+                    James Clear
+                  </p>
+                </div>
+              </div>
+              <div class="flex flex-col gap-3 pb-3">
+                <div
+                  class="w-full bg-center bg-no-repeat aspect-square bg-cover rounded-lg"
+                  style="
+                    background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuDr45ZNLNbe4aqZTRds0_A33HuAYnykcQJLcTqlrRHQGTEvnmYcB_33suA_aAHilrR9ZFBsZguRxcYyRxDF7oKv_NMX5kVWxi50Uwtt8CwFVDSxsgusbe6_HGhLo-aSHvxmHiQU5xGk2OmpoReu1rIJSOt9XP8RLRHMzUYWGD8qCtoDD1_THRRomaZZT7BbjdRApqGi9GJKJ84OchrOBZPzAXxwxHWc60CY3TqfjOxX6gGvsnCDhn08R4eQHmfvdiHdvC9p4VVy8ZRQ');
+                  "
+                ></div>
+                <div>
+                  <p
+                    class="text-[#0e1a13] text-base font-medium leading-normal"
+                  >
+                    The Silent Patient
+                  </p>
+                  <p class="text-[#51946b] text-sm font-normal leading-normal">
+                    Alex Michaelides
+                  </p>
+                </div>
+              </div>
+              <div class="flex flex-col gap-3 pb-3">
+                <div
+                  class="w-full bg-center bg-no-repeat aspect-square bg-cover rounded-lg"
+                  style="
+                    background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuCvZvd-V6NdcIZB9mAYgjarNu2i0gU4jnArZc9ofibz_SXDmMdijRieOR0SlGh5aR678_C4gsBPxKYIJsh2hLlM-0ocCZ0SUo6jC5iwt2iYdaV_yM8WL0g9xKFIICecFoJjMqetgIksTdSXGTwySrz0bNENCyXXgWisDVvSuGlTGphJkFWC1uTUpW3lR4vRzpi3gQBhCg_fmds5vXrtdQx1L4-yuJ2oh9EaSTKM20JGW6DQTlUs7ILiwMXnCKCf6GT6dsu7oGY1V3XN');
+                  "
+                ></div>
+                <div>
+                  <p
+                    class="text-[#0e1a13] text-base font-medium leading-normal"
+                  >
+                    Where the Crawdads Sing
+                  </p>
+                  <p class="text-[#51946b] text-sm font-normal leading-normal">
+                    Delia Owens
+                  </p>
+                </div>
+              </div>
+            </div>
+            <h2
+              class="text-[#0e1a13] text-[22px] font-bold leading-tight tracking-[-0.015em] px-4 pb-3 pt-5"
+            >
+              Best Sellers
+            </h2>
+            <div
+              class="grid grid-cols-[repeat(auto-fit,minmax(158px,1fr))] gap-3 p-4"
+            >
+              <div class="flex flex-col gap-3 pb-3">
+                <div
+                  class="w-full bg-center bg-no-repeat aspect-square bg-cover rounded-lg"
+                  style="
+                    background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuACdOUws_y162aZJT-SEhZAFlmPM5SJPaBQUFfa1MQ3YRHPXkYNgu5YnU-q9QDUaUB--IT8cmMjVZDcQND8_kbOmAJpLRdaDBZ7EeC2_nTFPwjMw6KAr7Z1mB06JZB74OctKXb4rDzbXpgTxFnXnIZ7tEjawrB7AVLovLAcVRPXxMcFfvsjzea2XZMzlLvf5SaUHvh1cyAyWw293lQ5Txjx-KS3OrmxiKTxaoEm0q5QwB2bG7JQvKMbwy9zQK_l7tXqSBY7oQxBmIHJ');
+                  "
+                ></div>
+                <div>
+                  <p
+                    class="text-[#0e1a13] text-base font-medium leading-normal"
+                  >
+                    The Alchemist
+                  </p>
+                  <p class="text-[#51946b] text-sm font-normal leading-normal">
+                    Paulo Coelho
+                  </p>
+                </div>
+              </div>
+              <div class="flex flex-col gap-3 pb-3">
+                <div
+                  class="w-full bg-center bg-no-repeat aspect-square bg-cover rounded-lg"
+                  style="
+                    background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuCR8KYJq7YSl9u9zbGf2qMZpPg8WE9ZUZliVdxXefn01OiMzzAjTIDGsG9Nga_aW6Kxso4jM4jYbBRrKZCC5yDOUYVKb7GJyOc9bk7etKAbShQF_Y7dNsCPAKyE_Wyvf_VM9QE8fQpYAATdWeO6c-9U_aStR8He6VkfKkZwlR2lFcinIF4oVRjmoiG6nZRjkHormgDHsjzNBBZkn-xGvEEprIBp1gZQ_Q8bV5vv2TwGmmaqAqJTK4pTLXbeACFgPB11KrQFPOTEZkBp');
+                  "
+                ></div>
+                <div>
+                  <p
+                    class="text-[#0e1a13] text-base font-medium leading-normal"
+                  >
+                    Sapiens
+                  </p>
+                  <p class="text-[#51946b] text-sm font-normal leading-normal">
+                    Yuval Noah Harari
+                  </p>
+                </div>
+              </div>
+              <div class="flex flex-col gap-3 pb-3">
+                <div
+                  class="w-full bg-center bg-no-repeat aspect-square bg-cover rounded-lg"
+                  style="
+                    background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuA4x1-OLHtm-WyBw6MBh18l30X8rl_tsEgfEdrNyb83ZNLj6tQdDDwvgMT5_PoOKVKJBpZQJD6Ficx71eyw7Ox_N2iBDHU2ugsLKbkHBdZIUUTUSotQaoFjcbDRqYab-skskAVNOk6p5svQk4W9AjcWSAgunlSRq0Gv9oWay_8JmOolUhJYU028apk1UnAF9l8QV4PaeR_nO4F_D5fgAf2FmM7XZeq6uMpk4Ba_t7BTjXoP3YwQrG3LqVr460alqsuWHkxrQEfA-uku');
+                  "
+                ></div>
+                <div>
+                  <p
+                    class="text-[#0e1a13] text-base font-medium leading-normal"
+                  >
+                    Educated
+                  </p>
+                  <p class="text-[#51946b] text-sm font-normal leading-normal">
+                    Tara Westover
+                  </p>
+                </div>
+              </div>
+              <div class="flex flex-col gap-3 pb-3">
+                <div
+                  class="w-full bg-center bg-no-repeat aspect-square bg-cover rounded-lg"
+                  style="
+                    background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuC8j6dKsQqhc9W47hyMIZM48FLEgyao9Gn-NRUp9HRb2cd-qGMM3OrBbCEUR4OMJdzanzS4AXA4bmSzkiY6c0fBnYv4WVwYTZWh7E1qikUZZyNXZFOUGz49xzfOQPAv6bSQjF_hfwfz4a3wKBBmOS_ByMx1ehdUc60ad_jak2oVwuc6Z5qJ0V0HGwg1V08XHXpCOSkbBf3_rO7CMhg3kxsKyBKiOQx5SM1HTbpmsiPZTHjoYD2wmpXbKyjHX5bKvgMgtusa4O0aSr5r');
+                  "
+                ></div>
+                <div>
+                  <p
+                    class="text-[#0e1a13] text-base font-medium leading-normal"
+                  >
+                    Becoming
+                  </p>
+                  <p class="text-[#51946b] text-sm font-normal leading-normal">
+                    Michelle Obama
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <footer class="flex justify-center">
+          <div class="flex max-w-[960px] flex-1 flex-col">
+            <footer
+              class="flex flex-col gap-6 px-5 py-10 text-center @container"
+            >
+              <div
+                class="flex flex-wrap items-center justify-center gap-6 @[480px]:flex-row @[480px]:justify-around"
+              >
+                <a
+                  class="text-[#51946b] text-base font-normal leading-normal min-w-40"
+                  href="#"
+                  >About Us</a
+                >
+                <a
+                  class="text-[#51946b] text-base font-normal leading-normal min-w-40"
+                  href="#"
+                  >Contact</a
+                >
+                <a
+                  class="text-[#51946b] text-base font-normal leading-normal min-w-40"
+                  href="#"
+                  >Privacy Policy</a
+                >
+                <a
+                  class="text-[#51946b] text-base font-normal leading-normal min-w-40"
+                  href="#"
+                  >Terms of Service</a
+                >
+              </div>
+              <p class="text-[#51946b] text-base font-normal leading-normal">
+                @2023 Book Haven. All rights reserved.
+              </p>
+            </footer>
+          </div>
+        </footer>
+      </div>
+    </div>
+  </body>
+</html>
