@@ -1,0 +1,196 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id          Int       @id @default(autoincrement())
+  email       String    @unique
+  password    String    // Ricorda di hashare la password prima di salvarla
+  name        String?
+  role        Role      @default(USER)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  orders      Order[]
+  addresses   Address[]
+  cart        Cart?     // Un utente può avere un carrello
+  notifications Notification[]
+  // Per il backoffice, potresti voler aggiungere campi come lastLogin, isActive, etc.
+}
+
+model Product {
+  id             Int          @id @default(autoincrement())
+  name           String
+  description    String?
+  price          Decimal      @db.Decimal(10, 2) // Es. 12345678.90
+  stock          Int          @default(0)
+  imageUrl       String?
+  isFeatured     Boolean      @default(false) // Per prodotti in evidenza
+  isBestSeller   Boolean      @default(false) // Per best seller (gestione manuale/logica app)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  orderItems     OrderItem[]
+  cartItems      CartItem[]   // Prodotti presenti nei carrelli
+  categories     Category[]   @relation("ProductCategories")
+  promotions     Promotion[]  @relation("ProductPromotions") // Prodotti inclusi in promozioni
+  // Potresti aggiungere campi come SKU, isActive, etc.
+}
+
+model Category {
+  id          Int       @id @default(autoincrement())
+  name        String    @unique
+  description String?
+  products    Product[] @relation("ProductCategories")
+  promotions  Promotion[] @relation("CategoryPromotions") // Categorie incluse in promozioni
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model Order {
+  id                Int           @id @default(autoincrement())
+  userId            Int
+  user              User          @relation(fields: [userId], references: [id])
+  totalAmount       Decimal       @db.Decimal(10, 2)
+  status            OrderStatus   @default(PENDING)
+  paymentIntentId   String?       @unique // Per Stripe
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+  orderItems        OrderItem[]
+  shippingAddressId Int?
+  shippingAddress   Address?      @relation("ShippingAddress", fields: [shippingAddressId], references: [id])
+  billingAddressId  Int?
+  billingAddress    Address?      @relation("BillingAddress", fields: [billingAddressId], references: [id])
+  // Potresti aggiungere campi come shippingMethod, trackingNumber, etc.
+}
+
+model OrderItem {
+  id              Int      @id @default(autoincrement())
+  orderId         Int
+  order           Order    @relation(fields: [orderId], references: [id])
+  productId       Int
+  product         Product  @relation(fields: [productId], references: [id])
+  quantity        Int
+  priceAtPurchase Decimal  @db.Decimal(10, 2) // Prezzo del prodotto al momento dell'acquisto
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@unique([orderId, productId]) // Un prodotto può apparire una sola volta per ordine (aggiorna la quantità invece)
+}
+
+model Address {
+  id                Int      @id @default(autoincrement())
+  userId            Int
+  user              User     @relation(fields: [userId], references: [id])
+  street            String
+  city              String
+  postalCode        String
+  country           String
+  isDefaultShipping Boolean  @default(false)
+  isDefaultBilling  Boolean  @default(false)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  shippingOrders    Order[] @relation("ShippingAddress")
+  billingOrders     Order[] @relation("BillingAddress")
+}
+
+// Nuovi Modelli
+
+model Cart {
+  id        Int        @id @default(autoincrement())
+  userId    Int        @unique // Ogni utente ha un solo carrello
+  user      User       @relation(fields: [userId], references: [id])
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  items     CartItem[]
+}
+
+model CartItem {
+  id        Int      @id @default(autoincrement())
+  cartId    Int
+  cart      Cart     @relation(fields: [cartId], references: [id])
+  productId Int
+  product   Product  @relation(fields: [productId], references: [id])
+  quantity  Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([cartId, productId]) // Un prodotto può apparire una sola volta nel carrello (aggiorna la quantità)
+}
+
+model Promotion {
+  id                 Int        @id @default(autoincrement())
+  name               String
+  description        String?
+  discountPercentage Decimal?   @db.Decimal(5, 2) // Es. 10.50 per 10.50%
+  discountAmount     Decimal?   @db.Decimal(10, 2) // Es. 5.00 per 5€ di sconto
+  startDate          DateTime
+  endDate            DateTime
+  isActive           Boolean    @default(true)
+  code               String?    @unique // Codice coupon opzionale
+  createdAt          DateTime   @default(now())
+  updatedAt          DateTime   @updatedAt
+
+  // Relazioni per applicare promozioni a prodotti o categorie specifiche
+  products           Product[]  @relation("ProductPromotions")
+  categories         Category[] @relation("CategoryPromotions")
+
+  // Assicurati che ci sia o una percentuale o un importo fisso, non entrambi o nessuno (può essere gestito a livello di logica applicativa)
+}
+
+model Notification {
+  id               Int               @id @default(autoincrement())
+  userId           Int?              // A quale utente è destinata (se null, potrebbe essere per admin)
+  user             User?             @relation(fields: [userId], references: [id])
+  type             NotificationType
+  message          String
+  isRead           Boolean           @default(false)
+  relatedEntityType String?           // Es. "Order", "Product"
+  relatedEntityId  Int?              // ID dell'entità correlata
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+enum OrderStatus {
+  PENDING     // Ordine creato, in attesa di azioni (es. pagamento)
+  AWAITING_PAYMENT // In attesa di conferma pagamento (es. redirect da Stripe)
+  PROCESSING  // Pagamento ricevuto/confermato, ordine in preparazione
+  SHIPPED     // Ordine spedito
+  DELIVERED   // Ordine consegnato
+  CANCELLED   // Ordine cancellato dall'utente o admin
+  FAILED      // Pagamento fallito o altro errore
+  REFUNDED    // Ordine rimborsato
+}
+
+enum NotificationType {
+  // Notifiche Utente
+  ORDER_CONFIRMATION
+  ORDER_SHIPPED
+  ORDER_DELIVERED
+  ORDER_CANCELLED_USER
+  PASSWORD_RESET_REQUEST
+  ACCOUNT_UPDATED
+
+  // Notifiche Admin
+  NEW_ORDER_PLACED_ADMIN
+  LOW_STOCK_WARNING_ADMIN
+  ORDER_CANCELLED_BY_USER_ADMIN
+  NEW_USER_REGISTERED_ADMIN
+  PRODUCT_REVIEW_SUBMITTED_ADMIN // Se implementerai le review
+  CONTACT_FORM_SUBMITTED_ADMIN   // Se avrai un form di contatto
+}
