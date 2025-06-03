@@ -100,7 +100,9 @@ async function apiLogout(token: string | null) {
 }
 
 // --- SAGA WORKERS ---
-function* handleLogin(action: ReturnType<typeof loginRequest>) {
+function* handleLogin(action: {
+  payload: { email: string; password: string };
+}) {
   try {
     // Map email to username for API compatibility
     const { email, password } = action.payload;
@@ -115,7 +117,9 @@ function* handleLogin(action: ReturnType<typeof loginRequest>) {
   }
 }
 
-function* handleRegister(action: ReturnType<typeof registerRequest>) {
+function* handleRegister(action: {
+  payload: { name: string; email: string; password: string };
+}) {
   try {
     // Map name to username for API compatibility
     const { name, email, password } = action.payload;
@@ -174,19 +178,19 @@ function* handleLogout() {
 
 // --- SAGA WATCHERS ---
 function* watchLoginRequest() {
-  yield takeLatest(loginRequest.type, handleLogin);
+  yield takeLatest(loginRequest, handleLogin);
 }
 
 function* watchRegisterRequest() {
-  yield takeLatest(registerRequest.type, handleRegister);
+  yield takeLatest(registerRequest, handleRegister);
 }
 
 function* watchGetCurrentUserRequest() {
-  yield takeLatest(getCurrentUserRequest.type, handleGetCurrentUser);
+  yield takeLatest(getCurrentUserRequest, handleGetCurrentUser);
 }
 
 function* watchLogoutRequest() {
-  yield takeLatest(logoutRequest.type, handleLogout);
+  yield takeLatest(logoutRequest, handleLogout);
 }
 
 export default function* authSaga() {
