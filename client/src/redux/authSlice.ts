@@ -29,7 +29,10 @@ const authSlice = createSlice({
   initialState,
   reducers: {
     // Login Actions
-    loginRequest(state, action: PayloadAction<any>) {
+    loginRequest(
+      state,
+      action: PayloadAction<{ email: string; password: string }>
+    ) {
       // action.payload saranno le credenziali
       state.isLoading = true;
       state.error = null;
@@ -56,7 +59,10 @@ const authSlice = createSlice({
     },
 
     // Register Actions
-    registerRequest(state, action: PayloadAction<any>) {
+    registerRequest(
+      state,
+      action: PayloadAction<{ email: string; password: string; name: string }>
+    ) {
       // action.payload saranno i dati di registrazione
       state.isLoading = true;
       state.error = null;

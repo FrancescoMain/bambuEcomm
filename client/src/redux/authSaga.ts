@@ -35,7 +35,7 @@ interface ApiError extends Error {
 const getToken = (state: RootState) => state.auth.token;
 
 // --- API Call Functions ---
-async function apiLogin(credentials: any) {
+async function apiLogin(credentials: { username: string; password: string }) {
   const response = await fetch(`${API_BASE_URL}/auth/login`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -48,7 +48,11 @@ async function apiLogin(credentials: any) {
   return response.json(); // Expected: { message: string, token: string, user: User }
 }
 
-async function apiRegister(userData: any) {
+async function apiRegister(userData: {
+  username: string;
+  password: string;
+  email: string;
+}) {
   const response = await fetch(`${API_BASE_URL}/auth/register`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -98,9 +102,11 @@ async function apiLogout(token: string | null) {
 // --- SAGA WORKERS ---
 function* handleLogin(action: ReturnType<typeof loginRequest>) {
   try {
+    // Map email to username for API compatibility
+    const { email, password } = action.payload;
     const response: { user: User; token: string; message: string } = yield call(
       apiLogin,
-      action.payload
+      { username: email, password }
     );
     yield put(loginSuccess({ user: response.user, token: response.token }));
   } catch (e) {
@@ -111,10 +117,13 @@ function* handleLogin(action: ReturnType<typeof loginRequest>) {
 
 function* handleRegister(action: ReturnType<typeof registerRequest>) {
   try {
-    const response: { user: User; message: string } = yield call(
-      apiRegister,
-      action.payload
-    );
+    // Map name to username for API compatibility
+    const { name, email, password } = action.payload;
+    const response: { user: User; message: string } = yield call(apiRegister, {
+      username: name,
+      email,
+      password,
+    });
     yield put(registerSuccess({ user: response.user }));
     // Optional: dispatch loginRequest if registration implies login
     // Or show a message to check email / login manually
