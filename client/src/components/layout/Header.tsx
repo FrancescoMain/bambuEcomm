@@ -1,6 +1,5 @@
 "use client";
 import React, { useState, useEffect } from "react";
-import Image from "next/image"; // Import the Next.js Image component
 import { useDispatch, useSelector } from "react-redux"; // Importa da react-redux
 import { RootState } from "@/redux/store"; // Importa RootState
 import { getCurrentUserRequest, logoutRequest } from "@/redux/authSlice"; // Importa anche logoutRequest
@@ -19,7 +18,6 @@ const Header = () => {
 
   const [menuOpen, setMenuOpen] = useState(false);
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
-  const [categoryOpen, setCategoryOpen] = useState(false); // Stato per mostrare le opzioni della categoria
 
   const handleClickOutside = (event: MouseEvent | TouchEvent) => {
     const target = event.target as HTMLElement;
@@ -32,7 +30,6 @@ const Header = () => {
       !target.closest(".cart-button") // Per chiudere il menu carrello
     ) {
       setMenuOpen(false);
-      setCategoryOpen(false);
       setProfileMenuOpen(false);
     }
   };

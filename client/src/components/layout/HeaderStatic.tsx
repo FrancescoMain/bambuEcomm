@@ -2,13 +2,14 @@
 
 import React from "react";
 import Image from "next/image";
+import Link from "next/link";
 
 const HeaderStatic = () => {
   return (
     <div className="flex items-center gap-8">
       <div className="flex-shrink-0 flex items-center gap-4 text-[#0e1a13]">
         <div className="flex items-center">
-          <a href="/">
+          <Link href="/">
             <Image
               src="/bambu-logo.jpg"
               alt="Bambu Ecomm Logo"
@@ -16,7 +17,7 @@ const HeaderStatic = () => {
               height={32}
               priority
             />
-          </a>
+          </Link>
         </div>
       </div>
       {/* Navbar: visibile solo su md+ */}

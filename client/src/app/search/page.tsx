@@ -1,6 +1,6 @@
 "use client";
 
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import React from "react";
 import SearchBar from "@/components/layout/SearchBar";
 import SearchResultCard from "@/components/layout/SearchResultCard";
@@ -9,7 +9,7 @@ export default function SearchPage() {
   const searchParams = useSearchParams();
   const query = searchParams.get("q") || "";
   const [search, setSearch] = React.useState(query);
-  const router = require("next/navigation").useRouter();
+  const router = useRouter();
 
   // Clear search input and query param
   const handleClear = () => {
