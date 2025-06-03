@@ -1,36 +1,75 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Image from "next/image"; // Import the Next.js Image component
+import { useDispatch, useSelector } from "react-redux"; // Importa da react-redux
+import { RootState } from "@/redux/store"; // Importa RootState
+import { getCurrentUserRequest, logoutRequest } from "@/redux/authSlice"; // Importa anche logoutRequest
+// import { useAuthStore } from "@/store/authStore"; // Rimosso store Zustand
+import HeaderStatic from "./HeaderStatic";
 
 const Header = () => {
+  const dispatch = useDispatch(); // Usa useDispatch
+  const { user: currentUser, isLoading } = useSelector(
+    (state: RootState) => state.auth
+  ); // Seleziona dallo store Redux
+
+  useEffect(() => {
+    dispatch(getCurrentUserRequest()); // Dispatch dell'azione per ottenere l'utente
+  }, [dispatch]);
+
   const [menuOpen, setMenuOpen] = useState(false);
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
+  const [categoryOpen, setCategoryOpen] = useState(false); // Stato per mostrare le opzioni della categoria
+
+  const handleClickOutside = (event: MouseEvent | TouchEvent) => {
+    const target = event.target as HTMLElement;
+    console.log("Clicked element:", target); // Log per debug
+
+    if (
+      !target.closest(".category-menu") && // Per chiudere il menu delle categorie
+      !target.closest(".hamburger-menu") && // Per chiudere il menu hamburger
+      !target.closest(".profile-menu") && // Per chiudere il menu profilo
+      !target.closest(".cart-button") // Per chiudere il menu carrello
+    ) {
+      setMenuOpen(false);
+      setCategoryOpen(false);
+      setProfileMenuOpen(false);
+    }
+  };
+
+  useEffect(() => {
+    document.addEventListener("click", handleClickOutside);
+    document.addEventListener("touchstart", handleClickOutside); // Aggiunto per il supporto mobile
+    return () => {
+      document.removeEventListener("click", handleClickOutside);
+      document.removeEventListener("touchstart", handleClickOutside);
+    };
+  }, []);
+
+  const handleLogout = () => {
+    dispatch(logoutRequest());
+    // Potresti voler aggiungere anche una notifica o un redirect qui
+  };
 
   return (
-    <header className="flex items-center justify-between whitespace-nowrap border-b border-solid border-b-[#e8f2ec] px-10 py-3">
-      <div className="flex items-center gap-8">
-        <div className="flex-shrink-0 flex items-center gap-4 text-[#0e1a13]">
-          <div className="flex items-center">
-            <Image
-              src="/bambu-logo.jpg"
-              alt="Bambu Ecomm Logo"
-              width={74}
-              height={32}
-              priority
-            />
-          </div>
-        </div>
-        {/* Navbar: visibile solo su md+ */}
-        <div className="hidden md:flex items-center gap-9">
-          <select className="text-[#0e1a13] text-sm font-medium leading-normal bg-transparent border-none cursor-pointer">
-            <option value="giornali">Giornali</option>
-            <option value="riviste">Riviste</option>
-            <option value="fumetti">Fumetti</option>
-          </select>
-        </div>
-      </div>
-      <div className="flex flex-1 justify-end items-center gap-8">
-        <button className="flex max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 bg-[#e8f2ec] text-[#0e1a13] gap-2 text-sm font-bold leading-normal tracking-[0.015em] min-w-0 px-2.5">
+    <header className="flex items-center justify-between whitespace-nowrap border-b border-solid border-b-[#e8f2ec] px-4 md:px-10 py-3">
+      <HeaderStatic />
+      <div className="flex flex-1 justify-end items-center gap-4  md:gap-8">
+        {isLoading ? (
+          <span>Loading...</span>
+        ) : currentUser ? (
+          <button className="text-sm font-bold hidden md:inline">
+            {currentUser.name}
+          </button>
+        ) : (
+          <a href="/login" className="text-sm font-bold">
+            Login
+          </a>
+        )}
+        <button
+          className="flex max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 bg-[#e8f2ec] text-[#0e1a13] gap-2 text-sm font-bold leading-normal tracking-[0.015em] min-w-0 px-2.5 cart-button"
+          aria-label="Apri carrello"
+        >
           <div
             className="text-[#0e1a13]"
             data-icon="ShoppingBag"
@@ -48,41 +87,8 @@ const Header = () => {
             </svg>
           </div>
         </button>
-        <div className="relative">
-          <button
-            className="hidden md:flex bg-center bg-no-repeat aspect-square bg-cover rounded-full size-10"
-            style={{
-              backgroundImage:
-                "url('https://lh3.googleusercontent.com/aida-public/AB6AXuCyYqkvxBHMRZhQXlELKzPCtdW-vqwBt8jKo2Dt_lV4ZyRk4UUvREYy-74B4Y_9OW6EjNbruNBM0GrrrE9XCC86Kwa8zrQGuTKvKkFl6XDNgeu7qF0oZFJr-R8PyxEtdlkdcHCcxWp3MvDY-IRUvvNmVXjnqe1jbeaEY7UgbNWvmprGwfCp8SDyjfow3Qn4KRqTeS_e8_LO17l3Idp-ZCtYmEl30LF_YSEFL1XFYeXyfYR6DwETvFLdpGE6J-drwJYxm75_2L0IgIyZ')",
-            }}
-            onClick={() => setProfileMenuOpen((v) => !v)}
-            aria-label="Apri menu profilo"
-          ></button>
-          {profileMenuOpen && (
-            <div className="absolute right-0 mt-2 w-48 bg-white shadow-lg rounded-lg py-2">
-              <a
-                href="#"
-                className="block px-4 py-2 text-sm text-[#0e1a13] hover:bg-[#e8f2ec]"
-              >
-                I miei Ordini
-              </a>
-              <a
-                href="#"
-                className="block px-4 py-2 text-sm text-[#0e1a13] hover:bg-[#e8f2ec]"
-              >
-                Dashboard
-              </a>
-              <a
-                href="#"
-                className="block px-4 py-2 text-sm text-[#0e1a13] hover:bg-[#e8f2ec]"
-              >
-                Informazioni
-              </a>
-            </div>
-          )}
-        </div>
         <button
-          className="md:hidden ml-2 p-2 rounded-lg bg-[#e8f2ec] text-[#0e1a13]"
+          className="md:hidden ml-2 p-2 rounded-lg bg-[#e8f2ec] text-[#0e1a13] hamburger-menu"
           onClick={() => setMenuOpen((v) => !v)}
           aria-label="Apri menu"
         >
@@ -101,6 +107,51 @@ const Header = () => {
             />
           </svg>
         </button>
+        {currentUser && (
+          <div className="relative profile-menu">
+            <button
+              className="hidden md:flex bg-center bg-no-repeat aspect-square bg-cover rounded-full size-10"
+              style={{
+                backgroundImage:
+                  "url('https://lh3.googleusercontent.com/aida-public/AB6AXuCyYqkvxBHMRZhQXlELKzPCtdW-vqwBt8jKo2Dt_lV4ZyRk4UUvREYy-74B4Y_9OW6EjNbruNBM0GrrrE9XCC86Kwa8zrQGuTKvKkFl6XDNgeu7qF0oZFJr-R8PyxEtdlkdcHCcxWp3MvDY-IRUvvNmVXjnqe1jbeaEY7UgbNWvmprGwfCp8SDyjfow3Qn4KRqTeS_e8_LO17l3Idp-ZCtYmEl30LF_YSEFL1XFYeXyfYR6DwETvFLdpGE6J-drwJYxm75_2L0IgIyZ')",
+              }}
+              onClick={() => setProfileMenuOpen((v) => !v)}
+              aria-label="Apri menu profilo"
+            ></button>
+            {profileMenuOpen && (
+              <div className="absolute right-0 mt-2 w-48 bg-white shadow-lg rounded-lg py-2">
+                <a
+                  href="#"
+                  className="block px-4 py-2 text-sm text-[#0e1a13] hover:bg-[#e8f2ec]"
+                >
+                  I miei Ordini
+                </a>
+                <a
+                  href="#"
+                  className="block px-4 py-2 text-sm text-[#0e1a13] hover:bg-[#e8f2ec]"
+                >
+                  Dashboard
+                </a>
+                <a
+                  href="#"
+                  className="block px-4 py-2 text-sm text-[#0e1a13] hover:bg-[#e8f2ec]"
+                >
+                  Informazioni
+                </a>
+                <a
+                  href="#logout"
+                  className="block px-4 py-2 text-sm text-red-500 hover:bg-[#e8f2ec]"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    handleLogout();
+                  }}
+                >
+                  Logout
+                </a>
+              </div>
+            )}
+          </div>
+        )}
       </div>
       {/* Mobile menu overlay */}
       {menuOpen && (
@@ -109,7 +160,7 @@ const Header = () => {
           onClick={() => setMenuOpen(false)}
         >
           <div
-            className="absolute top-0 left-0 w-3/4 max-w-xs h-full bg-white shadow-lg flex flex-col gap-6 p-6"
+            className="absolute top-0 left-0 w-3/4 max-w-xs h-full bg-white shadow-lg flex flex-col gap-6 p-6 overflow-auto"
             onClick={(e) => e.stopPropagation()}
           >
             <button
@@ -132,11 +183,66 @@ const Header = () => {
                 />
               </svg>
             </button>
-            <select className="text-[#0e1a13] text-sm font-medium leading-normal bg-transparent border-none cursor-pointer">
-              <option value="giornali">Giornali</option>
-              <option value="riviste">Riviste</option>
-              <option value="fumetti">Fumetti</option>
-            </select>
+            <div className="flex flex-col gap-4">
+              <h2 className="text-[#0e1a13] text-lg font-bold">Categorie</h2>
+              <a
+                href="#giornali"
+                className="block px-4 py-2 text-sm text-[#0e1a13] hover:bg-[#e8f2ec]"
+              >
+                Giornali
+              </a>
+              <a
+                href="#riviste"
+                className="block px-4 py-2 text-sm text-[#0e1a13] hover:bg-[#e8f2ec]"
+              >
+                Riviste
+              </a>
+              <a
+                href="#fumetti"
+                className="block px-4 py-2 text-sm text-[#0e1a13] hover:bg-[#e8f2ec]"
+              >
+                Fumetti
+              </a>
+            </div>
+            {currentUser && (
+              <div className="flex flex-col gap-4 mt-6">
+                <h2 className="text-[#0e1a13] text-lg font-bold">Profilo</h2>
+                <a
+                  href="#informazioni"
+                  className="block px-4 py-2 text-sm text-[#0e1a13] hover:bg-[#e8f2ec]"
+                >
+                  Informazioni
+                </a>
+                <a
+                  href="#dashboard"
+                  className="block px-4 py-2 text-sm text-[#0e1a13] hover:bg-[#e8f2ec]"
+                >
+                  Dashboard
+                </a>
+                <a
+                  href="#ordini"
+                  className="block px-4 py-2 text-sm text-[#0e1a13] hover:bg-[#e8f2ec]"
+                >
+                  Ordini
+                </a>
+                <a
+                  href="#logout"
+                  className="block px-4 py-2 text-sm text-red-500 hover:bg-[#e8f2ec]"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    handleLogout();
+                  }}
+                >
+                  Logout
+                </a>
+              </div>
+            )}
+            <a
+              href="#esplora"
+              className="block px-4 py-2 text-sm text-[#0e1a13] hover:bg-[#e8f2ec] mt-6"
+            >
+              Esplora
+            </a>
           </div>
         </div>
       )}
