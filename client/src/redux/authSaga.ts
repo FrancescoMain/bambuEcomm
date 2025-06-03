@@ -133,9 +133,7 @@ function* handleRegister(action: ReturnType<typeof registerRequest>) {
   }
 }
 
-function* handleGetCurrentUser(
-  _action: ReturnType<typeof getCurrentUserRequest> // After slice change, this action won't have a meaningful payload
-) {
+function* handleGetCurrentUser() {
   try {
     const token: string | null = yield select(getToken); // Get token from state first
 
