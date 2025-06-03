@@ -4,7 +4,7 @@ import Footer from "@/components/layout/Footer"; // Import Footer
 import ClientProvider from "@/components/layout/ClientProvider";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-
+import "./globals.css"; // Import global styles
 // Configure Plus Jakarta Sans
 const plusJakartaSans = Plus_Jakarta_Sans({
   subsets: ["latin"],
@@ -46,7 +46,6 @@ export default function RootLayout({
             href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;700&family=Noto+Sans:wght@400;700&display=swap"
           /> */}
           {/* Redundant Tailwind CDN (PostCSS setup is expected) - commented out */}
-          <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
         </head>
         <body className={`font-sans antialiased`}>
           <ToastContainer
