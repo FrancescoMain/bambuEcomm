@@ -29,6 +29,7 @@ const authSlice = createSlice({
   initialState,
   reducers: {
     // Login Actions
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     loginRequest(
       state,
       action: PayloadAction<{ email: string; password: string }>
@@ -59,6 +60,7 @@ const authSlice = createSlice({
     },
 
     // Register Actions
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     registerRequest(
       state,
       action: PayloadAction<{ email: string; password: string; name: string }>
