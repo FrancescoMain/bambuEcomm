@@ -1,5 +1,3 @@
-"use client";
-
 import { Plus_Jakarta_Sans, Noto_Sans } from "next/font/google"; // Import new fonts
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer"; // Import Footer
@@ -24,7 +22,8 @@ const notoSans = Noto_Sans({
 
 export const metadata = {
   title: "Cartolibreria Bambù",
-  description: "Cartolibreria Bambù - Libri, cancelleria, regali e molto altro!",
+  description:
+    "Cartolibreria Bambù - Libri, cancelleria, regali e molto altro!",
 };
 
 export default function RootLayout({
@@ -40,6 +39,7 @@ export default function RootLayout({
       >
         <head>
           <link rel="icon" href="/bambu-logo.jpg" type="image/jpeg" />
+          <link rel="shortcut icon" href="/bambu-logo.jpg" type="image/jpeg" />
           {/* Redundant font link (next/font is used) - commented out */}
           {/* <link
             rel="stylesheet"
