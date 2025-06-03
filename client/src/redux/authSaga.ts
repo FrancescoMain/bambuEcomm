@@ -134,10 +134,10 @@ function* handleRegister(action: ReturnType<typeof registerRequest>) {
 }
 
 function* handleGetCurrentUser(
-  action: ReturnType<typeof getCurrentUserRequest> // After slice change, this action won't have a meaningful payload
+  _action: ReturnType<typeof getCurrentUserRequest> // After slice change, this action won't have a meaningful payload
 ) {
   try {
-    let token: string | null = yield select(getToken); // Get token from state first
+    const token: string | null = yield select(getToken); // Get token from state first
 
     // The logic to extract token from action.payload has been removed.
     // The saga now relies on the token being present in the Redux state,
