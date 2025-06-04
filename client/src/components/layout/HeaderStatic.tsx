@@ -74,7 +74,7 @@ const HeaderStatic = () => {
           </div>
         </div>
         <a
-          href="#esplora"
+          href="#search"
           className="text-[#0e1a13] text-sm font-medium leading-normal hover:underline"
         >
           Esplora
