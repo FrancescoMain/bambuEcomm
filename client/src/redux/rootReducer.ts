@@ -1,8 +1,10 @@
 import { combineReducers } from "@reduxjs/toolkit";
 import authReducer from "./authSlice"; // Corrected: authSlice exports the reducer as default
+import categoryReducer from "./categorySlice";
 
 const rootReducer = combineReducers({
   auth: authReducer,
+  category: categoryReducer,
   // Aggiungi altri reducer qui
 });
 

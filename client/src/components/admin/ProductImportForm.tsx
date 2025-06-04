@@ -1,7 +1,12 @@
 "use client";
 import React, { useState, useRef, useEffect } from "react";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { RootState } from "@/redux/store";
+import { fetchCategoriesStart } from "@/redux/categorySlice";
+import {
+  selectParentCategories,
+  selectCategoriesLoading,
+} from "@/redux/categorySelectors";
 
 const ProductImportForm: React.FC = () => {
   const [file, setFile] = useState<File | null>(null);
@@ -14,6 +19,9 @@ const ProductImportForm: React.FC = () => {
   const [isPolling, setIsPolling] = useState(false);
   const pollingRef = useRef<NodeJS.Timeout | null>(null);
   const token = useSelector((state: RootState) => state.auth.token);
+  const dispatch = useDispatch();
+  const parentCategories = useSelector(selectParentCategories);
+  const categoriesLoading = useSelector(selectCategoriesLoading);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {

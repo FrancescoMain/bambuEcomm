@@ -32,7 +32,9 @@ const ProductCard: React.FC<ProductCardProps> = ({
         </p>
         <div className="flex items-center justify-between mt-2">
           <span className="text-[#0e1a13] text-sm font-bold">
-            {typeof price === "number" ? `€${price.toFixed(2)}` : price}
+            {typeof price === "number"
+              ? `€ ${price.toFixed(2)}`
+              : `€ ${(parseFloat(price) || 0).toFixed(2)}`}
           </span>
           <button
             className="ml-2 p-2 bg-[#51946b] hover:bg-[#417a57] text-white text-xs rounded-full transition-colors flex items-center justify-center"

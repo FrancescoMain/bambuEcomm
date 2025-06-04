@@ -96,30 +96,57 @@ export const importProducts = async (
             categoriaId:
               row["CATEGORIA"] || row["categoriaId"] || row["categoria"],
           };
-          // Gestione categoria: accetta sia id che nome, crea se non esiste
+          // Gestione categoria e sottocategoria anche per CSV: supporta "Categoria|Sottocategoria"
           let categoriaIdNum: number | undefined = undefined;
-          if (categoriaId && !isNaN(Number(categoriaId))) {
-            categoriaIdNum = Number(categoriaId);
-          } else if (categoriaId && typeof categoriaId === "string") {
-            // Cerca la categoria per nome (case-insensitive)
+          let subcategoryIdNum: number | undefined = undefined;
+          let categoriaNome = categoriaId;
+          let subcategoriaNome: string | undefined = undefined;
+          if (typeof categoriaId === "string" && categoriaId.includes("|")) {
+            const [cat, subcat] = categoriaId
+              .split("|")
+              .map((s: string) => s.trim());
+            categoriaNome = cat;
+            subcategoriaNome = subcat;
+          }
+          // Trova o crea la categoria principale
+          if (categoriaNome && !isNaN(Number(categoriaNome))) {
+            categoriaIdNum = Number(categoriaNome);
+          } else if (categoriaNome && typeof categoriaNome === "string") {
             let categoria = await prisma.category.findFirst({
               where: {
-                name: { equals: categoriaId.trim(), mode: "insensitive" },
+                name: { equals: categoriaNome.trim(), mode: "insensitive" },
               },
             });
             if (!categoria) {
               categoria = await prisma.category.create({
-                data: { name: categoriaId.trim() },
+                data: { name: categoriaNome.trim() },
               });
             }
             categoriaIdNum = categoria.id;
           }
+          // Trova o crea la sottocategoria e la collega alla categoria padre
+          if (subcategoriaNome) {
+            let subcat = await prisma.category.findFirst({
+              where: {
+                name: { equals: subcategoriaNome, mode: "insensitive" },
+                parentId: categoriaIdNum,
+              },
+            });
+            if (!subcat) {
+              subcat = await prisma.category.create({
+                data: { name: subcategoriaNome, parentId: categoriaIdNum },
+              });
+            }
+            subcategoryIdNum = subcat.id;
+          }
+          // Per i prodotti, collega la sottocategoria se esiste, altrimenti la categoria principale
+          const categoryToConnect = subcategoryIdNum || categoriaIdNum;
           const missingFields = [];
           if (!codiceProdotto) missingFields.push("codiceProdotto");
           if (!titolo) missingFields.push("titolo");
           if (!prezzo) missingFields.push("prezzo");
           if (!stock) missingFields.push("stock");
-          if (!categoriaIdNum) missingFields.push("categoriaId");
+          if (!categoryToConnect) missingFields.push("categoriaId");
           if (missingFields.length > 0) {
             errors.push({
               codiceProdotto,
@@ -146,7 +173,7 @@ export const importProducts = async (
                   descrizioneBreve,
                   stato,
                   prezzo: Number(prezzo),
-                  categoria: { set: [{ id: categoriaIdNum }] },
+                  categoria: { set: [{ id: categoryToConnect }] },
                 },
               });
               updated++;
@@ -163,7 +190,7 @@ export const importProducts = async (
                   descrizioneBreve,
                   stato,
                   prezzo: Number(prezzo),
-                  categoria: { connect: [{ id: categoriaIdNum }] },
+                  categoria: { connect: [{ id: categoryToConnect }] },
                 },
               });
               created++;
@@ -234,29 +261,58 @@ export const importProducts = async (
               rowObj["categoria"],
           };
 
-          // Gestione categoria anche per Excel: accetta sia id che nome, crea se non esiste
+          // Gestione categoria e sottocategoria per Excel: supporta "Categoria|Sottocategoria"
           let categoriaIdNum: number | undefined = undefined;
-          if (categoriaId && !isNaN(Number(categoriaId))) {
-            categoriaIdNum = Number(categoriaId);
-          } else if (categoriaId && typeof categoriaId === "string") {
+          let subcategoryIdNum: number | undefined = undefined;
+          let categoriaNome = categoriaId;
+          let subcategoriaNome: string | undefined = undefined;
+          if (typeof categoriaId === "string" && categoriaId.includes("|")) {
+            const [cat, subcat] = categoriaId
+              .split("|")
+              .map((s: string) => s.trim());
+            categoriaNome = cat;
+            subcategoriaNome = subcat;
+          }
+          // Trova o crea la categoria principale
+          if (categoriaNome && !isNaN(Number(categoriaNome))) {
+            categoriaIdNum = Number(categoriaNome);
+          } else if (categoriaNome && typeof categoriaNome === "string") {
             let categoria = await prisma.category.findFirst({
               where: {
-                name: { equals: categoriaId.trim(), mode: "insensitive" },
+                name: { equals: categoriaNome.trim(), mode: "insensitive" },
               },
             });
             if (!categoria) {
               categoria = await prisma.category.create({
-                data: { name: categoriaId.trim() },
+                data: { name: categoriaNome.trim() },
               });
             }
             categoriaIdNum = categoria.id;
           }
+          // Trova o crea la sottocategoria e la collega alla categoria padre
+          if (subcategoriaNome) {
+            let subcat = await prisma.category.findFirst({
+              where: {
+                name: { equals: subcategoriaNome, mode: "insensitive" },
+                // Associa la sottocategoria alla categoria padre se hai un campo parentId
+                parentId: categoriaIdNum,
+              },
+            });
+            if (!subcat) {
+              subcat = await prisma.category.create({
+                data: { name: subcategoriaNome, parentId: categoriaIdNum },
+              });
+            }
+            subcategoryIdNum = subcat.id;
+          }
+          // Per i prodotti, collega la sottocategoria se esiste, altrimenti la categoria principale
+          const categoryToConnect = subcategoryIdNum || categoriaIdNum;
           const missingFields = [];
           if (!codiceProdotto) missingFields.push("codiceProdotto");
           if (!titolo) missingFields.push("titolo");
           if (!prezzo) missingFields.push("prezzo");
           if (!stock) missingFields.push("stock");
-          if (!categoriaIdNum) missingFields.push("categoriaId");
+          if (!categoryToConnect) missingFields.push("categoriaId");
           if (missingFields.length > 0) {
             errors.push({
               codiceProdotto,
@@ -283,7 +339,7 @@ export const importProducts = async (
                   descrizioneBreve,
                   stato,
                   prezzo: Number(prezzo),
-                  categoria: { set: [{ id: categoriaIdNum }] },
+                  categoria: { set: [{ id: categoryToConnect }] },
                 },
               });
               updated++;
@@ -300,7 +356,7 @@ export const importProducts = async (
                   descrizioneBreve,
                   stato,
                   prezzo: Number(prezzo),
-                  categoria: { connect: [{ id: categoriaIdNum }] },
+                  categoria: { connect: [{ id: categoryToConnect }] },
                 },
               });
               created++;

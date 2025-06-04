@@ -1,10 +1,24 @@
 "use client";
 
-import React from "react";
+import React, { useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { useDispatch, useSelector } from "react-redux";
+import { fetchCategoriesStart } from "@/redux/categorySlice";
+import {
+  selectParentCategories,
+  selectCategoriesLoading,
+} from "@/redux/categorySelectors";
 
 const HeaderStatic = () => {
+  const dispatch = useDispatch();
+  const parentCategories = useSelector(selectParentCategories);
+  const categoriesLoading = useSelector(selectCategoriesLoading);
+
+  useEffect(() => {
+    dispatch(fetchCategoriesStart());
+  }, [dispatch]);
+
   return (
     <div className="flex items-center gap-8">
       <div className="flex-shrink-0 flex items-center gap-4 text-[#0e1a13]">
@@ -27,7 +41,6 @@ const HeaderStatic = () => {
             className="flex items-center text-[#0e1a13] text-sm font-medium leading-normal bg-transparent border-none cursor-pointer gap-2"
             aria-label="Apri categoria"
             onClick={() => {
-              // Toggle the category menu open/close
               const menu = document.getElementById("category-dropdown");
               if (menu) menu.classList.toggle("hidden");
             }}
@@ -48,33 +61,39 @@ const HeaderStatic = () => {
               />
             </svg>
           </button>
-          {/* Dropdown menu */}
+          {/* Dropdown menu dinamico */}
           <div
             id="category-dropdown"
-            className="absolute left-0 mt-2 w-48 bg-white border border-gray-200 rounded shadow-lg z-50 hidden"
+            className="absolute left-0 mt-2 w-72 bg-white border border-gray-200 rounded shadow-lg z-50 hidden"
           >
-            <a
-              href="#categoria1"
-              className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-            >
-              Categoria 1
-            </a>
-            <a
-              href="#categoria2"
-              className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-            >
-              Categoria 2
-            </a>
-            <a
-              href="#categoria3"
-              className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-            >
-              Categoria 3
-            </a>
+            {categoriesLoading ? (
+              <div className="px-4 py-2 text-sm text-gray-500">
+                Caricamento...
+              </div>
+            ) : parentCategories.length === 0 ? (
+              <div className="px-4 py-2 text-sm text-gray-500">
+                Nessuna categoria
+              </div>
+            ) : (
+              parentCategories.map((cat) => (
+                <Link
+                  key={cat.id}
+                  href={{ pathname: "/search", query: { category: cat.name } }}
+                  className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 truncate"
+                  title={cat.name}
+                  onClick={() => {
+                    const menu = document.getElementById("category-dropdown");
+                    if (menu) menu.classList.add("hidden");
+                  }}
+                >
+                  {cat.name}
+                </Link>
+              ))
+            )}
           </div>
         </div>
         <a
-          href="#search"
+          href="/search"
           className="text-[#0e1a13] text-sm font-medium leading-normal hover:underline"
         >
           Esplora
