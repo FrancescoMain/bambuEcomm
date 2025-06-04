@@ -1,5 +1,6 @@
 "use client";
 
+import { Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import React from "react";
 import SearchBar from "@/components/layout/SearchBar";
@@ -84,167 +85,169 @@ export default function SearchPage() {
     : results;
 
   return (
-    <div className="flex flex-1 justify-center py-5 px-2 md:px-10 bg-[#f8fbfa] min-h-screen">
-      <div className="layout-content-container flex flex-col max-w-5xl w-full flex-1">
-        <div className="px-2 md:px-4 py-3">
-          <div className="flex items-center gap-2">
-            <div className="flex-1">
-              <SearchBar
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                onSubmit={handleSearchSubmit}
-                placeholder="Cerca libri, autori, ecc..."
-              />
+    <Suspense fallback={<div>Loading...</div>}>
+      <div className="flex flex-1 justify-center py-5 px-2 md:px-10 bg-[#f8fbfa] min-h-screen">
+        <div className="layout-content-container flex flex-col max-w-5xl w-full flex-1">
+          <div className="px-2 md:px-4 py-3">
+            <div className="flex items-center gap-2">
+              <div className="flex-1">
+                <SearchBar
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  onSubmit={handleSearchSubmit}
+                  placeholder="Cerca libri, autori, ecc..."
+                />
+              </div>
+              {search && (
+                <button
+                  onClick={handleClear}
+                  className="ml-2 p-2 rounded-full bg-[#e8f2ec] hover:bg-[#d2e7db] text-[#51946b] transition-colors"
+                  aria-label="Cancella ricerca"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="24px"
+                    height="24px"
+                    fill="currentColor"
+                    viewBox="0 0 256 256"
+                  >
+                    <path d="M165.66,101.66,139.31,128l26.35,26.34a8,8,0,0,1-11.32,11.32L128,139.31l-26.34,26.35a8,8,0,0,1-11.32-11.32L116.69,128,90.34,101.66a8,8,0,0,1,11.32-11.32L128,116.69l26.34-26.35a8,8,0,0,1,11.32,11.32ZM232,128A104,104,0,1,1,128,24,104.11,104.11,0,0,1,232,128Zm-16,0a88,88,0,1,0-88,88A88.1,88.1,0,0,0,216,128Z"></path>
+                  </svg>
+                </button>
+              )}
             </div>
-            {search && (
-              <button
-                onClick={handleClear}
-                className="ml-2 p-2 rounded-full bg-[#e8f2ec] hover:bg-[#d2e7db] text-[#51946b] transition-colors"
-                aria-label="Cancella ricerca"
+          </div>
+          {/* Filtri */}
+          <div className="flex gap-3 p-3 overflow-x-auto">
+            <button className="flex h-8 shrink-0 items-center justify-center gap-x-2 rounded-lg bg-[#e8f2ec] pl-4 pr-2">
+              <p className="text-[#0e1a13] text-sm font-medium leading-normal">
+                Prezzo
+              </p>
+              <div
+                className="text-[#0e1a13]"
+                data-icon="CaretDown"
+                data-size="20px"
+                data-weight="regular"
               >
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
-                  width="24px"
-                  height="24px"
+                  width="20px"
+                  height="20px"
                   fill="currentColor"
                   viewBox="0 0 256 256"
                 >
-                  <path d="M165.66,101.66,139.31,128l26.35,26.34a8,8,0,0,1-11.32,11.32L128,139.31l-26.34,26.35a8,8,0,0,1-11.32-11.32L116.69,128,90.34,101.66a8,8,0,0,1,11.32-11.32L128,116.69l26.34-26.35a8,8,0,0,1,11.32,11.32ZM232,128A104,104,0,1,1,128,24,104.11,104.11,0,0,1,232,128Zm-16,0a88,88,0,1,0-88,88A88.1,88.1,0,0,0,216,128Z"></path>
+                  <path d="M213.66,101.66l-80,80a8,8,0,0,1-11.32,0l-80-80A8,8,0,0,1,53.66,90.34L128,164.69l74.34-74.35a8,8,0,0,1,11.32,11.32Z"></path>
                 </svg>
-              </button>
+              </div>
+            </button>
+            <button className="flex h-8 shrink-0 items-center justify-center gap-x-2 rounded-lg bg-[#e8f2ec] pl-4 pr-2">
+              <p className="text-[#0e1a13] text-sm font-medium leading-normal">
+                Disponibilità
+              </p>
+              <div
+                className="text-[#0e1a13]"
+                data-icon="CaretDown"
+                data-size="20px"
+                data-weight="regular"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="20px"
+                  height="20px"
+                  fill="currentColor"
+                  viewBox="0 0 256 256"
+                >
+                  <path d="M213.66,101.66l-80,80a8,8,0,0,1-11.32,0l-80-80A8,8,0,0,1,53.66,90.34L128,164.69l74.34-74.35a8,8,0,0,1,11.32,11.32Z"></path>
+                </svg>
+              </div>
+            </button>
+            <button className="flex h-8 shrink-0 items-center justify-center gap-x-2 rounded-lg bg-[#e8f2ec] pl-4 pr-2">
+              <p className="text-[#0e1a13] text-sm font-medium leading-normal">
+                Autore
+              </p>
+              <div
+                className="text-[#0e1a13]"
+                data-icon="CaretDown"
+                data-size="20px"
+                data-weight="regular"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="20px"
+                  height="20px"
+                  fill="currentColor"
+                  viewBox="0 0 256 256"
+                >
+                  <path d="M213.66,101.66l-80,80a8,8,0,0,1-11.32,0l-80-80A8,8,0,0,1,53.66,90.34L128,164.69l74.34-74.35a8,8,0,0,1,11.32,11.32Z"></path>
+                </svg>
+              </div>
+            </button>
+            <button className="flex h-8 shrink-0 items-center justify-center gap-x-2 rounded-lg bg-[#e8f2ec] pl-4 pr-2">
+              <p className="text-[#0e1a13] text-sm font-medium leading-normal">
+                Editore
+              </p>
+              <div
+                className="text-[#0e1a13]"
+                data-icon="CaretDown"
+                data-size="20px"
+                data-weight="regular"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="20px"
+                  height="20px"
+                  fill="currentColor"
+                  viewBox="0 0 256 256"
+                >
+                  <path d="M213.66,101.66l-80,80a8,8,0,0,1-11.32,0l-80-80A8,8,0,0,1,53.66,90.34L128,164.69l74.34-74.35a8,8,0,0,1,11.32,11.32Z"></path>
+                </svg>
+              </div>
+            </button>
+            <button className="flex h-8 shrink-0 items-center justify-center gap-x-2 rounded-lg bg-[#e8f2ec] pl-4 pr-2">
+              <p className="text-[#0e1a13] text-sm font-medium leading-normal">
+                Genere
+              </p>
+              <div
+                className="text-[#0e1a13]"
+                data-icon="CaretDown"
+                data-size="20px"
+                data-weight="regular"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="20px"
+                  height="20px"
+                  fill="currentColor"
+                  viewBox="0 0 256 256"
+                >
+                  <path d="M213.66,101.66l-80,80a8,8,0,0,1-11.32,0l-80-80A8,8,0,0,1,53.66,90.34L128,164.69l74.34-74.35a8,8,0,0,1,11.32,11.32Z"></path>
+                </svg>
+              </div>
+            </button>
+          </div>
+          <h2 className="text-[#0e1a13] text-[22px] font-bold leading-tight tracking-[-0.015em] px-4 pb-3 pt-5">
+            Risultati
+          </h2>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 p-4">
+            {filteredResults.length === 0 ? (
+              <div className="col-span-full text-center text-[#51946b] py-8 text-lg">
+                Nessun risultato trovato.
+              </div>
+            ) : (
+              filteredResults.map((r, i) => (
+                <SearchResultCard
+                  key={i}
+                  image={r.image}
+                  title={r.title}
+                  author={r.author}
+                  price={r.price}
+                  onAddToCart={() => handleAddToCart(r.title)}
+                />
+              ))
             )}
           </div>
         </div>
-        {/* Filtri */}
-        <div className="flex gap-3 p-3 overflow-x-auto">
-          <button className="flex h-8 shrink-0 items-center justify-center gap-x-2 rounded-lg bg-[#e8f2ec] pl-4 pr-2">
-            <p className="text-[#0e1a13] text-sm font-medium leading-normal">
-              Prezzo
-            </p>
-            <div
-              className="text-[#0e1a13]"
-              data-icon="CaretDown"
-              data-size="20px"
-              data-weight="regular"
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="20px"
-                height="20px"
-                fill="currentColor"
-                viewBox="0 0 256 256"
-              >
-                <path d="M213.66,101.66l-80,80a8,8,0,0,1-11.32,0l-80-80A8,8,0,0,1,53.66,90.34L128,164.69l74.34-74.35a8,8,0,0,1,11.32,11.32Z"></path>
-              </svg>
-            </div>
-          </button>
-          <button className="flex h-8 shrink-0 items-center justify-center gap-x-2 rounded-lg bg-[#e8f2ec] pl-4 pr-2">
-            <p className="text-[#0e1a13] text-sm font-medium leading-normal">
-              Disponibilità
-            </p>
-            <div
-              className="text-[#0e1a13]"
-              data-icon="CaretDown"
-              data-size="20px"
-              data-weight="regular"
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="20px"
-                height="20px"
-                fill="currentColor"
-                viewBox="0 0 256 256"
-              >
-                <path d="M213.66,101.66l-80,80a8,8,0,0,1-11.32,0l-80-80A8,8,0,0,1,53.66,90.34L128,164.69l74.34-74.35a8,8,0,0,1,11.32,11.32Z"></path>
-              </svg>
-            </div>
-          </button>
-          <button className="flex h-8 shrink-0 items-center justify-center gap-x-2 rounded-lg bg-[#e8f2ec] pl-4 pr-2">
-            <p className="text-[#0e1a13] text-sm font-medium leading-normal">
-              Autore
-            </p>
-            <div
-              className="text-[#0e1a13]"
-              data-icon="CaretDown"
-              data-size="20px"
-              data-weight="regular"
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="20px"
-                height="20px"
-                fill="currentColor"
-                viewBox="0 0 256 256"
-              >
-                <path d="M213.66,101.66l-80,80a8,8,0,0,1-11.32,0l-80-80A8,8,0,0,1,53.66,90.34L128,164.69l74.34-74.35a8,8,0,0,1,11.32,11.32Z"></path>
-              </svg>
-            </div>
-          </button>
-          <button className="flex h-8 shrink-0 items-center justify-center gap-x-2 rounded-lg bg-[#e8f2ec] pl-4 pr-2">
-            <p className="text-[#0e1a13] text-sm font-medium leading-normal">
-              Editore
-            </p>
-            <div
-              className="text-[#0e1a13]"
-              data-icon="CaretDown"
-              data-size="20px"
-              data-weight="regular"
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="20px"
-                height="20px"
-                fill="currentColor"
-                viewBox="0 0 256 256"
-              >
-                <path d="M213.66,101.66l-80,80a8,8,0,0,1-11.32,0l-80-80A8,8,0,0,1,53.66,90.34L128,164.69l74.34-74.35a8,8,0,0,1,11.32,11.32Z"></path>
-              </svg>
-            </div>
-          </button>
-          <button className="flex h-8 shrink-0 items-center justify-center gap-x-2 rounded-lg bg-[#e8f2ec] pl-4 pr-2">
-            <p className="text-[#0e1a13] text-sm font-medium leading-normal">
-              Genere
-            </p>
-            <div
-              className="text-[#0e1a13]"
-              data-icon="CaretDown"
-              data-size="20px"
-              data-weight="regular"
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="20px"
-                height="20px"
-                fill="currentColor"
-                viewBox="0 0 256 256"
-              >
-                <path d="M213.66,101.66l-80,80a8,8,0,0,1-11.32,0l-80-80A8,8,0,0,1,53.66,90.34L128,164.69l74.34-74.35a8,8,0,0,1,11.32,11.32Z"></path>
-              </svg>
-            </div>
-          </button>
-        </div>
-        <h2 className="text-[#0e1a13] text-[22px] font-bold leading-tight tracking-[-0.015em] px-4 pb-3 pt-5">
-          Risultati
-        </h2>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 p-4">
-          {filteredResults.length === 0 ? (
-            <div className="col-span-full text-center text-[#51946b] py-8 text-lg">
-              Nessun risultato trovato.
-            </div>
-          ) : (
-            filteredResults.map((r, i) => (
-              <SearchResultCard
-                key={i}
-                image={r.image}
-                title={r.title}
-                author={r.author}
-                price={r.price}
-                onAddToCart={() => handleAddToCart(r.title)}
-              />
-            ))
-          )}
-        </div>
       </div>
-    </div>
+    </Suspense>
   );
 }
