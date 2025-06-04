@@ -29,7 +29,10 @@ const authSlice = createSlice({
   initialState,
   reducers: {
     // Login Actions
-    loginRequest(state) {
+    loginRequest(
+      state,
+      action: PayloadAction<{ email: string; password: string }>
+    ) {
       state.isLoading = true;
       state.error = null;
       state.token = null;
@@ -55,7 +58,10 @@ const authSlice = createSlice({
     },
 
     // Register Actions
-    registerRequest(state) {
+    registerRequest(
+      state,
+      action: PayloadAction<{ email: string; password: string; name: string }>
+    ) {
       state.isLoading = true;
       state.error = null;
     },
