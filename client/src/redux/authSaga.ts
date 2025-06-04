@@ -35,7 +35,8 @@ interface ApiError extends Error {
 const getToken = (state: RootState) => state.auth.token;
 
 // --- API Call Functions ---
-async function apiLogin(credentials: { username: string; password: string }) {
+async function apiLogin(credentials: { email: string; password: string }) {
+  // Send email and password as JSON body
   const response = await fetch(`${API_BASE_URL}/auth/login`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -104,11 +105,10 @@ function* handleLogin(action: {
   payload: { email: string; password: string };
 }) {
   try {
-    // Map email to username for API compatibility
     const { email, password } = action.payload;
     const response: { user: User; token: string; message: string } = yield call(
       apiLogin,
-      { username: email, password }
+      { email, password }
     );
     yield put(loginSuccess({ user: response.user, token: response.token }));
   } catch (e) {

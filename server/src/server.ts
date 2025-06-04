@@ -10,6 +10,7 @@ import addressRoutes from "./routes/address.routes";
 import cartRoutes from "./routes/cart.routes"; // Import cart routes
 import promotionRoutes from "./routes/promotion.routes"; // Import promotion routes
 import notificationRoutes from "./routes/notification.routes"; // Import notification routes
+import productImportRoutes from "./routes/productImport.routes"; // Import product import routes
 
 dotenv.config();
 
@@ -42,6 +43,7 @@ app.use("/api/addresses", addressRoutes);
 app.use("/api/cart", cartRoutes); // Mount cart routes
 app.use("/api/promotions", promotionRoutes); // Mount promotion routes
 app.use("/api/notifications", notificationRoutes); // Mount notification routes
+app.use("/api/products", productImportRoutes); // Mount product import routes
 // TODO: Aggiungere le altre rotte (notifications)
 
 // Gestione errori globale (semplice)

@@ -123,12 +123,14 @@ const Header = () => {
                 >
                   I miei Ordini
                 </a>
-                <a
-                  href="#"
-                  className="block px-4 py-2 text-sm text-[#0e1a13] hover:bg-[#e8f2ec]"
-                >
-                  Dashboard
-                </a>
+                {currentUser.role === "ADMIN" && (
+                  <a
+                    href="/dashboard"
+                    className="block px-4 py-2 text-sm text-[#0e1a13] hover:bg-[#e8f2ec]"
+                  >
+                    Dashboard
+                  </a>
+                )}
                 <a
                   href="#"
                   className="block px-4 py-2 text-sm text-[#0e1a13] hover:bg-[#e8f2ec]"
@@ -210,12 +212,14 @@ const Header = () => {
                 >
                   Informazioni
                 </a>
-                <a
-                  href="#dashboard"
-                  className="block px-4 py-2 text-sm text-[#0e1a13] hover:bg-[#e8f2ec]"
-                >
-                  Dashboard
-                </a>
+                {currentUser.role === "ADMIN" && (
+                  <a
+                    href="/dashboard"
+                    className="block px-4 py-2 text-sm text-[#0e1a13] hover:bg-[#e8f2ec]"
+                  >
+                    Dashboard
+                  </a>
+                )}
                 <a
                   href="#ordini"
                   className="block px-4 py-2 text-sm text-[#0e1a13] hover:bg-[#e8f2ec]"

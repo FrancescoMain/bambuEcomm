@@ -17,39 +17,43 @@ const router = Router();
 
 // Regole di validazione per la creazione del prodotto
 const createProductValidationRules = [
-  body("name").notEmpty().withMessage("Il nome è obbligatorio").trim(),
-  body("description").optional().trim(),
-  body("price")
+  body("codiceProdotto")
+    .notEmpty()
+    .withMessage("Il codice prodotto è obbligatorio")
+    .trim(),
+  body("titolo").notEmpty().withMessage("Il titolo è obbligatorio").trim(),
+  body("prezzo")
     .isFloat({ gt: 0 })
     .withMessage("Il prezzo deve essere un numero positivo"),
   body("stock")
     .isInt({ gt: -1 })
     .withMessage("Lo stock deve essere un numero intero non negativo"),
-  body("categoryId")
+  body("categoriaId")
     .isInt({ gt: 0 })
     .withMessage(
       "L'ID della categoria è obbligatorio e deve essere un intero positivo"
     ),
-  body("imageUrl").optional().isURL().withMessage("URL immagine non valido"),
-  body("isFeatured")
-    .optional()
-    .isBoolean()
-    .withMessage("isFeatured deve essere un booleano"),
-  body("isBestSeller")
-    .optional()
-    .isBoolean()
-    .withMessage("isBestSeller deve essere un booleano"),
+  body("codiceEAN").optional().isString().trim(),
+  body("immagine").optional().isString().trim(),
+  body("url").optional().isString().trim(),
+  body("descrizione").optional().isString().trim(),
+  body("descrizioneBreve").optional().isString().trim(),
+  body("stato").optional().isString().trim(),
 ];
 
 // Regole di validazione per l'aggiornamento del prodotto (campi opzionali)
 const updateProductValidationRules = [
-  body("name")
+  body("codiceProdotto")
     .optional()
     .notEmpty()
-    .withMessage("Il nome non può essere vuoto se fornito")
+    .withMessage("Il codice prodotto non può essere vuoto se fornito")
     .trim(),
-  body("description").optional().trim(),
-  body("price")
+  body("titolo")
+    .optional()
+    .notEmpty()
+    .withMessage("Il titolo non può essere vuoto se fornito")
+    .trim(),
+  body("prezzo")
     .optional()
     .isFloat({ gt: 0 })
     .withMessage("Il prezzo deve essere un numero positivo se fornito"),
@@ -59,24 +63,18 @@ const updateProductValidationRules = [
     .withMessage(
       "Lo stock deve essere un numero intero non negativo se fornito"
     ),
-  body("categoryId")
+  body("categoriaId")
     .optional()
     .isInt({ gt: 0 })
     .withMessage(
       "L'ID della categoria deve essere un intero positivo se fornito"
     ),
-  body("imageUrl")
-    .optional()
-    .isURL()
-    .withMessage("URL immagine non valido se fornito"),
-  body("isFeatured")
-    .optional()
-    .isBoolean()
-    .withMessage("isFeatured deve essere un booleano se fornito"),
-  body("isBestSeller")
-    .optional()
-    .isBoolean()
-    .withMessage("isBestSeller deve essere un booleano se fornito"),
+  body("codiceEAN").optional().isString().trim(),
+  body("immagine").optional().isString().trim(),
+  body("url").optional().isString().trim(),
+  body("descrizione").optional().isString().trim(),
+  body("descrizioneBreve").optional().isString().trim(),
+  body("stato").optional().isString().trim(),
 ];
 
 router.get("/", getAllProducts);

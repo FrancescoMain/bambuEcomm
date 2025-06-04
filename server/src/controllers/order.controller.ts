@@ -84,17 +84,17 @@ export const createOrder = async (
     for (const item of cart.items) {
       if (item.product.stock < item.quantity) {
         res.status(400).json({
-          message: `Prodotto '${item.product.name}' non disponibile in quantità sufficiente. Stock disponibile: ${item.product.stock}, Richiesti: ${item.quantity}.`,
+          message: `Prodotto '${item.product.titolo}' non disponibile in quantità sufficiente. Stock disponibile: ${item.product.stock}, Richiesti: ${item.quantity}.`,
         });
         return; // Interrompe se un prodotto non è disponibile
       }
       totalAmount = totalAmount.plus(
-        new Prisma.Decimal(item.product.price).times(item.quantity)
+        new Prisma.Decimal(item.product.prezzo).times(item.quantity)
       );
       orderItemsData.push({
         productId: item.productId,
         quantity: item.quantity,
-        priceAtPurchase: item.product.price, // Salva il prezzo al momento dell'acquisto
+        priceAtPurchase: item.product.prezzo, // Salva il prezzo al momento dell'acquisto
       });
     }
 
@@ -193,7 +193,7 @@ export const getOrderById = async (
       include: {
         orderItems: {
           include: {
-            product: { select: { id: true, name: true, imageUrl: true } },
+            product: { select: { id: true, titolo: true, immagine: true } },
           },
         },
         shippingAddress: true,
@@ -209,11 +209,9 @@ export const getOrderById = async (
 
     // L'utente può vedere solo i propri ordini, l'admin può vedere tutto
     if (userRole !== Role.ADMIN && order.userId !== userId) {
-      res
-        .status(403)
-        .json({
-          message: "Accesso negato. Non sei il proprietario di questo ordine.",
-        });
+      res.status(403).json({
+        message: "Accesso negato. Non sei il proprietario di questo ordine.",
+      });
       return;
     }
 
@@ -221,12 +219,10 @@ export const getOrderById = async (
     return;
   } catch (error) {
     console.error(`Errore nel recupero dell'ordine ${orderId}:`, error);
-    res
-      .status(500)
-      .json({
-        message: "Errore interno del server durante il recupero dell'ordine.",
-        error: (error as Error).message,
-      });
+    res.status(500).json({
+      message: "Errore interno del server durante il recupero dell'ordine.",
+      error: (error as Error).message,
+    });
     return;
   }
 };
@@ -250,7 +246,7 @@ export const getUserOrders = async (
       include: {
         orderItems: {
           include: {
-            product: { select: { id: true, name: true, imageUrl: true } },
+            product: { select: { id: true, titolo: true, immagine: true } },
           },
         },
         shippingAddress: true,
@@ -265,12 +261,10 @@ export const getUserOrders = async (
       `Errore nel recupero degli ordini per l'utente ${userId}:`,
       error
     );
-    res
-      .status(500)
-      .json({
-        message: "Errore interno del server durante il recupero degli ordini.",
-        error: (error as Error).message,
-      });
+    res.status(500).json({
+      message: "Errore interno del server durante il recupero degli ordini.",
+      error: (error as Error).message,
+    });
     return;
   }
 };
@@ -323,7 +317,7 @@ export const getAllOrders = async (
         user: { select: { id: true, name: true, email: true } },
         orderItems: {
           include: {
-            product: { select: { id: true, name: true } },
+            product: { select: { id: true, titolo: true } },
           },
         },
         shippingAddress: true, // Potrebbe essere utile per l'admin
@@ -341,12 +335,10 @@ export const getAllOrders = async (
     return;
   } catch (error) {
     console.error("Errore nel recupero di tutti gli ordini:", error);
-    res
-      .status(500)
-      .json({
-        message: "Errore interno del server durante il recupero degli ordini.",
-        error: (error as Error).message,
-      });
+    res.status(500).json({
+      message: "Errore interno del server durante il recupero degli ordini.",
+      error: (error as Error).message,
+    });
     return;
   }
 };
@@ -416,13 +408,11 @@ export const updateOrderStatus = async (
           where: { id: item.productId },
         });
         if (!product || product.stock < item.quantity) {
-          res
-            .status(400)
-            .json({
-              message: `Stock insufficiente per il prodotto '${
-                product?.name || item.productId
-              }' per riattivare l'ordine.`,
-            });
+          res.status(400).json({
+            message: `Stock insufficiente per il prodotto '${
+              product?.titolo || item.productId
+            }' per riattivare l'ordine.`,
+          });
           return;
         }
       }
@@ -441,7 +431,7 @@ export const updateOrderStatus = async (
       data: { status: status as OrderStatus },
       include: {
         user: { select: { id: true, name: true, email: true } },
-        orderItems: { include: { product: { select: { name: true } } } },
+        orderItems: { include: { product: { select: { titolo: true } } } },
       },
     });
 
@@ -466,13 +456,11 @@ export const updateOrderStatus = async (
         .json({ message: "Ordine non trovato per l'aggiornamento." });
       return;
     }
-    res
-      .status(500)
-      .json({
-        message:
-          "Errore interno del server durante l'aggiornamento dello stato dell'ordine.",
-        error: (error as Error).message,
-      });
+    res.status(500).json({
+      message:
+        "Errore interno del server durante l'aggiornamento dello stato dell'ordine.",
+      error: (error as Error).message,
+    });
     return;
   }
 };
@@ -510,11 +498,9 @@ export const cancelOrder = async (
 
     // L'utente può cancellare solo i propri ordini, l'admin può cancellare qualsiasi ordine
     if (userRole !== Role.ADMIN && order.userId !== userId) {
-      res
-        .status(403)
-        .json({
-          message: "Accesso negato. Non puoi cancellare questo ordine.",
-        });
+      res.status(403).json({
+        message: "Accesso negato. Non puoi cancellare questo ordine.",
+      });
       return;
     }
 
@@ -531,11 +517,9 @@ export const cancelOrder = async (
       (order.status === OrderStatus.SHIPPED ||
         order.status === OrderStatus.DELIVERED)
     ) {
-      res
-        .status(400)
-        .json({
-          message: `Non è possibile cancellare un ordine che è già ${order.status.toLowerCase()}.`,
-        });
+      res.status(400).json({
+        message: `Non è possibile cancellare un ordine che è già ${order.status.toLowerCase()}.`,
+      });
       return;
     }
 
@@ -565,20 +549,16 @@ export const cancelOrder = async (
       error instanceof Prisma.PrismaClientKnownRequestError &&
       error.code === "P2025"
     ) {
-      res
-        .status(404)
-        .json({
-          message: "Ordine o prodotto non trovato durante la cancellazione.",
-        });
+      res.status(404).json({
+        message: "Ordine o prodotto non trovato durante la cancellazione.",
+      });
       return;
     }
-    res
-      .status(500)
-      .json({
-        message:
-          "Errore interno del server durante la cancellazione dell'ordine.",
-        error: (error as Error).message,
-      });
+    res.status(500).json({
+      message:
+        "Errore interno del server durante la cancellazione dell'ordine.",
+      error: (error as Error).message,
+    });
     return;
   }
 };

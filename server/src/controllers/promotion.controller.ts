@@ -139,7 +139,7 @@ export const getAllPromotions = async (
         },
       },
       include: {
-        products: { select: { id: true, name: true } }, // Includi solo info essenziali
+        products: { select: { id: true, titolo: true } }, // Includi solo info essenziali
         categories: { select: { id: true, name: true } },
       },
       orderBy: {

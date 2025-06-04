@@ -30,21 +30,24 @@ model User {
 }
 
 model Product {
-  id             Int          @id @default(autoincrement())
-  name           String
-  description    String?
-  price          Decimal      @db.Decimal(10, 2) // Es. 12345678.90
-  stock          Int          @default(0)
-  imageUrl       String?
-  isFeatured     Boolean      @default(false) // Per prodotti in evidenza
-  isBestSeller   Boolean      @default(false) // Per best seller (gestione manuale/logica app)
-  createdAt      DateTime     @default(now())
-  updatedAt      DateTime     @updatedAt
-  orderItems     OrderItem[]
-  cartItems      CartItem[]   // Prodotti presenti nei carrelli
-  categories     Category[]   @relation("ProductCategories")
-  promotions     Promotion[]  @relation("ProductPromotions") // Prodotti inclusi in promozioni
-  // Potresti aggiungere campi come SKU, isActive, etc.
+  id                Int          @id @default(autoincrement())
+  codiceProdotto    String       @unique // CODICE PRODOTTO
+  codiceEAN         String?      // CODICE EAN
+  titolo            String       // TITOLO
+  immagine          String?      // IMMAGINE
+  url               String?      // URL
+  stock             Int          @default(0) // STOCK
+  descrizione       String?      // DESCRIZIONE
+  descrizioneBreve  String?      // DESCRIZIONE BREVE
+  stato             String?      // STATO
+  prezzo            Decimal      @db.Decimal(10, 2) // PREZZO
+  categoria         Category[]   @relation("ProductCategories") // CATEGORIA (relation)
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
+  orderItems        OrderItem[]
+  cartItems         CartItem[]   // Prodotti presenti nei carrelli
+  promotions        Promotion[]  @relation("ProductPromotions") // Prodotti inclusi in promozioni
+  // Campi legacy o extra rimossi: name, imageUrl, isFeatured, isBestSeller
 }
 
 model Category {

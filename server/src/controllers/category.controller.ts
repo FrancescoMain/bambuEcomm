@@ -194,7 +194,7 @@ export const deleteCategory = async (
   try {
     // Opzionale: verificare se la categoria è utilizzata dai prodotti
     const productsInCategory = await prisma.product.count({
-      where: { categories: { some: { id: categoryId } } },
+      where: { categoria: { some: { id: categoryId } } },
     });
 
     if (productsInCategory > 0) {
