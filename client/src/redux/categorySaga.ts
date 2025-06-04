@@ -5,8 +5,9 @@ import {
   fetchCategoriesSuccess,
   fetchCategoriesFailure,
 } from "./categorySlice";
+import { SagaIterator } from "redux-saga";
 
-function* fetchCategoriesSaga(): any {
+function* fetchCategoriesSaga(): SagaIterator {
   try {
     const apiUrl =
       process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api/categories";
@@ -15,10 +16,12 @@ function* fetchCategoriesSaga(): any {
       : apiUrl.replace(/\/$/, "") + "/categories";
     const response = yield call(axios.get, url);
     yield put(fetchCategoriesSuccess(response.data));
-  } catch (error: any) {
+  } catch (error: unknown) {
     yield put(
       fetchCategoriesFailure(
-        error.message || "Errore nel caricamento categorie"
+        error instanceof Error
+          ? error.message
+          : "Errore nel caricamento categorie"
       )
     );
   }

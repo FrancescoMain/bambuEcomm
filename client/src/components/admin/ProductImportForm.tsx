@@ -8,9 +8,18 @@ import {
   selectCategoriesLoading,
 } from "@/redux/categorySelectors";
 
+type ImportError = { codiceProdotto?: string; error: string };
+type ImportResult = {
+  created: number;
+  updated: number;
+  errors: ImportError[];
+  currentRow?: number;
+  totalRows?: number;
+};
+
 const ProductImportForm: React.FC = () => {
   const [file, setFile] = useState<File | null>(null);
-  const [result, setResult] = useState<any>(null);
+  const [result, setResult] = useState<ImportResult | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [jobId, setJobId] = useState<string | null>(null);
@@ -137,8 +146,8 @@ const ProductImportForm: React.FC = () => {
         setError("Risposta backend senza jobId");
         setLoading(false);
       }
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : String(err));
       setLoading(false);
     }
   };
@@ -174,8 +183,8 @@ const ProductImportForm: React.FC = () => {
       setIsPolling(false);
       setLoading(false);
       if (pollingRef.current) clearInterval(pollingRef.current);
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : String(err));
       setLoading(false);
     }
   };
@@ -286,7 +295,7 @@ const ProductImportForm: React.FC = () => {
             <details>
               <summary>Errori ({result.errors.length})</summary>
               <ul className="text-red-600 text-xs">
-                {result.errors.map((err: any, i: number) => (
+                {result.errors.map((err, i: number) => (
                   <li key={i}>
                     {err.codiceProdotto}: {err.error}
                   </li>

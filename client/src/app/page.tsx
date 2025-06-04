@@ -6,6 +6,15 @@ import SearchBar from "@/components/layout/SearchBar";
 import { useRouter } from "next/navigation";
 import { fetchLatestProducts } from "@/api/productApi";
 
+type Product = {
+  id: number;
+  titolo: string;
+  immagine?: string;
+  prezzo: number | string;
+  categoria?: { name: string }[];
+  // aggiungi altri campi se servono
+};
+
 export default function Home() {
   // Dummy handler for add to cart (replace with real logic)
   const handleAddToCart = (product: { title: string }) => {
@@ -25,13 +34,13 @@ export default function Home() {
   };
 
   // State for new arrivals
-  const [latestProducts, setLatestProducts] = useState<any[]>([]);
+  const [latestProducts, setLatestProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
   // State for featured and best seller (ora usano le novità)
-  const [featuredProducts, setFeaturedProducts] = useState<any[]>([]);
-  const [bestSellerProducts, setBestSellerProducts] = useState<any[]>([]);
+  const [featuredProducts, setFeaturedProducts] = useState<Product[]>([]);
+  const [bestSellerProducts, setBestSellerProducts] = useState<Product[]>([]);
 
   useEffect(() => {
     setLoading(true);
