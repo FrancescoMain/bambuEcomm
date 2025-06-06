@@ -445,6 +445,15 @@ const HeaderView: React.FC<HeaderViewProps> = ({
           </aside>
         </>
       )}
+      <style jsx global>{`
+        @media (max-width: 768px) {
+          body,
+          .main-content,
+          .layout-content-container {
+            padding-top: 34px !important;
+          }
+        }
+      `}</style>
     </header>
   );
 };

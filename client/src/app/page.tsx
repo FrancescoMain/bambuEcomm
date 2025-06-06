@@ -82,6 +82,12 @@ export default function Home() {
       .finally(() => setLoading(false));
   }, []);
 
+  // Navigazione al dettaglio prodotto con loader
+  const handleProductClick = (productId: number | string) => {
+    setLoading(true);
+    router.push(`/product/${productId}`);
+  };
+
   return (
     <div className="flex flex-1 justify-center py-8 px-2 md:px-10 bg-[#f8fbfa] min-h-screen">
       <div className="layout-content-container flex flex-col max-w-5xl w-full flex-1">
@@ -122,6 +128,7 @@ export default function Home() {
                     (item: any) => String(item.productId) === String(product.id)
                   )}
                   onAddToCart={handleAddToCartAdapter}
+                  onClick={() => handleProductClick(product.id)}
                 />
               ))
             )}

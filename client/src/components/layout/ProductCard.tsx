@@ -17,12 +17,14 @@ interface ProductCardProps {
   };
   onAddToCart: (product: ProductCardProps["product"]) => void;
   isInCart?: boolean;
+  onClick?: () => void;
 }
 
 const ProductCard = ({
   product,
   onAddToCart,
   isInCart: isInCartProp,
+  onClick,
 }: ProductCardProps) => {
   const dispatch = useDispatch();
   const cartItems = useSelector((state: any) => state.cart.items);
@@ -44,7 +46,7 @@ const ProductCard = ({
       prefetch={false}
       tabIndex={0}
       aria-label={product.titolo}
-      onClick={() => {}}
+      onClick={onClick}
     >
       <div
         className="w-full bg-center bg-no-repeat aspect-square bg-cover rounded-t-lg"
