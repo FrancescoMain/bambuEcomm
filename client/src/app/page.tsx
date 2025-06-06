@@ -5,6 +5,8 @@ import ProductCard from "@/components/layout/ProductCard";
 import SearchBar from "@/components/layout/SearchBar";
 import { useRouter } from "next/navigation";
 import { fetchLatestProducts } from "@/api/productApi";
+import { useDispatch } from "react-redux";
+import { addToCart } from "@/redux/cartSlice";
 
 type Product = {
   id: number;
@@ -16,10 +18,21 @@ type Product = {
 };
 
 export default function Home() {
+  const dispatch = useDispatch();
   // Dummy handler for add to cart (replace with real logic)
-  const handleAddToCart = (product: { title: string }) => {
-    // You can use a toast or Redux action here
-    alert(`Aggiunto al carrello: ${product.title}`);
+  const handleAddToCart = (product: Product) => {
+    dispatch(
+      addToCart({
+        productId: product.id,
+        titolo: product.titolo,
+        prezzo:
+          typeof product.prezzo === "number"
+            ? product.prezzo
+            : parseFloat(product.prezzo as string) || 0,
+        immagine: product.immagine,
+        quantity: 1,
+      })
+    );
   };
   // State for search bar
   const [search, setSearch] = useState("");
@@ -41,6 +54,9 @@ export default function Home() {
   // State for featured and best seller (ora usano le novità)
   const [featuredProducts, setFeaturedProducts] = useState<Product[]>([]);
   const [bestSellerProducts, setBestSellerProducts] = useState<Product[]>([]);
+
+  // State for page loading
+  const [pageLoading, setPageLoading] = useState(false);
 
   useEffect(() => {
     setLoading(true);
@@ -92,7 +108,11 @@ export default function Home() {
                   title={product.titolo}
                   category={product.categoria?.[0]?.name || ""}
                   price={product.prezzo}
-                  onAddToCart={() => handleAddToCart({ title: product.titolo })}
+                  productId={product.id}
+                  onClick={() => {
+                    setPageLoading(true);
+                    router.push(`/product/${product.id}`);
+                  }}
                 />
               ))
             )}
@@ -118,38 +138,22 @@ export default function Home() {
                   title={product.titolo}
                   category={product.categoria?.[0]?.name || ""}
                   price={product.prezzo}
-                  onAddToCart={() => handleAddToCart({ title: product.titolo })}
+                  productId={product.id}
+                  onClick={() => {
+                    setPageLoading(true);
+                    router.push(`/product/${product.id}`);
+                  }}
                 />
               ))
             )}
           </div>
         </div>
-        {/* Best Sellers */}
-        <h2 className="text-[#0e1a13] text-xl md:text-2xl font-bold leading-tight tracking-[-0.015em] px-2 md:px-4 pb-3 pt-5">
-          Best Seller
-        </h2>
-        <div className="flex overflow-x-auto no-scrollbar">
-          <div className="flex items-stretch p-2 md:p-4 gap-3">
-            {loading ? (
-              <div className="text-gray-500 px-4 py-2">Caricamento...</div>
-            ) : error ? (
-              <div className="text-red-500 px-4 py-2">{error}</div>
-            ) : bestSellerProducts.length === 0 ? (
-              <div className="text-gray-500 px-4 py-2">Nessun prodotto</div>
-            ) : (
-              bestSellerProducts.map((product) => (
-                <ProductCard
-                  key={product.id}
-                  image={product.immagine || "/file.svg"}
-                  title={product.titolo}
-                  category={product.categoria?.[0]?.name || ""}
-                  price={product.prezzo}
-                  onAddToCart={() => handleAddToCart({ title: product.titolo })}
-                />
-              ))
-            )}
+        {/* Loader overlay */}
+        {pageLoading && (
+          <div className="fixed inset-0 bg-white bg-opacity-60 flex items-center justify-center z-50">
+            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#51946b]"></div>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );
