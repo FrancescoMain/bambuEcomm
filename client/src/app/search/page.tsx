@@ -10,6 +10,9 @@ import SearchResultCard from "@/components/layout/SearchResultCard";
 import { selectParentCategories } from "@/redux/categorySelectors";
 import { fetchCategoriesStart } from "@/redux/categorySlice";
 import { fetchLatestProducts } from "@/api/productApi";
+import { useCartActions } from "@/components/layout/CartProvider";
+import { RootState } from "@/redux/store";
+import { useLoading } from "@/components/layout/LoadingContext";
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
 
 export default function SearchPage() {
@@ -29,6 +32,17 @@ interface Filters {
   maxPrice: string;
 }
 
+// Define Product type for search results
+interface Product {
+  id: string;
+  titolo: string;
+  prezzo: number;
+  immagine: string;
+  categoria?: string;
+  autore?: string;
+  [key: string]: unknown;
+}
+
 function SearchPageContent() {
   const searchParams = useSearchParams();
   const query = searchParams.get("q") || "";
@@ -37,6 +51,7 @@ function SearchPageContent() {
   const dispatch = useDispatch();
   const parentCategories = useSelector(selectParentCategories);
   const categories = useSelector((state: any) => state.category.categories);
+  const currentUser = useSelector((state: RootState) => state.auth.user);
   const [selectedCategory, setSelectedCategory] = React.useState<number | null>(
     null
   );
@@ -45,8 +60,9 @@ function SearchPageContent() {
   >(null);
   const [minPrice, setMinPrice] = React.useState<string>("");
   const [maxPrice, setMaxPrice] = React.useState<string>("");
-  const [products, setProducts] = React.useState<any[]>([]);
-  const [loading, setLoading] = React.useState(false);
+  const [products, setProducts] = React.useState<Product[]>([]);
+  const [filteredProducts, setFilteredProducts] = React.useState<Product[]>([]);
+  const { setLoading } = useLoading();
   const [filters, setFilters] = React.useState<Filters>({
     search: query,
     category: null,
@@ -219,9 +235,25 @@ function SearchPageContent() {
     },
   ];
 
-  // Handler per aggiungi al carrello (dummy)
-  const handleAddToCart = (title: string) => {
-    alert(`Aggiunto al carrello: ${title}`);
+  const { handleAddToCart } = useCartActions();
+
+  // Handler for add to cart (calls backend if logged in)
+  const handleAddToCartAdapter = async (product: any) => {
+    setLoading(true);
+    await handleAddToCart({
+      productId: Number(product.id),
+      titolo: product.titolo,
+      prezzo: product.prezzo,
+      immagine: product.immagine || "",
+      quantity: 1,
+    });
+    setLoading(false);
+  };
+
+  // Add handleProductClick function to handle navigation or selection
+  const handleProductClick = (id: string) => {
+    // Implement navigation or selection logic here
+    // Example: router.push(`/product/${id}`);
   };
 
   // Filter results by search query
@@ -366,11 +398,7 @@ function SearchPageContent() {
           Risultati
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-4 gap-3 p-4">
-          {loading ? (
-            <div className="text-center text-[#51946b] py-8 text-lg">
-              Caricamento...
-            </div>
-          ) : products.length === 0 ? (
+          {products.length === 0 ? (
             <div className="col-span-full text-center text-[#51946b] py-8 text-lg">
               Nessun risultato trovato.
             </div>
@@ -384,12 +412,12 @@ function SearchPageContent() {
                 }}
                 className="cursor-pointer"
               >
+                {/* Pass the whole product object as 'product' prop to SearchResultCard */}
                 <SearchResultCard
-                  image={r.immagine}
-                  title={r.titolo}
-                  author={r.autore || ""}
-                  price={r.prezzo}
-                  productId={r.id}
+                  key={r.id}
+                  product={r}
+                  onClick={handleProductClick}
+                  onAddToCart={handleAddToCartAdapter}
                 />
               </div>
             ))
@@ -401,8 +429,7 @@ function SearchPageContent() {
           !filters.minPrice &&
           !filters.maxPrice &&
           !filters.category &&
-          !filters.subcategory &&
-          !loading && (
+          !filters.subcategory && (
             <div className="flex justify-center pb-8">
               <button
                 onClick={async () => {
@@ -425,7 +452,7 @@ function SearchPageContent() {
                   setLoading(false);
                 }}
                 className="mt-2 px-6 py-2 rounded-lg bg-[#51946b] text-white font-semibold hover:bg-[#3a7d5a] transition-colors shadow"
-                disabled={loading}
+                disabled={false}
               >
                 Carica altri
               </button>

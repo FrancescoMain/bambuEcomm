@@ -7,6 +7,7 @@ import {
   selectParentCategories,
   selectCategoriesLoading,
 } from "@/redux/categorySelectors";
+import { useLoading } from "@/components/layout/LoadingContext";
 
 type ImportError = { codiceProdotto?: string; error: string };
 type ImportResult = {
@@ -20,7 +21,6 @@ type ImportResult = {
 const ProductImportForm: React.FC = () => {
   const [file, setFile] = useState<File | null>(null);
   const [result, setResult] = useState<ImportResult | null>(null);
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [jobId, setJobId] = useState<string | null>(null);
   const [progress, setProgress] = useState<number>(0);
@@ -31,6 +31,7 @@ const ProductImportForm: React.FC = () => {
   const dispatch = useDispatch();
   const parentCategories = useSelector(selectParentCategories);
   const categoriesLoading = useSelector(selectCategoriesLoading);
+  const { setLoading } = useLoading();
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
@@ -262,7 +263,6 @@ const ProductImportForm: React.FC = () => {
     return () => {
       if (pollingRef.current) clearInterval(pollingRef.current);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token]);
 
   return (
@@ -282,9 +282,8 @@ const ProductImportForm: React.FC = () => {
       <button
         type="submit"
         className="bg-green-600 text-white px-4 py-2 rounded"
-        disabled={loading}
       >
-        {loading ? "Importazione in corso..." : "Importa prodotti"}
+        Importa prodotti
       </button>
       {error && <div className="text-red-600">{error}</div>}
       {result && (

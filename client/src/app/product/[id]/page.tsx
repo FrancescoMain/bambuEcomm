@@ -5,12 +5,12 @@ import { useParams, useRouter } from "next/navigation";
 import axios from "axios";
 import Image from "next/image";
 import Link from "next/link";
-import { useSelector, useDispatch } from "react-redux";
+import { useSelector } from "react-redux";
 import { RootState } from "@/redux/store";
-import { addToCart } from "@/redux/cartSlice";
 import ProductCard from "@/components/layout/ProductCard";
 import { useLoading } from "@/components/layout/LoadingContext";
 import Header from "@/components/layout/Header";
+import { useCartActions } from "@/components/layout/CartProvider";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
 
@@ -29,10 +29,9 @@ const ProductDetailPage: React.FC = () => {
   const params = useParams();
   const productId = params?.id;
   const [product, setProduct] = useState<Product | null>(null);
-  const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const dispatch = useDispatch();
-  const { setLoading: setGlobalLoading } = useLoading();
+  const { handleAddToCart } = useCartActions();
+  const { setLoading } = useLoading();
   const router = useRouter();
   const categories = useSelector(
     (state: RootState) => state.category.categories
@@ -85,7 +84,6 @@ const ProductDetailPage: React.FC = () => {
       });
   }, [mainCategoryId, product]);
 
-  if (loading) return <div className="p-8 text-gray-500">Caricamento...</div>;
   if (error || !product)
     return (
       <div className="p-8 text-red-500">{error || "Prodotto non trovato"}</div>
@@ -117,12 +115,14 @@ const ProductDetailPage: React.FC = () => {
             </div>
           )}
         <div className="flex flex-wrap gap-2 p-2 md:p-4">
-          <a
+          {/* Replace <a> with <Link> for navigation */}
+          <Link
             className="text-[#51946b] text-base font-medium leading-normal"
             href="/"
+            prefetch={false}
           >
             Home
-          </a>
+          </Link>
           {product.categoria && product.categoria.length > 0 && (
             <>
               <span className="text-[#51946b] text-base font-medium leading-normal">
@@ -157,12 +157,16 @@ const ProductDetailPage: React.FC = () => {
         </p>
         <div className="flex w-full grow bg-[#f8fbfa] @container p-2 md:p-4">
           <div className="w-full gap-1 overflow-hidden bg-[#f8fbfa] rounded-lg flex">
+            {/* Replace <img> with <Image> from next/image */}
             {product.immagine && (
-              <img
+              <Image
                 src={product.immagine}
                 alt={product.titolo}
+                width={600}
+                height={320}
                 className="w-full h-auto object-contain rounded-lg bg-white"
                 style={{ maxHeight: 320 }}
+                priority
               />
             )}
           </div>
@@ -179,20 +183,18 @@ const ProductDetailPage: React.FC = () => {
           ) : (
             <button
               className="flex min-w-[120px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-12 px-6 bg-[#39e079] text-[#0e1a13] text-base font-bold leading-normal tracking-[0.015em] shadow-md hover:bg-[#2fc76b] transition-colors"
-              onClick={() => {
+              onClick={async () => {
                 if (!product) return;
-                dispatch(
-                  addToCart({
-                    productId: product.id,
-                    titolo: product.titolo,
-                    prezzo:
-                      typeof product.prezzo === "number"
-                        ? product.prezzo
-                        : parseFloat(product.prezzo as string) || 0,
-                    immagine: product.immagine,
-                    quantity: 1,
-                  })
-                );
+                await handleAddToCart({
+                  productId: product.id,
+                  titolo: product.titolo,
+                  prezzo:
+                    typeof product.prezzo === "number"
+                      ? product.prezzo
+                      : parseFloat(product.prezzo as string) || 0,
+                  immagine: product.immagine || "",
+                  quantity: 1,
+                });
                 openCartSidebar();
               }}
             >
@@ -218,14 +220,29 @@ const ProductDetailPage: React.FC = () => {
                 {relatedProducts.map((p) => (
                   <ProductCard
                     key={p.id}
-                    image={p.immagine || ""}
-                    title={p.titolo}
-                    category={
-                      product.categoria?.[product.categoria.length - 1]?.name ||
-                      ""
+                    product={{
+                      ...p,
+                      id: String(p.id),
+                      prezzo:
+                        typeof p.prezzo === "number"
+                          ? p.prezzo
+                          : parseFloat(p.prezzo as string) || 0,
+                      immagine: p.immagine || "",
+                      categoria:
+                        p.categoria?.[p.categoria.length - 1]?.name || "",
+                    }}
+                    onAddToCart={() =>
+                      handleAddToCart({
+                        productId: p.id,
+                        titolo: p.titolo,
+                        prezzo:
+                          typeof p.prezzo === "number"
+                            ? p.prezzo
+                            : parseFloat(p.prezzo as string) || 0,
+                        immagine: p.immagine || "",
+                        quantity: 1,
+                      })
                     }
-                    price={p.prezzo}
-                    productId={p.id}
                   />
                 ))}
               </div>

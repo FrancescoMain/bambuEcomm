@@ -4,25 +4,30 @@ import Image from "next/image";
 import { useDispatch, useSelector } from "react-redux";
 import { addToCart } from "@/redux/cartSlice";
 
+// Update product type to include autore as string | undefined
 interface SearchResultCardProps {
-  image: string;
-  title: string;
-  author: string;
-  price: number | string;
-  productId?: number;
+  product: {
+    id: string;
+    titolo: string;
+    prezzo: number;
+    immagine: string;
+    categoria?: string;
+    autore?: string;
+    [key: string]: unknown;
+  };
+  onClick: (id: string) => void;
+  onAddToCart: (product: any) => void; // <-- add this prop
 }
 
-const SearchResultCard: React.FC<SearchResultCardProps> = ({
-  image,
-  title,
-  author,
-  price,
-  productId,
-}) => {
+const SearchResultCard = ({
+  product,
+  onClick,
+  onAddToCart,
+}: SearchResultCardProps) => {
   const dispatch = useDispatch();
   const cartItems = useSelector((state: any) => state.cart.items);
   const isInCart =
-    productId && cartItems.some((item: any) => item.productId === productId);
+    product.id && cartItems.some((item: any) => item.productId === product.id);
 
   // Funzione per triggerare apertura sidebar carrello
   const openCartSidebar = () => {
@@ -33,21 +38,21 @@ const SearchResultCard: React.FC<SearchResultCardProps> = ({
     <div className="flex flex-col gap-2 bg-white rounded-lg shadow p-3 h-full">
       <div
         className="w-full bg-center bg-no-repeat aspect-[3/4] bg-cover rounded-lg"
-        style={{ backgroundImage: `url('${image}')` }}
+        style={{ backgroundImage: `url('${product.immagine}')` }}
       ></div>
       <div>
         <p className="text-[#0e1a13] text-base font-medium leading-normal truncate">
-          {title}
+          {product.titolo}
         </p>
         <p className="text-[#51946b] text-sm font-normal leading-normal truncate">
-          {author}
+          {typeof product.autore === "string" ? product.autore : null}
         </p>
         <div className="flex items-center justify-between mt-2">
           <span className="text-[#0e1a13] font-semibold text-base">
             €{" "}
-            {typeof price === "number"
-              ? price.toFixed(2)
-              : Number(price).toFixed(2)}
+            {typeof product.prezzo === "number"
+              ? product.prezzo.toFixed(2)
+              : Number(product.prezzo).toFixed(2)}
           </span>
           {isInCart ? (
             <button
@@ -67,15 +72,17 @@ const SearchResultCard: React.FC<SearchResultCardProps> = ({
               onClick={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
-                dispatch(
-                  addToCart({
-                    productId: productId ?? Date.now(),
-                    titolo: title,
-                    prezzo: typeof price === "number" ? price : Number(price),
-                    immagine: image,
-                    quantity: 1,
-                  })
-                );
+                onAddToCart({
+                  ...product,
+                  id: product.id,
+                  titolo: product.titolo,
+                  prezzo:
+                    typeof product.prezzo === "number"
+                      ? product.prezzo
+                      : Number(product.prezzo),
+                  immagine: product.immagine,
+                  quantity: 1,
+                });
                 openCartSidebar();
               }}
               className="ml-2 p-2 bg-[#51946b] hover:bg-[#417a57] text-white text-xs rounded-full transition-colors flex items-center justify-center"

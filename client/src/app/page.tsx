@@ -5,8 +5,9 @@ import ProductCard from "@/components/layout/ProductCard";
 import SearchBar from "@/components/layout/SearchBar";
 import { useRouter } from "next/navigation";
 import { fetchLatestProducts } from "@/api/productApi";
-import { useDispatch } from "react-redux";
-import { addToCart } from "@/redux/cartSlice";
+import { useCartActions } from "@/components/layout/CartProvider";
+import { useLoading } from "@/components/layout/LoadingContext";
+import { useSelector } from "react-redux";
 
 type Product = {
   id: number;
@@ -18,22 +19,28 @@ type Product = {
 };
 
 export default function Home() {
-  const dispatch = useDispatch();
-  // Dummy handler for add to cart (replace with real logic)
-  const handleAddToCart = (product: Product) => {
-    dispatch(
-      addToCart({
-        productId: product.id,
-        titolo: product.titolo,
-        prezzo:
-          typeof product.prezzo === "number"
-            ? product.prezzo
-            : parseFloat(product.prezzo as string) || 0,
-        immagine: product.immagine,
-        quantity: 1,
-      })
-    );
+  const { handleAddToCart } = useCartActions();
+  const { setLoading } = useLoading();
+  const cartItems = useSelector((state: any) => state.cart.items);
+  // Adapter for ProductCard
+  const handleAddToCartAdapter = async (product: {
+    id: string;
+    titolo: string;
+    prezzo: number;
+    immagine: string;
+    categoria?: string;
+  }) => {
+    setLoading(true);
+    await handleAddToCart({
+      productId: Number(product.id),
+      titolo: product.titolo,
+      prezzo: product.prezzo,
+      immagine: product.immagine,
+      quantity: 1,
+    });
+    setLoading(false);
   };
+
   // State for search bar
   const [search, setSearch] = useState("");
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -48,7 +55,6 @@ export default function Home() {
 
   // State for new arrivals
   const [latestProducts, setLatestProducts] = useState<Product[]>([]);
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
   // State for featured and best seller (ora usano le novità)
@@ -94,9 +100,7 @@ export default function Home() {
         </h2>
         <div className="flex overflow-x-auto no-scrollbar">
           <div className="flex items-stretch p-2 md:p-4 gap-3">
-            {loading ? (
-              <div className="text-gray-500 px-4 py-2">Caricamento...</div>
-            ) : error ? (
+            {error ? (
               <div className="text-red-500 px-4 py-2">{error}</div>
             ) : featuredProducts.length === 0 ? (
               <div className="text-gray-500 px-4 py-2">Nessun prodotto</div>
@@ -104,15 +108,20 @@ export default function Home() {
               featuredProducts.map((product) => (
                 <ProductCard
                   key={product.id}
-                  image={product.immagine || "/file.svg"}
-                  title={product.titolo}
-                  category={product.categoria?.[0]?.name || ""}
-                  price={product.prezzo}
-                  productId={product.id}
-                  onClick={() => {
-                    setPageLoading(true);
-                    router.push(`/product/${product.id}`);
+                  product={{
+                    id: String(product.id),
+                    titolo: product.titolo,
+                    prezzo:
+                      typeof product.prezzo === "number"
+                        ? product.prezzo
+                        : parseFloat(product.prezzo as string) || 0,
+                    immagine: product.immagine || "/file.svg",
+                    categoria: product.categoria?.[0]?.name || "",
                   }}
+                  isInCart={cartItems.some(
+                    (item: any) => String(item.productId) === String(product.id)
+                  )}
+                  onAddToCart={handleAddToCartAdapter}
                 />
               ))
             )}
@@ -124,9 +133,7 @@ export default function Home() {
         </h2>
         <div className="flex overflow-x-auto no-scrollbar">
           <div className="flex items-stretch p-2 md:p-4 gap-3">
-            {loading ? (
-              <div className="text-gray-500 px-4 py-2">Caricamento...</div>
-            ) : error ? (
+            {error ? (
               <div className="text-red-500 px-4 py-2">{error}</div>
             ) : latestProducts.length === 0 ? (
               <div className="text-gray-500 px-4 py-2">Nessun prodotto</div>
@@ -134,15 +141,20 @@ export default function Home() {
               latestProducts.map((product) => (
                 <ProductCard
                   key={product.id}
-                  image={product.immagine || "/file.svg"}
-                  title={product.titolo}
-                  category={product.categoria?.[0]?.name || ""}
-                  price={product.prezzo}
-                  productId={product.id}
-                  onClick={() => {
-                    setPageLoading(true);
-                    router.push(`/product/${product.id}`);
+                  product={{
+                    id: String(product.id),
+                    titolo: product.titolo,
+                    prezzo:
+                      typeof product.prezzo === "number"
+                        ? product.prezzo
+                        : parseFloat(product.prezzo as string) || 0,
+                    immagine: product.immagine || "/file.svg",
+                    categoria: product.categoria?.[0]?.name || "",
                   }}
+                  isInCart={cartItems.some(
+                    (item: any) => String(item.productId) === String(product.id)
+                  )}
+                  onAddToCart={handleAddToCartAdapter}
                 />
               ))
             )}
