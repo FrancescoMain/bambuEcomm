@@ -57,6 +57,7 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
     (state: RootState) => state.cart.items as CartItem[]
   );
   const { setLoading } = useLoading();
+  const [cartLoaded, setCartLoaded] = useState(false);
 
   // Helper: get token
   const getToken = () =>
@@ -110,6 +111,7 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
           }
         }
       }
+      setCartLoaded(true);
     };
     loadCart();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -222,6 +224,14 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
       setLoading(false);
     }
   };
+
+  if (!cartLoaded) {
+    return (
+      <div className="w-full flex justify-center items-center py-12 text-[#51946b]">
+        Caricamento carrello...
+      </div>
+    );
+  }
 
   return (
     <CartActionsContext.Provider

@@ -429,14 +429,16 @@ const HeaderView: React.FC<HeaderViewProps> = ({
               </div>
               <div className="flex flex-col gap-2">
                 <button
-                  className="w-full text-center py-2 rounded bg-[#e8f2ec] text-[#0e1a13] font-bold hover:bg-[#d1e7db] transition"
+                  className="w-full text-center py-2 rounded bg-[#e8f2ec] text-[#0e1a13] font-bold hover:bg-[#d1e7db] transition disabled:opacity-50 disabled:cursor-not-allowed"
                   onClick={onGoToCart}
+                  disabled={!cartItems || cartItems.length === 0}
                 >
                   Vai al carrello
                 </button>
                 <button
-                  className="w-full text-center py-2 rounded bg-[#39e079] text-white font-bold hover:bg-[#2fc96a] transition"
+                  className="w-full text-center py-2 rounded bg-[#39e079] text-white font-bold hover:bg-[#2fc96a] transition disabled:opacity-50 disabled:cursor-not-allowed"
                   onClick={onGoToCheckout}
+                  disabled={!cartItems || cartItems.length === 0}
                 >
                   Vai al checkout
                 </button>

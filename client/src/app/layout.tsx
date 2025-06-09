@@ -35,28 +35,28 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <ClientProvider>
-      <CartProvider>
-        <LoadingProvider>
-          <html
-            lang="it"
-            className={`${plusJakartaSans.variable} ${notoSans.variable}`}
-          >
-            <head>
-              <link rel="icon" href="/bambu-logo.jpg" type="image/jpeg" />
-              <link
-                rel="shortcut icon"
-                href="/bambu-logo.jpg"
-                type="image/jpeg"
-              />
-              {/* Redundant font link (next/font is used) - commented out */}
-              {/* <link
-            rel="stylesheet"
-            href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;700&family=Noto+Sans:wght@400;700&display=swap"
-          /> */}
-              {/* Redundant Tailwind CDN (PostCSS setup is expected) - commented out */}
-            </head>
-            <body className={`font-sans antialiased`}>
+    <html
+      lang="it"
+      className={`${plusJakartaSans.variable} ${notoSans.variable}`}
+    >
+      <head>
+        <link rel="icon" href="/bambu-logo.jpg" type="image/jpeg" />
+        <link
+          rel="shortcut icon"
+          href="/bambu-logo.jpg"
+          type="image/jpeg"
+        />
+        {/* Redundant font link (next/font is used) - commented out */}
+        {/* <link
+          rel="stylesheet"
+          href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;700&family=Noto+Sans:wght@400;700&display=swap"
+        /> */}
+        {/* Redundant Tailwind CDN (PostCSS setup is expected) - commented out */}
+      </head>
+      <body className={`font-sans antialiased`}>
+        <ClientProvider>
+          <CartProvider>
+            <LoadingProvider>
               <GlobalLoader />
               <ToastContainer
                 position="top-right"
@@ -82,10 +82,10 @@ export default function RootLayout({
                   <Footer />
                 </div>
               </div>
-            </body>
-          </html>
-        </LoadingProvider>
-      </CartProvider>
-    </ClientProvider>
+            </LoadingProvider>
+          </CartProvider>
+        </ClientProvider>
+      </body>
+    </html>
   );
 }
