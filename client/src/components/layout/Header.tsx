@@ -31,15 +31,14 @@ interface HeaderProps {
   setShowCartSidebar?: (open: boolean) => void;
 }
 
-// Define CartItem type
-// Extend CartItem to include cartItemId (optional, only for logged-in users)
+// Tipi locali per il carrello
 interface CartItem {
   productId: number;
   titolo: string;
   prezzo: number;
+  immagine?: string;
   quantity: number;
-  immagine: string;
-  cartItemId?: number; // <-- NEW
+  cartItemId?: number;
 }
 
 const Header: React.FC<HeaderProps> = ({
@@ -192,18 +191,25 @@ const Header: React.FC<HeaderProps> = ({
           // Svuota il carrello Redux prima di importare quello dal backend
           dispatch(clearCart());
           if (res.data && Array.isArray(res.data.items)) {
-            res.data.items.forEach((item: any) => {
-              dispatch(
-                addToCart({
-                  productId: item.productId,
-                  titolo: item.product.titolo,
-                  prezzo: item.product.prezzo,
-                  immagine: item.product.immagine,
-                  quantity: item.quantity,
-                  cartItemId: item.id,
-                })
-              );
-            });
+            res.data.items.forEach(
+              (item: {
+                productId: number;
+                product: { titolo: string; prezzo: number; immagine?: string };
+                quantity: number;
+                id: number;
+              }) => {
+                dispatch(
+                  addToCart({
+                    productId: item.productId,
+                    titolo: item.product.titolo,
+                    prezzo: item.product.prezzo,
+                    immagine: item.product.immagine,
+                    quantity: item.quantity,
+                    cartItemId: item.id,
+                  })
+                );
+              }
+            );
           }
         } catch (e) {
           // fallback: svuota comunque il carrello Redux
@@ -218,7 +224,7 @@ const Header: React.FC<HeaderProps> = ({
           try {
             const items = JSON.parse(cached);
             if (Array.isArray(items)) {
-              items.forEach((item: any) => {
+              items.forEach((item: CartItem) => {
                 dispatch(addToCart(item));
               });
             }

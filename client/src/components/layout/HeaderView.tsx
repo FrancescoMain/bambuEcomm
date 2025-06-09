@@ -2,9 +2,16 @@ import React from "react";
 import HeaderStatic from "./HeaderStatic";
 import type { CartItem } from "@/redux/cartSlice";
 
+// Tipizza currentUser
+interface User {
+  id: number;
+  email: string;
+  // aggiungi altri campi se necessario
+}
+
 export interface HeaderViewProps {
   isLoading: boolean;
-  currentUser: any;
+  currentUser: User;
   cartCount: number;
   menuOpen: boolean;
   menuVisible: boolean;
@@ -233,7 +240,7 @@ const HeaderView: React.FC<HeaderViewProps> = ({
                     {cat.name}
                   </button>
                 ))
-              )}
+              }
             </div>
             {currentUser && (
               <div className="flex flex-col gap-4 mt-6">

@@ -4,6 +4,17 @@ import React from "react";
 import Link from "next/link";
 import { useDispatch, useSelector } from "react-redux";
 import { addToCart } from "@/redux/cartSlice";
+import { RootState } from "@/redux/store";
+
+// Tipi locali per evitare errori di import
+interface CartItem {
+  productId: number;
+  titolo: string;
+  prezzo: number;
+  immagine?: string;
+  quantity: number;
+  cartItemId?: number;
+}
 
 // Update product type to include categoria as string | undefined
 interface ProductCardProps {
@@ -27,12 +38,16 @@ const ProductCard = ({
   onClick,
 }: ProductCardProps) => {
   const dispatch = useDispatch();
-  const cartItems = useSelector((state: any) => state.cart.items);
+  const cartItems = useSelector(
+    (state: { cart: { items: CartItem[] } }) => state.cart.items
+  );
   const isInCart =
     typeof isInCartProp === "boolean"
       ? isInCartProp
       : product.id &&
-        cartItems.some((item: any) => item.productId === product.id);
+        cartItems.some(
+          (item: CartItem) => Number(item.productId) === Number(product.id)
+        );
 
   // Funzione per triggerare apertura sidebar carrello
   const openCartSidebar = () => {

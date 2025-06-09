@@ -18,10 +18,22 @@ type Product = {
   // aggiungi altri campi se servono
 };
 
+// Tipi locali per il carrello
+interface CartItem {
+  productId: number;
+  titolo: string;
+  prezzo: number;
+  immagine?: string;
+  quantity: number;
+  cartItemId?: number;
+}
+
 export default function Home() {
   const { handleAddToCart } = useCartActions();
   const { setLoading } = useLoading();
-  const cartItems = useSelector((state: any) => state.cart.items);
+  const cartItems = useSelector(
+    (state: { cart: { items: CartItem[] } }) => state.cart.items
+  );
   // Adapter for ProductCard
   const handleAddToCartAdapter = async (product: {
     id: string;
@@ -125,7 +137,8 @@ export default function Home() {
                     categoria: product.categoria?.[0]?.name || "",
                   }}
                   isInCart={cartItems.some(
-                    (item: any) => String(item.productId) === String(product.id)
+                    (item: CartItem) =>
+                      String(item.productId) === String(product.id)
                   )}
                   onAddToCart={handleAddToCartAdapter}
                   onClick={() => handleProductClick(product.id)}
@@ -159,7 +172,8 @@ export default function Home() {
                     categoria: product.categoria?.[0]?.name || "",
                   }}
                   isInCart={cartItems.some(
-                    (item: any) => String(item.productId) === String(product.id)
+                    (item: CartItem) =>
+                      String(item.productId) === String(product.id)
                   )}
                   onAddToCart={handleAddToCartAdapter}
                 />

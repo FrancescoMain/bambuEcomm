@@ -9,11 +9,29 @@ import { useCartActions } from "@/components/layout/CartProvider";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
 
+// Tipi TypeScript per i prodotti e il carrello
+interface CartItem {
+  productId: number;
+  titolo: string;
+  prezzo: number;
+  immagine?: string;
+  quantity: number;
+  cartItemId?: number;
+}
+
+interface Product {
+  id: number | string;
+  titolo: string;
+  prezzo: number;
+  immagine?: string;
+  categoria?: { name: string }[];
+}
+
 const CartPage = () => {
   const router = useRouter();
   // Recupera carrello da Redux o localStorage se non loggato
-  const reduxCartItems = useSelector((state: any) => state.cart.items);
-  const [cartItems, setCartItems] = React.useState<any[]>(reduxCartItems);
+  const reduxCartItems = useSelector((state: { cart: { items: CartItem[] } }) => state.cart.items);
+  const [cartItems, setCartItems] = React.useState<CartItem[]>(reduxCartItems);
   const { handleAddToCart } = useCartActions();
 
   React.useEffect(() => {
@@ -25,7 +43,7 @@ const CartPage = () => {
         typeof window !== "undefined" ? localStorage.getItem("cart") : null;
       if (cached) {
         try {
-          const items = JSON.parse(cached);
+          const items: CartItem[] = JSON.parse(cached);
           if (Array.isArray(items)) setCartItems(items);
         } catch {}
       } else {
@@ -50,7 +68,7 @@ const CartPage = () => {
   const isCartEmpty = !cartItems || cartItems.length === 0;
 
   // Carosello prodotti correlati
-  const [carouselProducts, setCarouselProducts] = React.useState<any[]>([]);
+  const [carouselProducts, setCarouselProducts] = React.useState<Product[]>([]);
   React.useEffect(() => {
     if (!cartItems || cartItems.length === 0) return;
     const first = cartItems[0];

@@ -19,13 +19,13 @@ import { useLoading } from "@/components/layout/LoadingContext";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
 
-// Define CartItem type
+// Tipi locali per il carrello
 interface CartItem {
   productId: number;
   titolo: string;
   prezzo: number;
+  immagine?: string;
   quantity: number;
-  immagine: string;
   cartItemId?: number;
 }
 
@@ -81,7 +81,7 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
           });
           dispatch(clearCart());
           if (res.data && Array.isArray(res.data.items)) {
-            const newCart = res.data.items.map((item: any) => ({
+            const newCart: CartItem[] = res.data.items.map((item: any) => ({
               productId: item.productId,
               titolo: item.product.titolo,
               prezzo: item.product.prezzo,
@@ -102,7 +102,7 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
           try {
             const items = JSON.parse(cached);
             if (Array.isArray(items)) {
-              items.forEach((item: any) => {
+              items.forEach((item: CartItem) => {
                 dispatch(addToCart(item));
               });
             }
@@ -136,7 +136,7 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
             headers: { Authorization: `Bearer ${getToken()}` },
           });
           if (res.data && Array.isArray(res.data.items)) {
-            const newCart = res.data.items.map((item: any) => ({
+            const newCart: CartItem[] = res.data.items.map((item: any) => ({
               productId: item.productId,
               titolo: item.product.titolo,
               prezzo: item.product.prezzo,
@@ -169,7 +169,7 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
               headers: { Authorization: `Bearer ${getToken()}` },
             });
             if (res.data && Array.isArray(res.data.items)) {
-              const newCart = res.data.items.map((item: any) => ({
+              const newCart: CartItem[] = res.data.items.map((item: any) => ({
                 productId: item.productId,
                 titolo: item.product.titolo,
                 prezzo: item.product.prezzo,
@@ -203,7 +203,7 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
               headers: { Authorization: `Bearer ${getToken()}` },
             });
             if (res.data && Array.isArray(res.data.items)) {
-              const newCart = res.data.items.map((item: any) => ({
+              const newCart: CartItem[] = res.data.items.map((item: any) => ({
                 productId: item.productId,
                 titolo: item.product.titolo,
                 prezzo: item.product.prezzo,
