@@ -41,7 +41,7 @@ export interface HeaderViewProps {
   pathname: string;
 }
 
-const HeaderView: React.FC<HeaderViewProps> = ({
+function HeaderView({
   isLoading,
   currentUser,
   cartCount,
@@ -69,7 +69,7 @@ const HeaderView: React.FC<HeaderViewProps> = ({
   onGoToCart,
   onGoToCheckout,
   pathname,
-}) => {
+}: HeaderViewProps) {
   return (
     <header className="fixed top-0 left-0 w-full z-50 md:static md:relative flex items-center justify-between whitespace-nowrap border-b border-solid border-b-[#e8f2ec] px-4 md:px-10 py-3 bg-white">
       <HeaderStatic />
@@ -345,7 +345,7 @@ const HeaderView: React.FC<HeaderViewProps> = ({
                 </svg>
               </button>
             </div>
-            <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-4">
+            <div className="flex-1 overflow-y-auto overflow-x-auto p-4 flex flex-col gap-4">
               {cartItems.length === 0 ? (
                 <div className="text-center text-[#51946b]">
                   Il carrello è vuoto.
@@ -467,6 +467,6 @@ const HeaderView: React.FC<HeaderViewProps> = ({
       `}</style>
     </header>
   );
-};
+}
 
 export default HeaderView;

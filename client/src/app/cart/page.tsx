@@ -30,7 +30,9 @@ interface Product {
 const CartPage = () => {
   const router = useRouter();
   // Recupera carrello da Redux o localStorage se non loggato
-  const reduxCartItems = useSelector((state: { cart: { items: CartItem[] } }) => state.cart.items);
+  const reduxCartItems = useSelector(
+    (state: { cart: { items: CartItem[] } }) => state.cart.items
+  );
   const [cartItems, setCartItems] = React.useState<CartItem[]>(reduxCartItems);
   const { handleAddToCart } = useCartActions();
 
@@ -88,9 +90,10 @@ const CartPage = () => {
           },
         })
         .then((res2) => {
-          const data = res2.data.data || res2.data.products || res2.data;
+          const data: Product[] =
+            res2.data.data || res2.data.products || res2.data;
           setCarouselProducts(
-            data.filter((p: any) => p.id !== first.productId)
+            data.filter((p: Product) => p.id !== first.productId)
           );
         });
     });
@@ -103,7 +106,7 @@ const CartPage = () => {
   );
 
   return (
-    <div className="gap-6 px-2 flex flex-col md:flex-row justify-center py-8 bg-[#f7faf8] min-h-screen">
+    <div className="gap-6 px-2 flex flex-col md:flex-row justify-center py-8 bg-[#f7faf8] md:min-h-screen">
       <div className="layout-content-container flex flex-col max-w-[920px] flex-1 w-full">
         <div className="flex flex-wrap justify-between gap-3 p-4 pb-2">
           <p className="text-[#111714] tracking-light text-[2rem] font-bold leading-tight min-w-72">
@@ -111,7 +114,7 @@ const CartPage = () => {
           </p>
         </div>
         <div className="px-0 md:px-4 py-3 @container">
-          <div className=" rounded-xl border border-[#dce5df] bg-white">
+          <div className="rounded-xl border border-[#dce5df] bg-white overflow-x-auto">
             <table className="w-full min-w-[600px]">
               <thead>
                 <tr className="bg-white">
@@ -183,7 +186,7 @@ const CartPage = () => {
       </div>
       <div className="layout-content-container flex flex-col w-full max-w-[360px] mt-8 md:mt-0 md:ml-6">
         <div className="p-4">
-          <div className="flex flex-col gap-4 rounded-xl bg-white p-6 shadow-[0_0_8px_rgba(0,0,0,0.07)] border border-[#e2e8f0]">
+          <div className="flex flex-col gap-4 rounded-xl bg-white p-6 shadow-[0_0_8px_rgba(0,0,0,0.07)] border border-[#e2e8f0] overflow-x-auto">
             <div className="flex flex-col gap-1">
               <p className="text-[#111714] text-lg font-bold leading-tight">
                 Riepilogo Ordine
