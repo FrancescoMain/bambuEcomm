@@ -6,6 +6,8 @@ import type { CartItem } from "@/redux/cartSlice";
 interface User {
   id: number;
   email: string;
+  name?: string;
+  role?: string;
   // aggiungi altri campi se necessario
 }
 
@@ -240,7 +242,7 @@ const HeaderView: React.FC<HeaderViewProps> = ({
                     {cat.name}
                   </button>
                 ))
-              }
+              )}
             </div>
             {currentUser && (
               <div className="flex flex-col gap-4 mt-6">
@@ -450,7 +452,7 @@ const HeaderView: React.FC<HeaderViewProps> = ({
                   Vai al checkout
                 </button>
               </div>
-            </div>{" "}
+            </div>
           </aside>
         </>
       )}
