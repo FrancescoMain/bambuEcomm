@@ -3,20 +3,31 @@ import React from "react";
 import Image from "next/image";
 import { useDispatch, useSelector } from "react-redux";
 import { addToCart } from "@/redux/cartSlice";
+import { RootState } from "@/redux/store";
 
-// Update product type to include autore as string | undefined
+interface Product {
+  id: string;
+  titolo: string;
+  prezzo: number;
+  immagine: string;
+  categoria?: string;
+  autore?: string;
+  [key: string]: unknown;
+}
+
+interface CartItem {
+  productId: number;
+  titolo: string;
+  prezzo: number;
+  immagine?: string;
+  quantity: number;
+  cartItemId?: number;
+}
+
 interface SearchResultCardProps {
-  product: {
-    id: string;
-    titolo: string;
-    prezzo: number;
-    immagine: string;
-    categoria?: string;
-    autore?: string;
-    [key: string]: unknown;
-  };
+  product: Product;
   onClick: (id: string) => void;
-  onAddToCart: (product: any) => void; // <-- add this prop
+  onAddToCart: (product: Product) => void;
 }
 
 const SearchResultCard = ({
@@ -25,9 +36,12 @@ const SearchResultCard = ({
   onAddToCart,
 }: SearchResultCardProps) => {
   const dispatch = useDispatch();
-  const cartItems = useSelector((state: any) => state.cart.items);
+  const cartItems = useSelector(
+    (state: RootState) => state.cart.items as CartItem[]
+  );
   const isInCart =
-    product.id && cartItems.some((item: any) => item.productId === product.id);
+    product.id &&
+    cartItems.some((item: CartItem) => item.productId === Number(product.id));
 
   // Funzione per triggerare apertura sidebar carrello
   const openCartSidebar = () => {

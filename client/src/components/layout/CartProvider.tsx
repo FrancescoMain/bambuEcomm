@@ -29,6 +29,18 @@ interface CartItem {
   cartItemId?: number;
 }
 
+// Add BackendCartItem type for API responses
+interface BackendCartItem {
+  id: number;
+  productId: number;
+  product: {
+    titolo: string;
+    prezzo: number;
+    immagine?: string;
+  };
+  quantity: number;
+}
+
 export const CartActionsContext = createContext<
   | {
       handleAddToCart: (item: CartItem) => Promise<void>;
@@ -81,14 +93,16 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
           });
           dispatch(clearCart());
           if (res.data && Array.isArray(res.data.items)) {
-            const newCart: CartItem[] = res.data.items.map((item: any) => ({
-              productId: item.productId,
-              titolo: item.product.titolo,
-              prezzo: item.product.prezzo,
-              immagine: item.product.immagine,
-              quantity: item.quantity,
-              cartItemId: item.id,
-            }));
+            const newCart: CartItem[] = res.data.items.map(
+              (item: BackendCartItem) => ({
+                productId: item.productId,
+                titolo: item.product.titolo,
+                prezzo: item.product.prezzo,
+                immagine: item.product.immagine,
+                quantity: item.quantity,
+                cartItemId: item.id,
+              })
+            );
             dispatch(setCart(newCart));
           }
         } catch (e) {
@@ -114,15 +128,13 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
       setCartLoaded(true);
     };
     loadCart();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentUser]);
+  }, [currentUser, dispatch]);
 
   // Salva il carrello in localStorage se l'utente NON è loggato
   useEffect(() => {
     if (!currentUser && typeof window !== "undefined") {
       localStorage.setItem("cart", JSON.stringify(cartItems));
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cartItems, currentUser]);
 
   // --- CART ACTIONS WRAPPED FOR BACKEND SYNC ---
@@ -136,14 +148,16 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
             headers: { Authorization: `Bearer ${getToken()}` },
           });
           if (res.data && Array.isArray(res.data.items)) {
-            const newCart: CartItem[] = res.data.items.map((item: any) => ({
-              productId: item.productId,
-              titolo: item.product.titolo,
-              prezzo: item.product.prezzo,
-              immagine: item.product.immagine,
-              quantity: item.quantity,
-              cartItemId: item.id,
-            }));
+            const newCart: CartItem[] = res.data.items.map(
+              (item: BackendCartItem) => ({
+                productId: item.productId,
+                titolo: item.product.titolo,
+                prezzo: item.product.prezzo,
+                immagine: item.product.immagine,
+                quantity: item.quantity,
+                cartItemId: item.id,
+              })
+            );
             dispatch(setCart(newCart));
           }
         } catch (e) {
@@ -169,14 +183,16 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
               headers: { Authorization: `Bearer ${getToken()}` },
             });
             if (res.data && Array.isArray(res.data.items)) {
-              const newCart: CartItem[] = res.data.items.map((item: any) => ({
-                productId: item.productId,
-                titolo: item.product.titolo,
-                prezzo: item.product.prezzo,
-                immagine: item.product.immagine,
-                quantity: item.quantity,
-                cartItemId: item.id,
-              }));
+              const newCart: CartItem[] = res.data.items.map(
+                (item: BackendCartItem) => ({
+                  productId: item.productId,
+                  titolo: item.product.titolo,
+                  prezzo: item.product.prezzo,
+                  immagine: item.product.immagine,
+                  quantity: item.quantity,
+                  cartItemId: item.id,
+                })
+              );
               dispatch(setCart(newCart));
             }
           } catch (e) {
@@ -203,14 +219,16 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
               headers: { Authorization: `Bearer ${getToken()}` },
             });
             if (res.data && Array.isArray(res.data.items)) {
-              const newCart: CartItem[] = res.data.items.map((item: any) => ({
-                productId: item.productId,
-                titolo: item.product.titolo,
-                prezzo: item.product.prezzo,
-                immagine: item.product.immagine,
-                quantity: item.quantity,
-                cartItemId: item.id,
-              }));
+              const newCart: CartItem[] = res.data.items.map(
+                (item: BackendCartItem) => ({
+                  productId: item.productId,
+                  titolo: item.product.titolo,
+                  prezzo: item.product.prezzo,
+                  immagine: item.product.immagine,
+                  quantity: item.quantity,
+                  cartItemId: item.id,
+                })
+              );
               dispatch(setCart(newCart));
             }
           } catch (e) {

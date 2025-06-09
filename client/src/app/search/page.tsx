@@ -43,6 +43,23 @@ interface Product {
   [key: string]: unknown;
 }
 
+// Add Category and ProductQueryParams types
+interface Category {
+  id: number;
+  name: string;
+  parentId?: number | null;
+}
+
+interface ProductQueryParams {
+  limit?: number;
+  sortBy?: string;
+  sortOrder?: string;
+  search?: string;
+  categoryId?: number | number[];
+  minPrice?: string;
+  maxPrice?: string;
+}
+
 function SearchPageContent() {
   const searchParams = useSearchParams();
   const query = searchParams.get("q") || "";
@@ -50,7 +67,9 @@ function SearchPageContent() {
   const router = useRouter();
   const dispatch = useDispatch();
   const parentCategories = useSelector(selectParentCategories);
-  const categories = useSelector((state: any) => state.category.categories);
+  const categories = useSelector(
+    (state: RootState) => state.category.categories as Category[]
+  );
   const currentUser = useSelector((state: RootState) => state.auth.user);
   const [selectedCategory, setSelectedCategory] = React.useState<number | null>(
     null
@@ -87,26 +106,26 @@ function SearchPageContent() {
     const categoryName = searchParams.get("category");
     if (categoryName) {
       const found = categories.find(
-        (cat: any) => cat.name.toLowerCase() === categoryName.toLowerCase()
+        (cat: Category) => cat.name.toLowerCase() === categoryName.toLowerCase()
       );
       if (found) {
         setFilters((f) => ({ ...f, category: found.id }));
         // Trova tutte le sottocategorie di questa categoria
         const subcats = categories.filter(
-          (cat: any) => cat.parentId === found.id
+          (cat: Category) => cat.parentId === found.id
         );
-        let params: any = {
+        let params: ProductQueryParams = {
           limit: 50,
           sortBy: "createdAt",
           sortOrder: "desc",
         };
         if (subcats.length > 0) {
-          params.categoryId = subcats.map((c: any) => c.id);
+          params.categoryId = subcats.map((c: Category) => c.id);
         } else {
           params.categoryId = found.id;
         }
         axios
-          .get(`${API_URL}/products`, {
+          .get<{ data: { data: Product[] } }>(`${API_URL}/products`, {
             params,
             paramsSerializer: (params) => {
               // Serializza array come categoryId=1&categoryId=2
@@ -121,9 +140,12 @@ function SearchPageContent() {
               return searchParams.toString();
             },
           })
-          .then((res: { data: { data: any[] } }) =>
-            setProducts(res.data.data || res.data)
-          )
+          .then((res) => {
+            const arr = Array.isArray(res.data.data)
+              ? res.data.data
+              : res.data.data.data;
+            setProducts(arr);
+          })
           .finally(() => setLoading(false));
         return;
       }
@@ -149,7 +171,11 @@ function SearchPageContent() {
   const handleApplyFilters = () => {
     setLoading(true);
     // Build params
-    const params: any = { limit: 50, sortBy: "createdAt", sortOrder: "desc" };
+    const params: ProductQueryParams = {
+      limit: 50,
+      sortBy: "createdAt",
+      sortOrder: "desc",
+    };
     if (filters.search) params.search = filters.search;
     // Se c'è una sottocategoria selezionata, invia solo quella
     if (filters.subcategory) {
@@ -157,10 +183,10 @@ function SearchPageContent() {
     } else if (filters.category) {
       // Trova tutte le sottocategorie della categoria selezionata
       const subcats = categories.filter(
-        (cat: any) => cat.parentId === filters.category
+        (cat: Category) => cat.parentId === filters.category
       );
       if (subcats.length > 0) {
-        params.categoryId = subcats.map((c: any) => c.id);
+        params.categoryId = subcats.map((c: Category) => c.id);
       } else {
         params.categoryId = filters.category;
       }
@@ -168,7 +194,7 @@ function SearchPageContent() {
     if (filters.minPrice) params.minPrice = filters.minPrice;
     if (filters.maxPrice) params.maxPrice = filters.maxPrice;
     axios
-      .get(`${API_URL}/products`, {
+      .get<{ data: { data: Product[] } }>(`${API_URL}/products`, {
         params,
         paramsSerializer: (params) => {
           // Serializza array come categoryId=1&categoryId=2
@@ -183,9 +209,12 @@ function SearchPageContent() {
           return searchParams.toString();
         },
       })
-      .then((res: { data: { data: any[] } }) =>
-        setProducts(res.data.data || res.data)
-      )
+      .then((res) => {
+        const arr = Array.isArray(res.data.data)
+          ? res.data.data
+          : res.data.data.data;
+        setProducts(arr);
+      })
       .finally(() => setLoading(false));
   };
 
@@ -238,7 +267,7 @@ function SearchPageContent() {
   const { handleAddToCart } = useCartActions();
 
   // Handler for add to cart (calls backend if logged in)
-  const handleAddToCartAdapter = async (product: any) => {
+  const handleAddToCartAdapter = async (product: Product) => {
     setLoading(true);
     await handleAddToCart({
       productId: Number(product.id),
@@ -268,7 +297,9 @@ function SearchPageContent() {
   const subcategories = React.useMemo(
     () =>
       filters.category
-        ? categories.filter((cat: any) => cat.parentId === filters.category)
+        ? categories.filter(
+            (cat: Category) => cat.parentId === filters.category
+          )
         : [],
     [categories, filters.category]
   );
@@ -322,7 +353,7 @@ function SearchPageContent() {
             }
           >
             <option value="">Categoria</option>
-            {parentCategories.map((cat: any) => (
+            {parentCategories.map((cat: Category) => (
               <option key={cat.id} value={cat.id}>
                 {cat.name}
               </option>
@@ -341,7 +372,7 @@ function SearchPageContent() {
             disabled={!filters.category}
           >
             <option value="">Sottocategoria</option>
-            {subcategories.map((cat: any) => (
+            {subcategories.map((cat: Category) => (
               <option key={cat.id} value={cat.id}>
                 {cat.name}
               </option>
@@ -437,16 +468,20 @@ function SearchPageContent() {
                   const nextCount = loadCount + 1;
                   setLoadCount(nextCount);
                   // Chiedi last (nextCount * 50) prodotti
-                  const params: any = {
+                  const params: ProductQueryParams = {
                     limit: nextCount * 50,
                     sortBy: "createdAt",
                     sortOrder: "desc",
                   };
-                  const res = await axios.get(`${API_URL}/products`, {
-                    params,
-                  });
-                  const allProducts = res.data.data || res.data;
-                  // Prendi solo i nuovi (gli ultimi 50)
+                  const res = await axios.get<{ data: { data: Product[] } }>(
+                    `${API_URL}/products`,
+                    {
+                      params,
+                    }
+                  );
+                  const allProducts = Array.isArray(res.data.data)
+                    ? res.data.data
+                    : res.data.data.data;
                   const newProducts = allProducts.slice(products.length);
                   setProducts((prev) => [...prev, ...newProducts]);
                   setLoading(false);
