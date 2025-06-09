@@ -136,7 +136,7 @@ const Header: React.FC<HeaderProps> = ({
     const openSidebar = () => setCartSidebarOpen(true);
     window.addEventListener("open-cart-sidebar", openSidebar);
     return () => window.removeEventListener("open-cart-sidebar", openSidebar);
-  }, []);
+  }, [setCartSidebarOpen]);
 
   // Open menu: set both true
   const openMenu = () => {
@@ -243,7 +243,6 @@ const Header: React.FC<HeaderProps> = ({
     if (!currentUser) {
       localStorage.setItem("cart", JSON.stringify(cartItems));
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cartItems, currentUser]);
 
   // --- CART ACTIONS WRAPPED FOR BACKEND SYNC ---

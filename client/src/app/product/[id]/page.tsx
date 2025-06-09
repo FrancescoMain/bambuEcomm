@@ -65,7 +65,7 @@ const ProductDetailPage: React.FC = () => {
       .then((res) => setProduct(res.data))
       .catch(() => setError("Prodotto non trovato"))
       .finally(() => setLoading(false));
-  }, [productId]);
+  }, [productId, setLoading]);
 
   useEffect(() => {
     if (!mainCategoryId) return;

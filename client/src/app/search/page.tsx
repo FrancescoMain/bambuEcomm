@@ -114,7 +114,7 @@ function SearchPageContent() {
         const subcats = categories.filter(
           (cat: Category) => cat.parentId === found.id
         );
-        let params: ProductQueryParams = {
+        const params: ProductQueryParams = {
           limit: 50,
           sortBy: "createdAt",
           sortOrder: "desc",
@@ -154,7 +154,7 @@ function SearchPageContent() {
     fetchLatestProducts(50)
       .then((data) => setProducts(data.data || data))
       .finally(() => setLoading(false));
-  }, [searchParams, categories]);
+  }, [searchParams, categories, setLoading]);
 
   // Clear search input and query param
   const handleClear = () => {
@@ -475,9 +475,7 @@ function SearchPageContent() {
                   };
                   const res = await axios.get<{ data: { data: Product[] } }>(
                     `${API_URL}/products`,
-                    {
-                      params,
-                    }
+                    { params }
                   );
                   const allProducts = Array.isArray(res.data.data)
                     ? res.data.data

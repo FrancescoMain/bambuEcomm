@@ -263,7 +263,7 @@ const ProductImportForm: React.FC = () => {
     return () => {
       if (pollingRef.current) clearInterval(pollingRef.current);
     };
-  }, [token]);
+  }, [token, setLoading]);
 
   return (
     <form

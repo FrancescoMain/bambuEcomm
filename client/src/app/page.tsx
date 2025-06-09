@@ -92,7 +92,7 @@ export default function Home() {
       })
       .catch(() => setError("Errore nel caricamento dei prodotti"))
       .finally(() => setLoading(false));
-  }, []);
+  }, [setLoading]);
 
   // Navigazione al dettaglio prodotto con loader
   const handleProductClick = (productId: number | string) => {

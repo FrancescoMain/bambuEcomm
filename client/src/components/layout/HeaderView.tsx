@@ -1,19 +1,11 @@
 import React from "react";
 import HeaderStatic from "./HeaderStatic";
 import type { CartItem } from "@/redux/cartSlice";
-
-// Tipizza currentUser
-interface User {
-  id: number;
-  email: string;
-  name?: string;
-  role?: string;
-  // aggiungi altri campi se necessario
-}
+import type { User } from "@/redux/authSlice";
 
 export interface HeaderViewProps {
   isLoading: boolean;
-  currentUser: User;
+  currentUser: User | null;
   cartCount: number;
   menuOpen: boolean;
   menuVisible: boolean;
