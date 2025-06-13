@@ -1,6 +1,8 @@
 import axios from "axios";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
+const API_URL =
+  process.env.NEXT_PUBLIC_API_URL ||
+  "https://bambu-ecomm-in2g-lft67fyze-alessandros-projects-a9603e0f.vercel.app/api";
 
 export async function fetchLatestProducts(limit = 10) {
   const res = await axios.get(`${API_URL}/products`, {
