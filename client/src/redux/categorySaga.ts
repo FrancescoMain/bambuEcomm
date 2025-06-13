@@ -9,9 +9,7 @@ import { SagaIterator } from "redux-saga";
 
 function* fetchCategoriesSaga(): SagaIterator {
   try {
-    const apiUrl =
-      process.env.NEXT_PUBLIC_API_URL ||
-      "https://bambu-ecomm-in2g-lft67fyze-alessandros-projects-a9603e0f.vercel.app/api/categories";
+    const apiUrl = "https://bambu-ecomm-in2g.vercel.app/api/categories";
     const url = apiUrl.endsWith("/categories")
       ? apiUrl
       : apiUrl.replace(/\/$/, "") + "/categories";

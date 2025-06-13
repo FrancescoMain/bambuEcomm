@@ -56,7 +56,7 @@ export const importProducts = async (
       let totalRows = 0;
       // CSV: leggi tutto in memoria (già riga per riga)
       if (file.originalname.endsWith(".csv")) {
-        let fileContent = fs.readFileSync(file.path, "utf8");
+        let fileContent = file.buffer.toString("utf8");
         const delimiter = fileContent.includes(";") ? ";" : ",";
         let rowsRaw = parse(fileContent, {
           columns: true,
@@ -209,7 +209,7 @@ export const importProducts = async (
         }
       } else {
         // Excel: processa riga per riga senza caricare tutto in memoria
-        const workbook = XLSX.readFile(file.path);
+        const workbook = XLSX.read(file.buffer, { type: "buffer" });
         const sheetName = workbook.SheetNames[0];
         const sheet = workbook.Sheets[sheetName];
         const range = XLSX.utils.decode_range(sheet["!ref"]!);
