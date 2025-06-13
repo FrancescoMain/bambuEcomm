@@ -11,6 +11,8 @@ import cartRoutes from "./routes/cart.routes"; // Import cart routes
 import promotionRoutes from "./routes/promotion.routes"; // Import promotion routes
 import notificationRoutes from "./routes/notification.routes"; // Import notification routes
 import productImportRoutes from "./routes/productImport.routes"; // Import product import routes
+import checkoutRoutes from "./routes/checkout.routes"; // Import checkout routes
+import webhookRoutes from "./routes/webhook.routes"; // Import webhook routes
 
 dotenv.config();
 
@@ -44,6 +46,8 @@ app.use("/api/cart", cartRoutes); // Mount cart routes
 app.use("/api/promotions", promotionRoutes); // Mount promotion routes
 app.use("/api/notifications", notificationRoutes); // Mount notification routes
 app.use("/api/products", productImportRoutes); // Mount product import routes
+app.use("/api", checkoutRoutes); // Mount checkout routes
+app.use("/api", webhookRoutes); // Mount webhook routes
 // TODO: Aggiungere le altre rotte (notifications)
 
 // Gestione errori globale (semplice)
