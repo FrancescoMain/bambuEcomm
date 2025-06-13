@@ -13,7 +13,7 @@ import {
 import { Role } from "@prisma/client";
 
 const router = Router();
-const upload = multer({ dest: "uploads/" });
+const upload = multer({ storage: multer.memoryStorage() });
 
 // Solo ADMIN può importare prodotti
 router.post(
