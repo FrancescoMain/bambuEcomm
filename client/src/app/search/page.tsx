@@ -13,7 +13,9 @@ import { fetchLatestProducts } from "@/api/productApi";
 import { useCartActions } from "@/components/layout/CartProvider";
 import { RootState } from "@/redux/store";
 import { useLoading } from "@/components/layout/LoadingContext";
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
+const API_URL =
+  process.env.NEXT_PUBLIC_API_URL ||
+  "https://bambu-ecomm-in2g-lft67fyze-alessandros-projects-a9603e0f.vercel.app/api";
 
 export default function SearchPage() {
   return (

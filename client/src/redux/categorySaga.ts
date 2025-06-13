@@ -10,7 +10,8 @@ import { SagaIterator } from "redux-saga";
 function* fetchCategoriesSaga(): SagaIterator {
   try {
     const apiUrl =
-      process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api/categories";
+      process.env.NEXT_PUBLIC_API_URL ||
+      "https://bambu-ecomm-in2g-lft67fyze-alessandros-projects-a9603e0f.vercel.app/api/categories";
     const url = apiUrl.endsWith("/categories")
       ? apiUrl
       : apiUrl.replace(/\/$/, "") + "/categories";

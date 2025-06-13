@@ -19,7 +19,8 @@ import { RootState } from "./store"; // To get token from state
 
 // Define your API base URL
 // const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api'; // Adjust if your server runs elsewhere
-const API_BASE_URL = "http://localhost:5000/api"; // Replace 5000 with your actual backend port if different
+const API_BASE_URL =
+  "https://bambu-ecomm-in2g-lft67fyze-alessandros-projects-a9603e0f.vercel.app/api"; // Backend Vercel
 
 interface ApiError extends Error {
   response?: {
