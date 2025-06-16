@@ -3,7 +3,7 @@
 
 import express from "express";
 import Stripe from "stripe";
-import { authenticateToken } from "../middleware/auth.middleware";
+// import { authenticateToken } from "../middleware/auth.middleware";
 import { Request } from "express";
 
 const router = express.Router();
@@ -17,7 +17,8 @@ interface UserRequest extends Request {
   user?: any;
 }
 
-router.post("/checkout-session", authenticateToken, (req: Request, res) => {
+// REMOVE authenticateToken middleware to allow guest checkout
+router.post("/checkout-session", (req: Request, res) => {
   (async () => {
     try {
       const { form, cart } = req.body;

@@ -33,6 +33,9 @@ const initialForm: CheckoutForm = {
   note: "",
 };
 
+const API_URL =
+  process.env.NEXT_PUBLIC_API_URL || "https://bambu-ecomm-in2g.vercel.app/api";
+
 export default function CheckoutPage() {
   const router = useRouter();
   const cartItems = useSelector((state: RootState) => state.cart.items);
@@ -70,7 +73,7 @@ export default function CheckoutPage() {
     setSubmitting(true);
     setError("");
     try {
-      const res = await fetch("/api/checkout-session", {
+      const res = await fetch(`${API_URL}/checkout-session`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ form, cart: cartItems }),
