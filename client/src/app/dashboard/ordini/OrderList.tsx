@@ -10,6 +10,19 @@ export interface Order {
   total: number;
   customerName: string;
   customerEmail: string;
+  orderItems?: Array<{
+    id: number;
+    product?: { titolo: string };
+    quantity: number;
+    priceAtPurchase: number | string;
+  }>;
+  via?: string;
+  numero?: string;
+  cap?: string;
+  citta?: string;
+  stato?: string;
+  telefono?: string;
+  note?: string;
 }
 
 export default function OrderList() {
@@ -23,6 +36,7 @@ export default function OrderList() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(
     null
   );
+  const [detailOrder, setDetailOrder] = useState<Order | null>(null);
 
   useEffect(() => {
     const fetchOrders = async () => {
@@ -37,7 +51,35 @@ export default function OrderList() {
         });
         if (!res.ok) throw new Error("Errore nel recupero ordini");
         const data = await res.json();
-        setOrders(data.orders || []);
+        // Mappa i dati per supportare guest e user
+        const mapped = (data.data || data.orders || []).map(
+          (order: any): Order => ({
+            id: String(order.id),
+            createdAt: order.createdAt,
+            status: order.status,
+            total: Number(order.totalAmount),
+            customerName:
+              order.user && order.user.name
+                ? order.user.name
+                : (
+                    (order.nome || "") +
+                    (order.cognome ? " " + order.cognome : "")
+                  ).trim() || "Guest",
+            customerEmail:
+              order.user && order.user.email
+                ? order.user.email
+                : order.guestEmail || "",
+            orderItems: order.orderItems || [],
+            via: order.via,
+            numero: order.numero,
+            cap: order.cap,
+            citta: order.citta,
+            stato: order.stato,
+            telefono: order.telefono,
+            note: order.note,
+          })
+        );
+        setOrders(mapped);
       } catch (err) {
         setError("Errore nel recupero ordini");
       }
@@ -101,111 +143,180 @@ export default function OrderList() {
     setSaving(false);
   };
 
+  // Stato ordine: traduzione IT
+  const statoLabel = (status: string) => {
+    switch (status) {
+      case "PAID":
+        return "Pagato";
+      case "SHIPPED":
+        return "Spedito";
+      case "CANCELLED":
+        return "Cancellato";
+      default:
+        return status;
+    }
+  };
+
   if (loading) return <div>Caricamento ordini...</div>;
   if (error) return <div className="text-red-600">{error}</div>;
 
   return (
     <div>
       <h2 className="text-xl font-bold mb-4">Ordini</h2>
-      <table className="w-full border bg-white">
-        <thead>
-          <tr className="bg-[#e8f2ec]">
-            <th className="p-2">ID</th>
-            <th className="p-2">Data</th>
-            <th className="p-2">Cliente</th>
-            <th className="p-2">Email</th>
-            <th className="p-2">Totale</th>
-            <th className="p-2">Stato</th>
-            <th className="p-2">Azioni</th>
-          </tr>
-        </thead>
-        <tbody>
-          {orders.map((order) => (
-            <tr key={order.id} className="border-t">
-              <td className="p-2">{order.id}</td>
-              <td className="p-2">
-                {new Date(order.createdAt).toLocaleString()}
-              </td>
-              <td className="p-2">{order.customerName}</td>
-              <td className="p-2">{order.customerEmail}</td>
-              <td className="p-2">€ {order.total.toFixed(2)}</td>
-              <td className="p-2">
-                {selectedOrder?.id === order.id ? (
-                  <select
-                    value={editStatus}
-                    onChange={(e) => setEditStatus(e.target.value)}
-                    className="border rounded px-2 py-1"
-                  >
-                    <option value="PROCESSING">PROCESSING</option>
-                    <option value="PAID">PAID</option>
-                    <option value="SHIPPED">SHIPPED</option>
-                    <option value="CANCELLED">CANCELLED</option>
-                  </select>
-                ) : (
-                  order.status
-                )}
-              </td>
-              <td className="p-2 flex gap-2">
-                {selectedOrder?.id === order.id ? (
-                  <>
-                    <button
-                      className="bg-green-600 text-white px-2 py-1 rounded text-xs"
-                      onClick={handleSave}
-                      disabled={saving}
-                    >
-                      Salva
-                    </button>
-                    <button
-                      className="bg-gray-300 text-gray-700 px-2 py-1 rounded text-xs"
-                      onClick={() => setSelectedOrder(null)}
-                    >
-                      Annulla
-                    </button>
-                  </>
-                ) : (
-                  <>
-                    <button
-                      className="bg-blue-600 text-white px-2 py-1 rounded text-xs"
-                      onClick={() => handleEdit(order)}
-                    >
-                      Modifica
-                    </button>
-                    <button
-                      className="bg-red-600 text-white px-2 py-1 rounded text-xs"
-                      onClick={() => handleDelete(order.id)}
-                    >
-                      Elimina
-                    </button>
-                  </>
-                )}
-                {showDeleteConfirm === order.id && (
-                  <div className="fixed inset-0 flex items-center justify-center z-50 bg-black bg-opacity-30">
-                    <div className="bg-white p-6 rounded shadow-lg flex flex-col items-center">
-                      <div className="mb-4 text-lg font-semibold">
-                        Sei sicuro di voler eliminare questo ordine?
-                      </div>
-                      <div className="flex gap-4">
+      <div className="w-full overflow-x-auto">
+        <div className="max-h-[60vh] overflow-y-auto rounded-xl border border-[#dce5df] bg-white">
+          <table className="w-full min-w-[700px] whitespace-nowrap">
+            <thead>
+              <tr className="bg-[#e8f2ec]">
+                <th className="p-2">ID</th>
+                <th className="p-2">Data</th>
+                <th className="p-2">Cliente</th>
+                <th className="p-2">Email</th>
+                <th className="p-2">Totale</th>
+                <th className="p-2">Stato</th>
+                <th className="p-2">Azioni</th>
+              </tr>
+            </thead>
+            <tbody>
+              {orders.map((order) => (
+                <tr
+                  key={order.id}
+                  className="border-t cursor-pointer hover:bg-[#f3f7f4]"
+                  onClick={() => setDetailOrder(order)}
+                >
+                  <td className="p-2">{order.id}</td>
+                  <td className="p-2">
+                    {new Date(order.createdAt).toLocaleString()}
+                  </td>
+                  <td className="p-2">{order.customerName}</td>
+                  <td className="p-2">{order.customerEmail}</td>
+                  <td className="p-2">€ {order.total.toFixed(2)}</td>
+                  <td className="p-2">{statoLabel(order.status)}</td>
+                  <td className="p-2 flex gap-2">
+                    {selectedOrder?.id === order.id ? (
+                      <>
                         <button
-                          className="bg-red-600 text-white px-4 py-2 rounded"
-                          onClick={() => confirmDelete(order.id)}
+                          className="bg-green-600 text-white px-2 py-1 rounded text-xs"
+                          onClick={handleSave}
+                          disabled={saving}
                         >
-                          Conferma
+                          Salva
                         </button>
                         <button
-                          className="bg-gray-300 text-gray-700 px-4 py-2 rounded"
-                          onClick={() => setShowDeleteConfirm(null)}
+                          className="bg-gray-300 text-gray-700 px-2 py-1 rounded text-xs"
+                          onClick={() => setSelectedOrder(null)}
                         >
                           Annulla
                         </button>
+                      </>
+                    ) : (
+                      <>
+                        <button
+                          className="bg-blue-600 text-white px-2 py-1 rounded text-xs"
+                          onClick={() => handleEdit(order)}
+                        >
+                          Modifica
+                        </button>
+                        <button
+                          className="bg-red-600 text-white px-2 py-1 rounded text-xs"
+                          onClick={() => handleDelete(order.id)}
+                        >
+                          Elimina
+                        </button>
+                      </>
+                    )}
+                    {showDeleteConfirm === order.id && (
+                      <div className="fixed inset-0 flex items-center justify-center z-50 bg-black bg-opacity-30">
+                        <div className="bg-white p-6 rounded shadow-lg flex flex-col items-center">
+                          <div className="mb-4 text-lg font-semibold">
+                            Sei sicuro di voler eliminare questo ordine?
+                          </div>
+                          <div className="flex gap-4">
+                            <button
+                              className="bg-red-600 text-white px-4 py-2 rounded"
+                              onClick={() => confirmDelete(order.id)}
+                            >
+                              Conferma
+                            </button>
+                            <button
+                              className="bg-gray-300 text-gray-700 px-4 py-2 rounded"
+                              onClick={() => setShowDeleteConfirm(null)}
+                            >
+                              Annulla
+                            </button>
+                          </div>
+                        </div>
                       </div>
-                    </div>
-                  </div>
-                )}
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+      {/* Modale dettaglio ordine */}
+      {detailOrder && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
+          <div className="bg-white rounded-lg shadow-lg max-w-2xl w-full p-6 relative">
+            <button
+              className="absolute top-2 right-2 text-gray-500 hover:text-gray-800"
+              onClick={() => setDetailOrder(null)}
+            >
+              &times;
+            </button>
+            <h3 className="text-xl font-bold mb-2">
+              Dettaglio Ordine #{detailOrder.id}
+            </h3>
+            <div className="mb-2 text-sm text-gray-700">
+              Data: {new Date(detailOrder.createdAt).toLocaleString()}
+            </div>
+            <div className="mb-2 text-sm text-gray-700">
+              Stato: {statoLabel(detailOrder.status)}
+            </div>
+            <div className="mb-2 text-sm text-gray-700">
+              Cliente: {detailOrder.customerName}
+            </div>
+            <div className="mb-2 text-sm text-gray-700">
+              Email: {detailOrder.customerEmail}
+            </div>
+            {/* Mostra prodotti */}
+            {detailOrder.orderItems && detailOrder.orderItems.length > 0 && (
+              <div className="mb-4">
+                <div className="font-semibold mb-1">Prodotti:</div>
+                <ul className="list-disc pl-5">
+                  {detailOrder.orderItems.map((item: any) => (
+                    <li key={item.id} className="mb-1">
+                      {item.product?.titolo || "Prodotto"} x{item.quantity}{" "}
+                      &ndash; €{Number(item.priceAtPurchase).toFixed(2)}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            {/* Mostra indirizzo se presente */}
+            {detailOrder.via && (
+              <div className="mb-2 text-sm text-gray-700">
+                Indirizzo: {detailOrder.via} {detailOrder.numero},{" "}
+                {detailOrder.cap} {detailOrder.citta} ({detailOrder.stato})
+              </div>
+            )}
+            {detailOrder.telefono && (
+              <div className="mb-2 text-sm text-gray-700">
+                Telefono: {detailOrder.telefono}
+              </div>
+            )}
+            {detailOrder.note && (
+              <div className="mb-2 text-sm text-gray-700">
+                Note: {detailOrder.note}
+              </div>
+            )}
+            <div className="mt-4 font-bold text-lg">
+              Totale: € {detailOrder.total.toFixed(2)}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

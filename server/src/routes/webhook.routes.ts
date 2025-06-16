@@ -96,4 +96,10 @@ router.post(
   }
 );
 
+// TEST: rispondi sempre 200 per debug routing
+router.post("/webhook-test", (req, res) => {
+  console.log("/api/webhook-test hit", new Date().toISOString());
+  res.status(200).json({ message: "Webhook test OK" });
+});
+
 export default router;
