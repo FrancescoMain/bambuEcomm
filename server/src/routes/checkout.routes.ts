@@ -52,6 +52,7 @@ router.post("/checkout-session", (req: Request, res) => {
           cap: form.cap,
           stato: form.stato,
           note: form.note || "",
+          cart: JSON.stringify(cart), // <-- aggiunto per Stripe webhook
         },
         success_url: `${process.env.FRONTEND_URL}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
         cancel_url: `${process.env.FRONTEND_URL}/checkout/cancel`,

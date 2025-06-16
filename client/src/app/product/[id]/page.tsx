@@ -12,7 +12,8 @@ import { useLoading } from "@/components/layout/LoadingContext";
 import Header from "@/components/layout/Header";
 import { useCartActions } from "@/components/layout/CartProvider";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
+const API_URL =
+  process.env.NEXT_PUBLIC_API_URL || "https://bambu-ecomm-in2g.vercel.app/api";
 
 type Product = {
   id: number;

@@ -53,7 +53,7 @@ const ProductImportForm: React.FC = () => {
     try {
       const backendUrl =
         process.env.NEXT_PUBLIC_API_URL ||
-        "http://localhost:5000/api/products/import";
+        "https://bambu-ecomm-in2g.vercel.app/api/products/import";
       const res = await fetch(backendUrl, {
         method: "POST",
         body: formData,
@@ -168,7 +168,7 @@ const ProductImportForm: React.FC = () => {
     try {
       const backendUrl =
         process.env.NEXT_PUBLIC_API_URL ||
-        "http://localhost:5000/api/products/import";
+        "https://bambu-ecomm-in2g.vercel.app/api/products/import";
       const res = await fetch(`${backendUrl}/cancel`, {
         method: "POST",
         headers: {
@@ -200,7 +200,7 @@ const ProductImportForm: React.FC = () => {
       setStatus(null);
       const backendUrl =
         process.env.NEXT_PUBLIC_API_URL ||
-        "http://localhost:5000/api/products/import";
+        "https://bambu-ecomm-in2g.vercel.app/api/products/import";
       try {
         const res = await fetch(`${backendUrl}/active`, {
           headers: token ? { Authorization: `Bearer ${token}` } : undefined,

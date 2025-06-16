@@ -17,7 +17,8 @@ import {
 } from "@/api/cartApi";
 import { useLoading } from "@/components/layout/LoadingContext";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
+const API_URL =
+  process.env.NEXT_PUBLIC_API_URL || "https://bambu-ecomm-in2g.vercel.app/api";
 
 // Tipi locali per il carrello
 interface CartItem {
