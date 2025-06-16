@@ -66,8 +66,8 @@ model Category {
 
 model Order {
   id                Int           @id @default(autoincrement())
-  userId            Int
-  user              User          @relation(fields: [userId], references: [id])
+  userId            Int? // ora opzionale per supportare guest
+  user              User?          @relation(fields: [userId], references: [id])
   totalAmount       Decimal       @db.Decimal(10, 2)
   status            OrderStatus   @default(PENDING)
   paymentIntentId   String?       @unique // Per Stripe
@@ -78,6 +78,16 @@ model Order {
   shippingAddress   Address?      @relation("ShippingAddress", fields: [shippingAddressId], references: [id])
   billingAddressId  Int?
   billingAddress    Address?      @relation("BillingAddress", fields: [billingAddressId], references: [id])
+  guestEmail        String?       // Email guest se ordine senza utente
+  nome              String?
+  cognome           String?
+  telefono          String?
+  via               String?
+  numero            String?
+  citta             String?
+  cap               String?
+  stato             String?
+  note              String?
   // Potresti aggiungere campi come shippingMethod, trackingNumber, etc.
 }
 
