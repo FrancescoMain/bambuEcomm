@@ -21,6 +21,8 @@ const port = process.env.PORT || 5000;
 const prisma = new PrismaClient();
 
 // Middleware
+app.use("/api", webhookRoutes); // Mount webhook routes PRIMA di express.json()
+
 app.use(cors()); // Abilita CORS per tutte le richieste
 app.use(express.json()); // Per parsare il body delle richieste JSON
 app.use(express.urlencoded({ extended: true })); // Per parsare il body delle richieste URL-encoded
@@ -47,7 +49,6 @@ app.use("/api/promotions", promotionRoutes); // Mount promotion routes
 app.use("/api/notifications", notificationRoutes); // Mount notification routes
 app.use("/api/products", productImportRoutes); // Mount product import routes
 app.use("/api", checkoutRoutes); // Mount checkout routes
-app.use("/api", webhookRoutes); // Mount webhook routes
 // TODO: Aggiungere le altre rotte (notifications)
 
 // Gestione errori globale (semplice)
