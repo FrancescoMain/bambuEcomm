@@ -53,30 +53,55 @@ export default function OrderList() {
         const data = await res.json();
         // Mappa i dati per supportare guest e user
         const mapped = (data.data || data.orders || []).map(
-          (order: any): Order => ({
+          (order: Record<string, unknown>): Order => ({
             id: String(order.id),
-            createdAt: order.createdAt,
-            status: order.status,
+            createdAt: String(order.createdAt),
+            status: String(order.status),
             total: Number(order.totalAmount),
             customerName:
-              order.user && order.user.name
-                ? order.user.name
+              order.user &&
+              typeof order.user === "object" &&
+              "name" in order.user &&
+              order.user.name
+                ? String((order.user as { name?: string }).name)
                 : (
-                    (order.nome || "") +
-                    (order.cognome ? " " + order.cognome : "")
+                    String(order.nome || "") +
+                    (order.cognome ? " " + String(order.cognome) : "")
                   ).trim() || "Guest",
             customerEmail:
-              order.user && order.user.email
-                ? order.user.email
-                : order.guestEmail || "",
-            orderItems: order.orderItems || [],
-            via: order.via,
-            numero: order.numero,
-            cap: order.cap,
-            citta: order.citta,
-            stato: order.stato,
-            telefono: order.telefono,
-            note: order.note,
+              order.user &&
+              typeof order.user === "object" &&
+              "email" in order.user &&
+              order.user.email
+                ? String((order.user as { email?: string }).email)
+                : String(order.guestEmail || ""),
+            orderItems: Array.isArray(order.orderItems)
+              ? order.orderItems.map((item: unknown) => {
+                  const oi = item as Record<string, unknown>;
+                  return {
+                    id: Number(oi.id),
+                    product:
+                      oi.product &&
+                      typeof oi.product === "object" &&
+                      "titolo" in oi.product
+                        ? {
+                            titolo: String(
+                              (oi.product as { titolo?: string }).titolo
+                            ),
+                          }
+                        : undefined,
+                    quantity: Number(oi.quantity),
+                    priceAtPurchase: oi.priceAtPurchase as number | string,
+                  };
+                })
+              : [],
+            via: order.via ? String(order.via) : undefined,
+            numero: order.numero ? String(order.numero) : undefined,
+            cap: order.cap ? String(order.cap) : undefined,
+            citta: order.citta ? String(order.citta) : undefined,
+            stato: order.stato ? String(order.stato) : undefined,
+            telefono: order.telefono ? String(order.telefono) : undefined,
+            note: order.note ? String(order.note) : undefined,
           })
         );
         setOrders(mapped);
@@ -285,7 +310,7 @@ export default function OrderList() {
               <div className="mb-4">
                 <div className="font-semibold mb-1">Prodotti:</div>
                 <ul className="list-disc pl-5">
-                  {detailOrder.orderItems.map((item: any) => (
+                  {detailOrder.orderItems.map((item) => (
                     <li key={item.id} className="mb-1">
                       {item.product?.titolo || "Prodotto"} x{item.quantity}{" "}
                       &ndash; €{Number(item.priceAtPurchase).toFixed(2)}
