@@ -187,7 +187,8 @@ const Header: React.FC<HeaderProps> = ({
   // --- CART PERSISTENCE LOGIC ---
   useEffect(() => {
     const loadCart = async () => {
-      if (currentUser) {         // Utente loggato: carica carrello dal backend
+      if (currentUser) {
+        // Utente loggato: carica carrello dal backend
         try {
           const res = await headerService.getCart();
           // Svuota il carrello Redux prima di importare quello dal backend
@@ -287,7 +288,8 @@ const Header: React.FC<HeaderProps> = ({
       onMenuClose={closeMenu}
       onProfileMenuToggle={() => setProfileMenuOpen((v) => !v)}
       onCartSidebarOpen={openCartSidebar}
-      onCartSidebarClose={closeCartSidebar}      onCategoryClick={(catName: string) => {
+      onCartSidebarClose={closeCartSidebar}
+      onCategoryClick={(catName: string) => {
         setLoading(true);
         router.push(`/search?category=${encodeURIComponent(catName)}`);
         closeMenu();
@@ -314,7 +316,7 @@ const Header: React.FC<HeaderProps> = ({
         router.push("/checkout");
         setCartSidebarOpen(false);
       }}
-      pathname={pathname}
+      pathname={pathname || "/"} // Fornisce un valore di fallback sicuro
       // If you want to pass handleAddToCart to HeaderView, add it here
       // handleAddToCart={handleAddToCart}
     />
