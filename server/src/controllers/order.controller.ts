@@ -365,55 +365,9 @@ export const updateOrderStatus = async (
       return;
     }
 
-    // Logica aggiuntiva per la gestione dello stato (es. ripristino stock se cancellato)
-    if (
-      status === OrderStatus.CANCELLED &&
-      order.status !== OrderStatus.CANCELLED
-    ) {
-      // Se l'ordine viene cancellato e non era già cancellato, ripristina lo stock
-      const orderItems = await prisma.orderItem.findMany({
-        where: { orderId },
-      });
-      await prisma.$transaction(
-        orderItems.map((item) =>
-          prisma.product.update({
-            where: { id: item.productId },
-            data: { stock: { increment: item.quantity } },
-          })
-        )
-      );
-    } else if (
-      order.status === OrderStatus.CANCELLED &&
-      status !== OrderStatus.CANCELLED
-    ) {
-      // Se un ordine era CANCELLED e viene cambiato ad un altro stato, decrementa lo stock di nuovo
-      // Questo scenario potrebbe richiedere una logica più complessa per verificare la disponibilità
-      const orderItems = await prisma.orderItem.findMany({
-        where: { orderId },
-      });
-      for (const item of orderItems) {
-        const product = await prisma.product.findUnique({
-          where: { id: item.productId },
-        });
-        if (!product || product.stock < item.quantity) {
-          res.status(400).json({
-            message: `Stock insufficiente per il prodotto '${
-              product?.titolo || item.productId
-            }' per riattivare l'ordine.`,
-          });
-          return;
-        }
-      }
-      await prisma.$transaction(
-        orderItems.map((item) =>
-          prisma.product.update({
-            where: { id: item.productId },
-            data: { stock: { decrement: item.quantity } },
-          })
-        )
-      );
-    }
-
+    // RIMOSSO: Logica aggiuntiva per la gestione dello stato (ripristino/decremento stock)
+    // Il modello Product non ha più il campo stock, quindi questa logica non è più necessaria.
+    // Aggiorna solo lo stato dell'ordine.
     const updatedOrder = await prisma.order.update({
       where: { id: orderId },
       data: { status: status as OrderStatus },
@@ -517,14 +471,7 @@ export const cancelOrder = async (
         where: { id: orderId },
         data: { status: OrderStatus.CANCELLED },
       });
-
-      // Ripristina lo stock dei prodotti
-      for (const item of order.orderItems) {
-        await tx.product.update({
-          where: { id: item.productId },
-          data: { stock: { increment: item.quantity } },
-        });
-      }
+      // RIMOSSO: Ripristino stock prodotti
     });
 
     // TODO: Inviare notifica all'utente (e admin se cancellato dall'utente)
