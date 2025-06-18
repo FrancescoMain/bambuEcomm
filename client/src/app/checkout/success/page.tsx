@@ -5,11 +5,10 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useDispatch } from "react-redux";
 import { clearCart } from "@/redux/cartSlice";
 
-export default function CheckoutSuccess() {
-  const router = useRouter();
+export default function CheckoutSuccess() {  const router = useRouter();
   const dispatch = useDispatch();
   const searchParams = useSearchParams();
-  const sessionId = searchParams.get("session_id");
+  const sessionId = searchParams?.get("session_id") || null;
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
