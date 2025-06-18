@@ -74,18 +74,20 @@ const CartPage = () => {
   React.useEffect(() => {
     const lastCat = localStorage.getItem("lastCategory");
     if (!lastCat) return;
+
+    const lastCatId = parseInt(lastCat, 10);
+    if (isNaN(lastCatId)) return;
+
     productService
-      .getProducts({
-        category: lastCat,
-        limit: 10,
-        sortBy: "createdAt",
-        sortOrder: "desc",
-      })
+      .getProductsByCategory(lastCatId, 1, 10)
       .then((res) => {
-        const data: Product[] = res.data.data || res.data.products || res.data;
+        const data: Product[] = res.products || [];
         setRelatedProducts(data);
+      })
+      .catch((error) => {
+        console.error("Failed to fetch related products:", error);
       });
-  }, [cartItems]);
+  }, []);
 
   // Calcolo dinamico del totale carrello
   const subtotal = cartItems.reduce(
