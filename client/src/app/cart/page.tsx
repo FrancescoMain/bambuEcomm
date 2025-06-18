@@ -7,7 +7,7 @@ import { AppDispatch, RootState } from "@/redux/store";
 import ProductCard from "@/components/layout/ProductCard";
 import { useCartActions } from "@/components/layout/CartProvider";
 import productService from "@/api/productService";
-import { fetchCart, removeFromCart, updateQuantity } from "@/redux/cartSlice";
+import { removeFromCart, updateQuantity } from "@/redux/cartSlice";
 
 // Tipi TypeScript per i prodotti e il carrello
 interface CartItem {
