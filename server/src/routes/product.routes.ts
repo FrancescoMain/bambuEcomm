@@ -21,37 +21,21 @@ const router = Router();
 
 // Regole di validazione per la creazione del prodotto
 const createProductValidationRules = [
-  body("codiceProdotto")
-    .notEmpty()
-    .withMessage("Il codice prodotto è obbligatorio")
-    .trim(),
   body("titolo").notEmpty().withMessage("Il titolo è obbligatorio").trim(),
   body("prezzo")
     .isFloat({ gt: 0 })
     .withMessage("Il prezzo deve essere un numero positivo"),
-  body("stock")
-    .isInt({ gt: -1 })
-    .withMessage("Lo stock deve essere un numero intero non negativo"),
   body("categoriaId")
     .isInt({ gt: 0 })
     .withMessage(
       "L'ID della categoria è obbligatorio e deve essere un intero positivo"
     ),
-  body("codiceEAN").optional().isString().trim(),
   body("immagine").optional().isString().trim(),
-  body("url").optional().isString().trim(),
   body("descrizione").optional().isString().trim(),
-  body("descrizioneBreve").optional().isString().trim(),
-  body("stato").optional().isString().trim(),
 ];
 
 // Regole di validazione per l'aggiornamento del prodotto (campi opzionali)
 const updateProductValidationRules = [
-  body("codiceProdotto")
-    .optional()
-    .notEmpty()
-    .withMessage("Il codice prodotto non può essere vuoto se fornito")
-    .trim(),
   body("titolo")
     .optional()
     .notEmpty()
@@ -61,24 +45,14 @@ const updateProductValidationRules = [
     .optional()
     .isFloat({ gt: 0 })
     .withMessage("Il prezzo deve essere un numero positivo se fornito"),
-  body("stock")
-    .optional()
-    .isInt({ gt: -1 })
-    .withMessage(
-      "Lo stock deve essere un numero intero non negativo se fornito"
-    ),
   body("categoriaId")
     .optional()
     .isInt({ gt: 0 })
     .withMessage(
       "L'ID della categoria deve essere un intero positivo se fornito"
     ),
-  body("codiceEAN").optional().isString().trim(),
   body("immagine").optional().isString().trim(),
-  body("url").optional().isString().trim(),
   body("descrizione").optional().isString().trim(),
-  body("descrizioneBreve").optional().isString().trim(),
-  body("stato").optional().isString().trim(),
 ];
 
 const storage = multer.memoryStorage();
@@ -111,19 +85,19 @@ router.delete(
 router.post(
   "/products/upload-image",
   upload.single("image"),
-  (req: Request, res: Response) => {
+  async (req: Request, res: Response): Promise<void> => {
     if (!req.file) {
-      return res.status(400).json({ message: "Nessun file inviato." });
+      res.status(400).json({ message: "Nessun file inviato." });
+      return;
     }
     const stream = cloudinary.uploader.upload_stream(
       { folder: "bambu-ecomm/products" },
       (error: any, result: any) => {
         if (error || !result) {
-          return res
-            .status(500)
-            .json({ message: "Errore upload Cloudinary", error });
+          res.status(500).json({ message: "Errore upload Cloudinary", error });
+          return;
         }
-        return res.json({ url: result.secure_url });
+        res.json({ url: result.secure_url });
       }
     );
     streamifier.createReadStream(req.file.buffer).pipe(stream);
