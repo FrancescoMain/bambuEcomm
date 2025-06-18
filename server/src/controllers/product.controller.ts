@@ -142,6 +142,7 @@ export const createProduct = async (
     });
     res.status(201).json({ message: "Prodotto creato con successo", product });
   } catch (error) {
+    console.error("Errore nella creazione prodotto:", error);
     if (error instanceof Prisma.PrismaClientKnownRequestError) {
       if (error.code === "P2002" && error.meta?.target) {
         res.status(409).json({

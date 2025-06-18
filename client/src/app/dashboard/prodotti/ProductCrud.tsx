@@ -109,10 +109,10 @@ export default function ProductCrud() {
       }
       const payload = {
         titolo: form.titolo,
-        prezzo: form.prezzo,
+        prezzo: Number(form.prezzo),
         descrizione: form.descrizione,
         immagine: imageUrl,
-        categoriaId: form.categoriaId,
+        categoriaId: form.categoriaId ? Number(form.categoriaId) : undefined,
       };
       if (editProduct) {
         await axios.put(`${API_URL}/products/${editProduct.id}`, payload, {
@@ -213,14 +213,29 @@ export default function ProductCrud() {
           >
             <button
               type="button"
-              className="absolute top-2 right-2 text-gray-500 hover:text-gray-800"
+              className="absolute top-2 right-2 text-gray-500 hover:text-gray-800 p-2 rounded-full focus:outline-none focus:ring-2 focus:ring-[#51946b]"
               onClick={() => {
                 setShowForm(false);
                 setEditProduct(null);
                 setForm({});
               }}
+              aria-label="Chiudi"
             >
-              &times;
+              {/* Usa una icona SVG per la X */}
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+                strokeWidth={2}
+                stroke="currentColor"
+                className="w-5 h-5"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M6 18L18 6M6 6l12 12"
+                />
+              </svg>
             </button>
             <h3 className="text-xl font-bold mb-4">
               {editProduct ? "Modifica prodotto" : "Nuovo prodotto"}
