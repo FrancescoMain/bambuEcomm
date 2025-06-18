@@ -32,6 +32,9 @@ const createProductValidationRules = [
     ),
   body("immagine").optional().isString().trim(),
   body("descrizione").optional().isString().trim(),
+  body("stock")
+    .isInt({ min: 0 })
+    .withMessage("Lo stock è obbligatorio e deve essere un intero >= 0"),
 ];
 
 // Regole di validazione per l'aggiornamento del prodotto (campi opzionali)
@@ -53,6 +56,10 @@ const updateProductValidationRules = [
     ),
   body("immagine").optional().isString().trim(),
   body("descrizione").optional().isString().trim(),
+  body("stock")
+    .optional()
+    .isInt({ min: 0 })
+    .withMessage("Lo stock deve essere un intero >= 0 se fornito"),
 ];
 
 const storage = multer.memoryStorage();

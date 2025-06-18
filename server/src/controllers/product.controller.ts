@@ -114,7 +114,8 @@ export const createProduct = async (
     res.status(400).json({ errors: errors.array() });
     return;
   }
-  const { titolo, descrizione, prezzo, immagine, categoriaId } = req.body;
+  const { titolo, descrizione, prezzo, immagine, categoriaId, stock } =
+    req.body;
   if (!titolo || prezzo === undefined || categoriaId === undefined) {
     res.status(400).json({
       message: "titolo, prezzo e categoriaId sono obbligatori.",
@@ -134,6 +135,7 @@ export const createProduct = async (
         descrizione,
         prezzo: parsedPrezzo,
         immagine,
+        stock: stock !== undefined ? parseInt(stock, 10) : 0,
         categoria: {
           connect: { id: parsedCategoriaId },
         },
