@@ -16,6 +16,7 @@ export interface Product {
   immagine?: string;
   descrizione?: string;
   categoria?: { id: number; name: string }[];
+  stock?: number;
 }
 
 export default function ProductCrud() {
@@ -29,7 +30,7 @@ export default function ProductCrud() {
   const [editProduct, setEditProduct] = useState<Product | null>(null);
   const [form, setForm] = useState<
     Partial<Product> & { categoriaId?: number; imageFile?: File }
-  >({});
+  >({ stock: 0 });
   const [formLoading, setFormLoading] = useState(false);
 
   // Stato per paginazione e filtri
@@ -88,6 +89,7 @@ export default function ProductCrud() {
         product.categoria && product.categoria.length > 0
           ? Number(product.categoria[0].id)
           : undefined,
+      stock: product.stock ?? 0,
     });
     setShowForm(true);
   };
@@ -114,7 +116,10 @@ export default function ProductCrud() {
     if (type === "file" && files && files[0]) {
       setForm((f) => ({ ...f, imageFile: files[0] }));
     } else if (name === "categoriaId") {
-      setForm((f) => ({ ...f, categoriaId: value ? Number(value) : undefined }));
+      setForm((f) => ({
+        ...f,
+        categoriaId: value ? Number(value) : undefined,
+      }));
     } else {
       setForm((f) => ({ ...f, [name]: value }));
     }
@@ -152,6 +157,7 @@ export default function ProductCrud() {
         descrizione: form.descrizione,
         immagine: imageUrl,
         categoriaId: form.categoriaId ? Number(form.categoriaId) : undefined,
+        stock: form.stock !== undefined ? Number(form.stock) : 0,
       };
       if (editProduct) {
         await axios.put(`${API_URL}/products/${editProduct.id}`, payload, {
@@ -233,6 +239,7 @@ export default function ProductCrud() {
                 <th className="p-2">Prezzo</th>
                 <th className="p-2">Categoria</th>
                 <th className="p-2">Immagine</th>
+                <th className="p-2">Stock</th>
                 <th className="p-2">Azioni</th>
               </tr>
             </thead>
@@ -256,6 +263,7 @@ export default function ProductCrud() {
                       />
                     )}
                   </td>
+                  <td className="p-2">{p.stock ?? 0}</td>
                   <td className="p-2 flex gap-2">
                     <button
                       className="bg-blue-600 text-white px-2 py-1 rounded text-xs"
@@ -409,6 +417,18 @@ export default function ProductCrud() {
                   </option>
                 ))}
               </select>
+            </div>
+            <div className="mb-2">
+              <label className="block text-sm font-medium mb-1">Stock</label>
+              <input
+                name="stock"
+                type="number"
+                min="0"
+                className="w-full border rounded px-3 py-2"
+                value={form.stock ?? 0}
+                onChange={handleFormChange}
+                required
+              />
             </div>
             <button
               type="submit"

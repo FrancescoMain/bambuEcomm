@@ -192,7 +192,7 @@ export const updateProduct = async (
     res.status(400).json({ message: "ID prodotto non valido" });
     return;
   }
-  const { titolo, descrizione, prezzo, immagine, categoriaId } = req.body;
+  const { titolo, descrizione, prezzo, immagine, categoriaId, stock } = req.body;
   try {
     const dataToUpdate: any = {};
     if (titolo !== undefined) dataToUpdate.titolo = titolo;
@@ -207,6 +207,7 @@ export const updateProduct = async (
       }
       dataToUpdate.categoria = { set: [{ id: parsedCategoriaId }] };
     }
+    if (stock !== undefined) dataToUpdate.stock = parseInt(stock, 10);
     const product = await prisma.product.update({
       where: { id: productId },
       data: dataToUpdate,
