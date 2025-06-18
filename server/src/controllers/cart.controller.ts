@@ -174,12 +174,10 @@ export const updateCartItemQuantity = async (
     });
 
     if (!cartItem || cartItem.cart.userId !== userId) {
-      res
-        .status(404)
-        .json({
-          message:
-            "Articolo del carrello non trovato o non appartenente all'utente.",
-        });
+      res.status(404).json({
+        message:
+          "Articolo del carrello non trovato o non appartenente all'utente.",
+      });
       return;
     }
 
@@ -221,12 +219,10 @@ const removeItemFromCartById = async (
   });
 
   if (!cartItem || cartItem.cart.userId !== userId) {
-    res
-      .status(404)
-      .json({
-        message:
-          "Articolo del carrello non trovato o non appartenente all'utente.",
-      });
+    res.status(404).json({
+      message:
+        "Articolo del carrello non trovato o non appartenente all'utente.",
+    });
     return;
   }
 

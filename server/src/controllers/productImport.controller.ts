@@ -69,29 +69,10 @@ export const importProducts = async (
           const currentStatus = importJobStatus[jobId].status as string;
           if (currentStatus === "cancelled") break;
           const row = rowsRaw[i];
-          const {
-            codiceProdotto,
-            codiceEAN,
-            titolo,
-            immagine,
-            url,
-            stock,
-            descrizione,
-            descrizioneBreve,
-            stato,
-            prezzo,
-            categoriaId,
-          } = {
-            codiceProdotto: row["CODICE PRODOTTO"] || row["codiceProdotto"],
-            codiceEAN: row["CODICE EAN"] || row["codiceEAN"],
+          const { titolo, immagine, descrizione, prezzo, categoriaId } = {
             titolo: row["TITOLO"] || row["titolo"],
             immagine: row["IMMAGINE"] || row["immagine"],
-            url: row["URL"] || row["url"],
-            stock: row["STOCK"] || row["stock"],
             descrizione: row["DESCRIZIONE"] || row["descrizione"],
-            descrizioneBreve:
-              row["DESCRIZIONE BREVE"] || row["descrizioneBreve"],
-            stato: row["STATO"] || row["stato"],
             prezzo: row["prezzo"] || row["PREZZO"],
             categoriaId:
               row["CATEGORIA"] || row["categoriaId"] || row["categoria"],
@@ -142,14 +123,11 @@ export const importProducts = async (
           // Per i prodotti, collega la sottocategoria se esiste, altrimenti la categoria principale
           const categoryToConnect = subcategoryIdNum || categoriaIdNum;
           const missingFields = [];
-          if (!codiceProdotto) missingFields.push("codiceProdotto");
           if (!titolo) missingFields.push("titolo");
           if (!prezzo) missingFields.push("prezzo");
-          if (!stock) missingFields.push("stock");
           if (!categoryToConnect) missingFields.push("categoriaId");
           if (missingFields.length > 0) {
             errors.push({
-              codiceProdotto,
               error: `Campi obbligatori mancanti o non validi: ${missingFields.join(
                 ", "
               )}`,
@@ -157,21 +135,20 @@ export const importProducts = async (
             continue;
           }
           try {
-            const existing = await prisma.product.findUnique({
-              where: { codiceProdotto },
+            // Cerca prodotto solo per titolo e categoria (no codiceProdotto)
+            const existing = await prisma.product.findFirst({
+              where: {
+                titolo,
+                categoria: { some: { id: categoryToConnect } },
+              },
             });
             if (existing) {
               await prisma.product.update({
-                where: { codiceProdotto },
+                where: { id: existing.id },
                 data: {
-                  codiceEAN,
                   titolo,
                   immagine,
-                  url,
-                  stock: Number(stock),
                   descrizione,
-                  descrizioneBreve,
-                  stato,
                   prezzo: Number(prezzo),
                   categoria: { set: [{ id: categoryToConnect }] },
                 },
@@ -180,23 +157,17 @@ export const importProducts = async (
             } else {
               await prisma.product.create({
                 data: {
-                  codiceProdotto,
-                  codiceEAN,
                   titolo,
                   immagine,
-                  url,
-                  stock: Number(stock),
                   descrizione,
-                  descrizioneBreve,
-                  stato,
                   prezzo: Number(prezzo),
                   categoria: { connect: [{ id: categoryToConnect }] },
-                },
+                } as any, // workaround for lingering type error from old generated types
               });
               created++;
             }
           } catch (err) {
-            errors.push({ codiceProdotto, error: (err as Error).message });
+            errors.push({ error: (err as Error).message });
           }
           importJobStatus[jobId].progress = Math.round(
             ((i + 1) / totalRows) * 100
@@ -230,30 +201,10 @@ export const importProducts = async (
             const header = sheet[headerCell]?.v;
             rowObj[header] = sheet[cellAddress]?.v;
           }
-          const {
-            codiceProdotto,
-            codiceEAN,
-            titolo,
-            immagine,
-            url,
-            stock,
-            descrizione,
-            descrizioneBreve,
-            stato,
-            prezzo,
-            categoriaId,
-          } = {
-            codiceProdotto:
-              rowObj["CODICE PRODOTTO"] || rowObj["codiceProdotto"],
-            codiceEAN: rowObj["CODICE EAN"] || rowObj["codiceEAN"],
+          const { titolo, immagine, descrizione, prezzo, categoriaId } = {
             titolo: rowObj["TITOLO"] || rowObj["titolo"],
             immagine: rowObj["IMMAGINE"] || rowObj["immagine"],
-            url: rowObj["URL"] || rowObj["url"],
-            stock: rowObj["STOCK"] || rowObj["stock"],
             descrizione: rowObj["DESCRIZIONE"] || rowObj["descrizione"],
-            descrizioneBreve:
-              rowObj["DESCRIZIONE BREVE"] || rowObj["descrizioneBreve"],
-            stato: rowObj["STATO"] || rowObj["stato"],
             prezzo: rowObj["prezzo"] || rowObj["PREZZO"],
             categoriaId:
               rowObj["CATEGORIA"] ||
@@ -308,14 +259,11 @@ export const importProducts = async (
           // Per i prodotti, collega la sottocategoria se esiste, altrimenti la categoria principale
           const categoryToConnect = subcategoryIdNum || categoriaIdNum;
           const missingFields = [];
-          if (!codiceProdotto) missingFields.push("codiceProdotto");
           if (!titolo) missingFields.push("titolo");
           if (!prezzo) missingFields.push("prezzo");
-          if (!stock) missingFields.push("stock");
           if (!categoryToConnect) missingFields.push("categoriaId");
           if (missingFields.length > 0) {
             errors.push({
-              codiceProdotto,
               error: `Campi obbligatori mancanti o non validi: ${missingFields.join(
                 ", "
               )}`,
@@ -323,21 +271,20 @@ export const importProducts = async (
             continue;
           }
           try {
-            const existing = await prisma.product.findUnique({
-              where: { codiceProdotto },
+            // Cerca prodotto solo per titolo e categoria (no codiceProdotto)
+            const existing = await prisma.product.findFirst({
+              where: {
+                titolo,
+                categoria: { some: { id: categoryToConnect } },
+              },
             });
             if (existing) {
               await prisma.product.update({
-                where: { codiceProdotto },
+                where: { id: existing.id },
                 data: {
-                  codiceEAN,
                   titolo,
                   immagine,
-                  url,
-                  stock: Number(stock),
                   descrizione,
-                  descrizioneBreve,
-                  stato,
                   prezzo: Number(prezzo),
                   categoria: { set: [{ id: categoryToConnect }] },
                 },
@@ -346,23 +293,17 @@ export const importProducts = async (
             } else {
               await prisma.product.create({
                 data: {
-                  codiceProdotto,
-                  codiceEAN,
                   titolo,
                   immagine,
-                  url,
-                  stock: Number(stock),
                   descrizione,
-                  descrizioneBreve,
-                  stato,
                   prezzo: Number(prezzo),
                   categoria: { connect: [{ id: categoryToConnect }] },
-                },
+                } as any, // workaround for lingering type error from old generated types
               });
               created++;
             }
           } catch (err) {
-            errors.push({ codiceProdotto, error: (err as Error).message });
+            errors.push({ error: (err as Error).message });
           }
           importJobStatus[jobId].progress = Math.round(
             ((rowNum - range.s.r) / totalRows) * 100

@@ -114,13 +114,7 @@ export const createProduct = async (
     res.status(400).json({ errors: errors.array() });
     return;
   }
-  const {
-    titolo,
-    descrizione,
-    prezzo,
-    immagine,
-    categoriaId,
-  } = req.body;
+  const { titolo, descrizione, prezzo, immagine, categoriaId } = req.body;
   if (!titolo || prezzo === undefined || categoriaId === undefined) {
     res.status(400).json({
       message: "titolo, prezzo e categoriaId sono obbligatori.",
@@ -130,9 +124,7 @@ export const createProduct = async (
   const parsedPrezzo = parseFloat(prezzo);
   const parsedCategoriaId = parseInt(categoriaId, 10);
   if (isNaN(parsedPrezzo) || isNaN(parsedCategoriaId)) {
-    res
-      .status(400)
-      .json({ message: "Prezzo o categoriaId non validi." });
+    res.status(400).json({ message: "Prezzo o categoriaId non validi." });
     return;
   }
   try {
@@ -197,13 +189,7 @@ export const updateProduct = async (
     res.status(400).json({ message: "ID prodotto non valido" });
     return;
   }
-  const {
-    titolo,
-    descrizione,
-    prezzo,
-    immagine,
-    categoriaId,
-  } = req.body;
+  const { titolo, descrizione, prezzo, immagine, categoriaId } = req.body;
   try {
     const dataToUpdate: any = {};
     if (titolo !== undefined) dataToUpdate.titolo = titolo;
