@@ -49,7 +49,8 @@ interface Category {
   parentId?: number | null;
 }
 
-function SearchPageContent() {  const searchParams = useSearchParams();
+function SearchPageContent() {
+  const searchParams = useSearchParams();
   const query = searchParams?.get("q") || "";
   const [search, setSearch] = React.useState(query);
   const router = useRouter();

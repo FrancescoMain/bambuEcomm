@@ -1,5 +1,11 @@
 "use client";
-import React, { useState, useEffect, createContext, useContext } from "react";
+import React, {
+  useState,
+  useEffect,
+  createContext,
+  useContext,
+  useMemo,
+} from "react";
 import { useDispatch, useSelector } from "react-redux"; // Importa da react-redux
 import { RootState } from "@/redux/store"; // Importa RootState
 import { getCurrentUserRequest, logoutRequest } from "@/redux/authSlice"; // Importa anche logoutRequest
@@ -78,12 +84,17 @@ const Header: React.FC<HeaderProps> = ({
   const categoriesLoading = useSelector((state: RootState) =>
     selectCategoriesLoading(state)
   );
+  // Memorizza i search params in modo sicuro
+  const searchParamsString = useMemo(
+    () => searchParams?.toString() || "",
+    [searchParams]
+  );
 
   // Chiudi loader dopo ogni navigazione
   useEffect(() => {
     setLoading(false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pathname, searchParams.toString()]);
+  }, [pathname, searchParamsString]);
 
   useEffect(() => {
     dispatch(getCurrentUserRequest()); // Dispatch dell'azione per ottenere l'utente
