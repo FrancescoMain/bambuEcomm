@@ -38,6 +38,10 @@ model Product {
   categoria  Category[] @relation("ProductCategories")
   createdAt  DateTime   @default(now())
   updatedAt  DateTime   @updatedAt
+  // Relazioni inverse per OrderItem, CartItem, Promotion
+  orderItems OrderItem[]
+  cartItems  CartItem[]
+  promotions Promotion[] @relation("ProductPromotions")
 }
 
 model Category {
