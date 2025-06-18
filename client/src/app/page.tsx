@@ -4,19 +4,28 @@ import React, { useEffect, useState } from "react";
 import ProductCard from "@/components/layout/ProductCard";
 import SearchBar from "@/components/layout/SearchBar";
 import { useRouter } from "next/navigation";
-import { fetchLatestProducts } from "@/api/productApi";
+import { fetchLatestProducts, Product } from "@/api/productApi";
 import { useCartActions } from "@/components/layout/CartProvider";
 import { useLoading } from "@/components/layout/LoadingContext";
 import { useSelector } from "react-redux";
 
-type Product = {
+// Tipo locale per la compatibilità con i componenti esistenti
+type LocalProduct = {
   id: number;
   titolo: string;
   immagine?: string;
   prezzo: number | string;
   categoria?: { name: string }[];
-  // aggiungi altri campi se servono
 };
+
+// Funzione per convertire Product API in LocalProduct
+const convertApiProductToLocal = (apiProduct: Product): LocalProduct => ({
+  id: apiProduct.id,
+  titolo: apiProduct.name,
+  immagine: apiProduct.images?.[0] || "/file.svg",
+  prezzo: apiProduct.price,
+  categoria: [{ name: `Category ${apiProduct.categoryId}` }], // Placeholder - andrebbe sostituito con il nome reale
+});
 
 // Tipi locali per il carrello
 interface CartItem {
@@ -64,26 +73,23 @@ export default function Home() {
       router.push(`/search?q=${encodeURIComponent(search)}`);
     }
   };
-
   // State for new arrivals
-  const [latestProducts, setLatestProducts] = useState<Product[]>([]);
+  const [latestProducts, setLatestProducts] = useState<LocalProduct[]>([]);
   const [error, setError] = useState("");
 
   // State for featured and best seller (ora usano le novità)
-  const [featuredProducts, setFeaturedProducts] = useState<Product[]>([]);
-  const [bestSellerProducts, setBestSellerProducts] = useState<Product[]>([]);
+  const [featuredProducts, setFeaturedProducts] = useState<LocalProduct[]>([]);
+  const [bestSellerProducts, setBestSellerProducts] = useState<LocalProduct[]>([]);
 
   // State for page loading
   const [pageLoading, setPageLoading] = useState(false);
-
   useEffect(() => {
     setLoading(true);
     fetchLatestProducts(10)
       .then((data) => {
-        const products = Array.isArray(data)
-          ? data
-          : Array.isArray(data.data)
-          ? data.data
+        // Converti i dati API in formato locale
+        const products = Array.isArray(data) 
+          ? data.map(convertApiProductToLocal) 
           : [];
         setLatestProducts(products);
         setFeaturedProducts(products); // Per ora uguale alle novità

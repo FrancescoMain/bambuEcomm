@@ -23,8 +23,8 @@ export interface ProductVariant {
 }
 
 // API per ottenere i prodotti più recenti
-export async function fetchLatestProducts(limit = 10) {
-  return apiService.get("/products", {
+export async function fetchLatestProducts(limit = 10): Promise<Product[]> {
+  return apiService.get<Product[]>("/products", {
     params: {
       limit,
       sortBy: "createdAt",
