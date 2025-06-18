@@ -79,7 +79,9 @@ export default function Home() {
 
   // State for featured and best seller (ora usano le novità)
   const [featuredProducts, setFeaturedProducts] = useState<LocalProduct[]>([]);
-  const [bestSellerProducts, setBestSellerProducts] = useState<LocalProduct[]>([]);
+  const [bestSellerProducts, setBestSellerProducts] = useState<LocalProduct[]>(
+    []
+  );
 
   // State for page loading
   const [pageLoading, setPageLoading] = useState(false);
@@ -88,8 +90,8 @@ export default function Home() {
     fetchLatestProducts(10)
       .then((data) => {
         // Converti i dati API in formato locale
-        const products = Array.isArray(data) 
-          ? data.map(convertApiProductToLocal) 
+        const products = Array.isArray(data)
+          ? data.map(convertApiProductToLocal)
           : [];
         setLatestProducts(products);
         setFeaturedProducts(products); // Per ora uguale alle novità

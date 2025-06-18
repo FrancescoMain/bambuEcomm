@@ -49,9 +49,8 @@ interface Category {
   parentId?: number | null;
 }
 
-function SearchPageContent() {
-  const searchParams = useSearchParams();
-  const query = searchParams.get("q") || "";
+function SearchPageContent() {  const searchParams = useSearchParams();
+  const query = searchParams?.get("q") || "";
   const [search, setSearch] = React.useState(query);
   const router = useRouter();
   const dispatch = useDispatch();
@@ -92,7 +91,7 @@ function SearchPageContent() {
     setLoading(true);
     setLoadCount(1);
     // Se c'è un category nella query string, seleziona la categoria corrispondente
-    const categoryName = searchParams.get("category");
+    const categoryName = searchParams?.get("category");
     if (categoryName) {
       const found = categories.find(
         (cat: Category) => cat.name.toLowerCase() === categoryName.toLowerCase()
