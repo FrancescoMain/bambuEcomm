@@ -30,24 +30,14 @@ model User {
 }
 
 model Product {
-  id                Int          @id @default(autoincrement())
-  codiceProdotto    String       @unique // CODICE PRODOTTO
-  codiceEAN         String?      // CODICE EAN
-  titolo            String       // TITOLO
-  immagine          String?      // IMMAGINE
-  url               String?      // URL
-  stock             Int          @default(0) // STOCK
-  descrizione       String?      // DESCRIZIONE
-  descrizioneBreve  String?      // DESCRIZIONE BREVE
-  stato             String?      // STATO
-  prezzo            Decimal      @db.Decimal(10, 2) // PREZZO
-  categoria         Category[]   @relation("ProductCategories") // CATEGORIA (relation)
-  createdAt         DateTime     @default(now())
-  updatedAt         DateTime     @updatedAt
-  orderItems        OrderItem[]
-  cartItems         CartItem[]   // Prodotti presenti nei carrelli
-  promotions        Promotion[]  @relation("ProductPromotions") // Prodotti inclusi in promozioni
-  // Campi legacy o extra rimossi: name, imageUrl, isFeatured, isBestSeller
+  id         Int        @id @default(autoincrement())
+  titolo     String
+  descrizione String?
+  prezzo     Decimal    @db.Decimal(10, 2)
+  immagine   String?    // URL Cloudinary
+  categoria  Category[] @relation("ProductCategories")
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
 }
 
 model Category {

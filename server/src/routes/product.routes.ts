@@ -12,6 +12,10 @@ import {
   authorizeRole,
 } from "../middleware/auth.middleware";
 import { Role } from "@prisma/client";
+import multer from "multer";
+import cloudinary from "../utils/cloudinary";
+import { Request, Response } from "express";
+import streamifier from "streamifier";
 
 const router = Router();
 
@@ -77,6 +81,9 @@ const updateProductValidationRules = [
   body("stato").optional().isString().trim(),
 ];
 
+const storage = multer.memoryStorage();
+const upload = multer({ storage });
+
 router.get("/", getAllProducts);
 router.get("/:id", getProductById);
 
@@ -100,6 +107,27 @@ router.delete(
   authenticateToken,
   authorizeRole([Role.ADMIN]),
   deleteProduct
+);
+router.post(
+  "/products/upload-image",
+  upload.single("image"),
+  (req: Request, res: Response) => {
+    if (!req.file) {
+      return res.status(400).json({ message: "Nessun file inviato." });
+    }
+    const stream = cloudinary.uploader.upload_stream(
+      { folder: "bambu-ecomm/products" },
+      (error: any, result: any) => {
+        if (error || !result) {
+          return res
+            .status(500)
+            .json({ message: "Errore upload Cloudinary", error });
+        }
+        return res.json({ url: result.secure_url });
+      }
+    );
+    streamifier.createReadStream(req.file.buffer).pipe(stream);
+  }
 );
 
 export default router;
