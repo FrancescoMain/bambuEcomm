@@ -187,13 +187,12 @@ const Header: React.FC<HeaderProps> = ({
   // --- CART PERSISTENCE LOGIC ---
   useEffect(() => {
     const loadCart = async () => {
-      if (currentUser) {
-        // Utente loggato: carica carrello dal backend
+      if (currentUser) {         // Utente loggato: carica carrello dal backend
         try {
-          const res = await headerService.get(`/cart`);
+          const res = await headerService.getCart();
           // Svuota il carrello Redux prima di importare quello dal backend
           dispatch(clearCart());
-          if (res.data && Array.isArray(res.data.items)) {
+          if (res && res.items && Array.isArray(res.items)) {
             res.data.items.forEach(
               (item: {
                 productId: number;
@@ -288,8 +287,7 @@ const Header: React.FC<HeaderProps> = ({
       onMenuClose={closeMenu}
       onProfileMenuToggle={() => setProfileMenuOpen((v) => !v)}
       onCartSidebarOpen={openCartSidebar}
-      onCartSidebarClose={closeCartSidebar}
-      onCategoryClick={(catName) => {
+      onCartSidebarClose={closeCartSidebar}      onCategoryClick={(catName: string) => {
         setLoading(true);
         router.push(`/search?category=${encodeURIComponent(catName)}`);
         closeMenu();
@@ -299,7 +297,7 @@ const Header: React.FC<HeaderProps> = ({
         router.push("/login");
       }}
       onLogout={handleLogout}
-      onCartItemClick={(productId) => {
+      onCartItemClick={(productId: number | string) => {
         setLoading(true);
         router.push(`/product/${productId}`);
         setCartSidebarOpen(false);
