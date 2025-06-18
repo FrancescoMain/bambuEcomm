@@ -6,7 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 export default function CheckoutSuccess() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const sessionId = searchParams.get("session_id");
+  const sessionId = searchParams?.get("session_id");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
