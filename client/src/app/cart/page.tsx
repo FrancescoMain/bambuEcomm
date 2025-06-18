@@ -2,10 +2,12 @@
 
 import React from "react";
 import { useRouter } from "next/navigation";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
+import { AppDispatch, RootState } from "@/redux/store";
 import ProductCard from "@/components/layout/ProductCard";
 import { useCartActions } from "@/components/layout/CartProvider";
-import cartPageService from "@/api/cartPageService";
+import productService from "@/api/productService";
+import { fetchCart, removeFromCart, updateQuantity } from "@/redux/cartSlice";
 
 // Tipi TypeScript per i prodotti e il carrello
 interface CartItem {
@@ -68,31 +70,22 @@ const CartPage = () => {
   const isCartEmpty = !cartItems || cartItems.length === 0;
 
   // Carosello prodotti correlati
-  const [carouselProducts, setCarouselProducts] = React.useState<Product[]>([]);
+  const [relatedProducts, setRelatedProducts] = React.useState<Product[]>([]);
   React.useEffect(() => {
-    if (!cartItems || cartItems.length === 0) return;
-    const first = cartItems[0];
-    if (!first || !first.productId) return;
-    // Recupera la categoria dal primo prodotto (assumendo che sia in redux o backend)
-    cartPageService.getProductById(first.productId).then((res) => {
-      const prod = res.data;
-      const lastCat = prod.categoria?.[prod.categoria.length - 1]?.name;
-      if (!lastCat) return;
-      cartPageService
-        .getProducts({
-          category: lastCat,
-          limit: 10,
-          sortBy: "createdAt",
-          sortOrder: "desc",
-        })
-        .then((res2) => {
-          const data: Product[] =
-            res2.data.data || res2.data.products || res2.data;
-          setCarouselProducts(
-            data.filter((p: Product) => p.id !== first.productId)
-          );
-        });
-    });
+    const lastCat = localStorage.getItem("lastCategory");
+    if (!lastCat) return;
+    productService
+      .getProducts({
+        category: lastCat,
+        limit: 10,
+        sortBy: "createdAt",
+        sortOrder: "desc",
+      })
+      .then((res) => {
+        const data: Product[] =
+          res.data.data || res.data.products || res.data;
+        setRelatedProducts(data);
+      });
   }, [cartItems]);
 
   // Calcolo dinamico del totale carrello
