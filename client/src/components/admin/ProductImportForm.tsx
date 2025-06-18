@@ -9,7 +9,7 @@ import {
 } from "@/redux/categorySelectors";
 import { useLoading } from "@/components/layout/LoadingContext";
 
-type ImportError = { codiceProdotto?: string; error: string };
+type ImportError = { row?: number; error: string };
 type ImportResult = {
   created: number;
   updated: number;
@@ -271,7 +271,8 @@ const ProductImportForm: React.FC = () => {
       className="flex flex-col gap-4 p-4 border rounded bg-white max-w-md"
     >
       <label>
-        Seleziona file Excel (.xlsx) o CSV (.csv):
+        Seleziona file Excel (.xlsx) o CSV (.csv) con colonne: titolo,
+        descrizione, prezzo, immagine (URL o file), categoria
         <input
           type="file"
           accept=".xlsx,.xls,.csv"
@@ -296,7 +297,8 @@ const ProductImportForm: React.FC = () => {
               <ul className="text-red-600 text-xs">
                 {result.errors.map((err, i: number) => (
                   <li key={i}>
-                    {err.codiceProdotto}: {err.error}
+                    {err.row !== undefined ? `Riga ${err.row + 1}: ` : ""}
+                    {err.error}
                   </li>
                 ))}
               </ul>

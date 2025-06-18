@@ -83,7 +83,7 @@ router.delete(
   deleteProduct
 );
 router.post(
-  "/products/upload-image",
+  "/upload-image",
   upload.single("image"),
   async (req: Request, res: Response): Promise<void> => {
     if (!req.file) {

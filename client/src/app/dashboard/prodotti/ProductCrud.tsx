@@ -11,14 +11,10 @@ const API_URL =
 
 export interface Product {
   id: number;
-  codiceProdotto: string;
   titolo: string;
   prezzo: number;
-  stock: number;
   immagine?: string;
   descrizione?: string;
-  descrizioneBreve?: string;
-  stato?: string;
   categoria?: { id: number; name: string }[];
 }
 
@@ -31,7 +27,9 @@ export default function ProductCrud() {
   const [error, setError] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [editProduct, setEditProduct] = useState<Product | null>(null);
-  const [form, setForm] = useState<Partial<Product>>({});
+  const [form, setForm] = useState<
+    Partial<Product> & { categoriaId?: number; imageFile?: File }
+  >({});
 
   useEffect(() => {
     fetchProducts();
@@ -72,23 +70,56 @@ export default function ProductCrud() {
   };
 
   const handleFormChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+    e: React.ChangeEvent<
+      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
+    >
   ) => {
-    const { name, value } = e.target;
-    setForm((f) => ({ ...f, [name]: value }));
+    const { name, value, type, files } = e.target as HTMLInputElement;
+    if (type === "file" && files && files[0]) {
+      setForm((f) => ({ ...f, imageFile: files[0] }));
+    } else {
+      setForm((f) => ({ ...f, [name]: value }));
+    }
+  };
+
+  const handleImageUpload = async (file: File): Promise<string | null> => {
+    const formData = new FormData();
+    formData.append("image", file);
+    try {
+      const res = await axios.post(
+        `${API_URL}/products/upload-image`,
+        formData,
+        {
+          headers: { "Content-Type": "multipart/form-data" },
+        }
+      );
+      return res.data.url;
+    } catch {
+      alert("Errore durante l'upload dell'immagine");
+      return null;
+    }
   };
 
   const handleFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
+      let imageUrl = form.immagine;
+      if (form.imageFile) {
+        imageUrl = await handleImageUpload(form.imageFile);
+      }
+      const payload = {
+        titolo: form.titolo,
+        prezzo: form.prezzo,
+        descrizione: form.descrizione,
+        immagine: imageUrl,
+        categoriaId: form.categoriaId,
+      };
       if (editProduct) {
-        // Modifica prodotto
-        await axios.put(`${API_URL}/products/${editProduct.id}`, form, {
+        await axios.put(`${API_URL}/products/${editProduct.id}`, payload, {
           headers: token ? { Authorization: `Bearer ${token}` } : undefined,
         });
       } else {
-        // Nuovo prodotto
-        await axios.post(`${API_URL}/products`, form, {
+        await axios.post(`${API_URL}/products`, payload, {
           headers: token ? { Authorization: `Bearer ${token}` } : undefined,
         });
       }
@@ -126,11 +157,10 @@ export default function ProductCrud() {
             <thead>
               <tr className="bg-[#e8f2ec]">
                 <th className="p-2">ID</th>
-                <th className="p-2">Codice</th>
                 <th className="p-2">Titolo</th>
                 <th className="p-2">Prezzo</th>
-                <th className="p-2">Stock</th>
                 <th className="p-2">Categoria</th>
+                <th className="p-2">Immagine</th>
                 <th className="p-2">Azioni</th>
               </tr>
             </thead>
@@ -138,14 +168,21 @@ export default function ProductCrud() {
               {products.map((p) => (
                 <tr key={p.id} className="border-t hover:bg-[#f3f7f4]">
                   <td className="p-2">{p.id}</td>
-                  <td className="p-2">{p.codiceProdotto}</td>
                   <td className="p-2">{p.titolo}</td>
                   <td className="p-2">€ {Number(p.prezzo).toFixed(2)}</td>
-                  <td className="p-2">{p.stock}</td>
                   <td className="p-2">
                     {p.categoria && p.categoria.length > 0
                       ? p.categoria.map((c) => c.name).join(", ")
                       : "-"}
+                  </td>
+                  <td className="p-2">
+                    {p.immagine && (
+                      <img
+                        src={p.immagine}
+                        alt="img"
+                        className="h-12 w-12 object-cover rounded"
+                      />
+                    )}
                   </td>
                   <td className="p-2 flex gap-2">
                     <button
@@ -189,18 +226,6 @@ export default function ProductCrud() {
               {editProduct ? "Modifica prodotto" : "Nuovo prodotto"}
             </h3>
             <div className="mb-2">
-              <label className="block text-sm font-medium mb-1">
-                Codice prodotto
-              </label>
-              <input
-                name="codiceProdotto"
-                className="w-full border rounded px-3 py-2"
-                value={form.codiceProdotto || ""}
-                onChange={handleFormChange}
-                required
-              />
-            </div>
-            <div className="mb-2">
               <label className="block text-sm font-medium mb-1">Titolo</label>
               <input
                 name="titolo"
@@ -223,37 +248,27 @@ export default function ProductCrud() {
               />
             </div>
             <div className="mb-2">
-              <label className="block text-sm font-medium mb-1">Stock</label>
-              <input
-                name="stock"
-                type="number"
-                className="w-full border rounded px-3 py-2"
-                value={form.stock || ""}
-                onChange={handleFormChange}
-                required
-              />
-            </div>
-            <div className="mb-2">
-              <label className="block text-sm font-medium mb-1">
-                Immagine (URL)
-              </label>
+              <label className="block text-sm font-medium mb-1">Immagine</label>
               <input
                 name="immagine"
-                className="w-full border rounded px-3 py-2"
+                className="w-full border rounded px-3 py-2 mb-1"
                 value={form.immagine || ""}
                 onChange={handleFormChange}
+                placeholder="URL immagine o carica file"
               />
-            </div>
-            <div className="mb-2">
-              <label className="block text-sm font-medium mb-1">
-                Descrizione breve
-              </label>
               <input
-                name="descrizioneBreve"
+                type="file"
+                accept="image/*"
                 className="w-full border rounded px-3 py-2"
-                value={form.descrizioneBreve || ""}
                 onChange={handleFormChange}
               />
+              {form.immagine && (
+                <img
+                  src={form.immagine}
+                  alt="preview"
+                  className="h-16 mt-2 rounded"
+                />
+              )}
             </div>
             <div className="mb-2">
               <label className="block text-sm font-medium mb-1">
@@ -263,15 +278,6 @@ export default function ProductCrud() {
                 name="descrizione"
                 className="w-full border rounded px-3 py-2"
                 value={form.descrizione || ""}
-                onChange={handleFormChange}
-              />
-            </div>
-            <div className="mb-2">
-              <label className="block text-sm font-medium mb-1">Stato</label>
-              <input
-                name="stato"
-                className="w-full border rounded px-3 py-2"
-                value={form.stato || ""}
                 onChange={handleFormChange}
               />
             </div>
