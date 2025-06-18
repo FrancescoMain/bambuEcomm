@@ -2,7 +2,6 @@
 
 import React, { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import axios from "axios";
 import Image from "next/image";
 import Link from "next/link";
 import { useSelector } from "react-redux";
@@ -11,9 +10,7 @@ import ProductCard from "@/components/layout/ProductCard";
 import { useLoading } from "@/components/layout/LoadingContext";
 import Header from "@/components/layout/Header";
 import { useCartActions } from "@/components/layout/CartProvider";
-
-const API_URL =
-  process.env.NEXT_PUBLIC_API_URL || "https://bambu-ecomm-in2g.vercel.app/api";
+import productDetailService from "@/api/productDetailService";
 
 type Product = {
   id: number;
@@ -57,31 +54,21 @@ const ProductDetailPage: React.FC = () => {
     const found = categories.find((cat) => cat.name === lastCatName);
     return found?.id || null;
   }, [product, categories]);
-
   useEffect(() => {
     if (!productId) return;
     setLoading(true);
-    axios
-      .get(`${API_URL}/products/${productId}`)
-      .then((res) => setProduct(res.data))
+    productDetailService
+      .getProductById(productId.toString())
+      .then((product) => setProduct(product))
       .catch(() => setError("Prodotto non trovato"))
       .finally(() => setLoading(false));
   }, [productId, setLoading]);
-
   useEffect(() => {
     if (!mainCategoryId) return;
-    axios
-      .get(`${API_URL}/products`, {
-        params: {
-          categoryId: mainCategoryId,
-          limit: 10,
-          sortBy: "createdAt",
-          sortOrder: "desc",
-        },
-      })
-      .then((res) => {
-        const data = res.data.data || res.data;
-        setRelatedProducts(data.filter((p: Product) => p.id !== product?.id));
+    productDetailService
+      .getRelatedProductsByCategory(mainCategoryId, 10, product?.id)
+      .then((products) => {
+        setRelatedProducts(products);
       });
   }, [mainCategoryId, product]);
 

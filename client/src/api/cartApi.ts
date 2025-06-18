@@ -1,35 +1,16 @@
-import axios from "axios";
+import apiService from "./apiService";
 
-const API_URL =
-  process.env.NEXT_PUBLIC_API_URL || "https://bambu-ecomm-in2g.vercel.app/api";
-
-export const addCartItemApi = async (
-  productId: number,
-  quantity: number,
-  token: string
-) => {
-  return axios.post(
-    `${API_URL}/cart/items`, // <-- fix endpoint
-    { productId, quantity },
-    { headers: { Authorization: `Bearer ${token}` } }
-  );
+export const addCartItemApi = async (productId: number, quantity: number) => {
+  return apiService.post("/cart/items", { productId, quantity });
 };
 
-export const removeCartItemApi = async (cartItemId: number, token: string) => {
-  return axios.delete(`${API_URL}/cart/items/${cartItemId}`, {
-    // <-- fix endpoint
-    headers: { Authorization: `Bearer ${token}` },
-  });
+export const removeCartItemApi = async (cartItemId: number) => {
+  return apiService.delete(`/cart/items/${cartItemId}`);
 };
 
 export const updateCartItemQuantityApi = async (
   cartItemId: number,
-  quantity: number,
-  token: string
+  quantity: number
 ) => {
-  return axios.put(
-    `${API_URL}/cart/items/${cartItemId}`, // <-- fix endpoint
-    { quantity },
-    { headers: { Authorization: `Bearer ${token}` } }
-  );
+  return apiService.put(`/cart/items/${cartItemId}`, { quantity });
 };

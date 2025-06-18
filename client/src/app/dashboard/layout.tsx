@@ -1,12 +1,13 @@
 "use client";
 
 import React from "react";
-import { useSelector } from "react-redux";
+import { useSelector, useDispatch } from "react-redux";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { RootState } from "@/redux/store";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { getCurrentUserRequest } from "@/redux/authSlice";
 
 export default function DashboardLayout({
   children,
@@ -18,21 +19,34 @@ export default function DashboardLayout({
   const token = useSelector((state: RootState) => state.auth.token);
   const router = useRouter();
   const pathname = usePathname();
+  const dispatch = useDispatch();
   const menu = [
     { label: "Dashboard", href: "/dashboard" },
     { label: "Ordini", href: "/dashboard/ordini" },
     { label: "Prodotti", href: "/dashboard/prodotti" },
     { label: "Import Prodotti", href: "/dashboard/import-prodotti" },
   ];
-
   useEffect(() => {
-    if (isLoading) return;
-    if (!user && !token) {
+    console.log("Dashboard auth check:", { user, isLoading, token });
+
+    if (isLoading) {
+      console.log("Auth still loading, waiting...");
+      return;
+    }
+
+    if (!token) {
+      console.log("No token found, redirecting to login");
       router.replace("/login");
-    } else if (user && user.role !== "ADMIN") {
+    } else if (!user) {
+      console.log("Token exists but no user data, dispatching getCurrentUser");
+      // Il token esiste ma non abbiamo i dati utente, probabilmente dobbiamo caricarli
+      // Non reindirizzare immediatamente, potrebbe essere in caricamento
+      dispatch(getCurrentUserRequest());
+    } else if (user.role !== "ADMIN") {
+      console.log("User is not admin:", user.role);
       router.replace("/");
     }
-  }, [user, isLoading, token, router]);
+  }, [user, isLoading, token, router, dispatch]);
 
   if (isLoading || (token && !user)) {
     return <div>Loading...</div>;

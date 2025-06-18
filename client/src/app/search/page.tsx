@@ -4,7 +4,6 @@ import { Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import React from "react";
 import { useSelector, useDispatch } from "react-redux";
-import axios from "axios";
 import SearchBar from "@/components/layout/SearchBar";
 import SearchResultCard from "@/components/layout/SearchResultCard";
 import { selectParentCategories } from "@/redux/categorySelectors";
@@ -13,8 +12,7 @@ import { fetchLatestProducts } from "@/api/productApi";
 import { useCartActions } from "@/components/layout/CartProvider";
 import { RootState } from "@/redux/store";
 import { useLoading } from "@/components/layout/LoadingContext";
-const API_URL =
-  process.env.NEXT_PUBLIC_API_URL || "https://bambu-ecomm-in2g.vercel.app/api";
+import searchService, { ProductQueryParams } from "@/api/searchService";
 
 export default function SearchPage() {
   return (
@@ -49,16 +47,6 @@ interface Category {
   id: number;
   name: string;
   parentId?: number | null;
-}
-
-interface ProductQueryParams {
-  limit?: number;
-  sortBy?: string;
-  sortOrder?: string;
-  search?: string;
-  categoryId?: number | number[];
-  minPrice?: string;
-  maxPrice?: string;
 }
 
 function SearchPageContent() {
@@ -125,35 +113,18 @@ function SearchPageContent() {
         } else {
           params.categoryId = found.id;
         }
-        axios
-          .get<{ data: { data: Product[] } }>(`${API_URL}/products`, {
-            params,
-            paramsSerializer: (params) => {
-              // Serializza array come categoryId=1&categoryId=2
-              const searchParams = new URLSearchParams();
-              Object.entries(params).forEach(([key, value]) => {
-                if (Array.isArray(value)) {
-                  value.forEach((v) => searchParams.append(key, v));
-                } else if (value !== undefined && value !== null) {
-                  searchParams.append(key, value);
-                }
-              });
-              return searchParams.toString();
-            },
-          })
-          .then((res) => {
-            const arr = Array.isArray(res.data.data)
-              ? res.data.data
-              : res.data.data.data;
-            setProducts(arr);
+        searchService
+          .searchProducts(params)
+          .then((products) => {
+            setProducts(products);
           })
           .finally(() => setLoading(false));
         return;
       }
-    }
-    // Default: ultimi 50 prodotti
-    fetchLatestProducts(50)
-      .then((data) => setProducts(data.data || data))
+    } // Default: ultimi 50 prodotti
+    searchService
+      .loadMoreProducts(50)
+      .then((products) => setProducts(products))
       .finally(() => setLoading(false));
   }, [searchParams, categories, setLoading]);
 
@@ -194,27 +165,10 @@ function SearchPageContent() {
     }
     if (filters.minPrice) params.minPrice = filters.minPrice;
     if (filters.maxPrice) params.maxPrice = filters.maxPrice;
-    axios
-      .get<{ data: { data: Product[] } }>(`${API_URL}/products`, {
-        params,
-        paramsSerializer: (params) => {
-          // Serializza array come categoryId=1&categoryId=2
-          const searchParams = new URLSearchParams();
-          Object.entries(params).forEach(([key, value]) => {
-            if (Array.isArray(value)) {
-              value.forEach((v) => searchParams.append(key, v));
-            } else if (value !== undefined && value !== null) {
-              searchParams.append(key, value);
-            }
-          });
-          return searchParams.toString();
-        },
-      })
-      .then((res) => {
-        const arr = Array.isArray(res.data.data)
-          ? res.data.data
-          : res.data.data.data;
-        setProducts(arr);
+    searchService
+      .searchProducts(params)
+      .then((products) => {
+        setProducts(products);
       })
       .finally(() => setLoading(false));
   };
@@ -417,8 +371,9 @@ function SearchPageContent() {
                 maxPrice: "",
               });
               setLoading(true);
-              fetchLatestProducts(50)
-                .then((data) => setProducts(data.data || data))
+              searchService
+                .loadMoreProducts(50)
+                .then((products) => setProducts(products))
                 .finally(() => setLoading(false));
             }}
             className="ml-2 px-4 py-2 rounded-lg bg-[#e8f2ec] text-[#51946b] font-semibold hover:bg-[#d2e7db] transition-colors border border-[#51946b]"
@@ -474,13 +429,10 @@ function SearchPageContent() {
                     sortBy: "createdAt",
                     sortOrder: "desc",
                   };
-                  const res = await axios.get<{ data: { data: Product[] } }>(
-                    `${API_URL}/products`,
-                    { params }
+
+                  const allProducts = await searchService.loadMoreProducts(
+                    nextCount * 50
                   );
-                  const allProducts = Array.isArray(res.data.data)
-                    ? res.data.data
-                    : res.data.data.data;
                   const newProducts = allProducts.slice(products.length);
                   setProducts((prev) => [...prev, ...newProducts]);
                   setLoading(false);

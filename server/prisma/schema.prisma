@@ -43,6 +43,7 @@ model Product {
   orderItems OrderItem[]
   cartItems  CartItem[]
   promotions Promotion[] @relation("ProductPromotions")
+  varianti   ProductVariantType[]
 }
 
 model Category {
@@ -172,6 +173,22 @@ model Notification {
   relatedEntityId  Int?              // ID dell'entità correlata
   createdAt        DateTime          @default(now())
   updatedAt        DateTime          @updatedAt
+}
+
+model ProductVariantType {
+  id        Int                   @id @default(autoincrement())
+  nome      String
+  product   Product               @relation(fields: [productId], references: [id])
+  productId Int
+  valori    ProductVariantValue[]
+}
+
+model ProductVariantValue {
+  id        Int    @id @default(autoincrement())
+  nome      String
+  immagine  String?
+  type      ProductVariantType    @relation(fields: [typeId], references: [id])
+  typeId    Int
 }
 
 enum Role {

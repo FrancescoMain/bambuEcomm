@@ -16,12 +16,7 @@ import {
   selectParentCategories,
   selectCategoriesLoading,
 } from "@/redux/categorySelectors";
-import axios from "axios";
-import {
-  addCartItemApi,
-  removeCartItemApi,
-  updateCartItemQuantityApi,
-} from "@/api/cartApi";
+import headerService from "@/api/headerService";
 import { useCartActions } from "@/components/layout/CartProvider";
 
 const API_URL =
@@ -184,11 +179,7 @@ const Header: React.FC<HeaderProps> = ({
       if (currentUser) {
         // Utente loggato: carica carrello dal backend
         try {
-          const res = await axios.get(`${API_URL}/cart`, {
-            headers: {
-              Authorization: `Bearer ${getToken()}`,
-            },
-          });
+          const res = await headerService.get(`/cart`);
           // Svuota il carrello Redux prima di importare quello dal backend
           dispatch(clearCart());
           if (res.data && Array.isArray(res.data.items)) {

@@ -1,5 +1,5 @@
 import { call, put, takeLatest } from "redux-saga/effects";
-import axios from "axios";
+import categoryService from "../api/categoryService";
 import {
   fetchCategoriesStart,
   fetchCategoriesSuccess,
@@ -9,12 +9,11 @@ import { SagaIterator } from "redux-saga";
 
 function* fetchCategoriesSaga(): SagaIterator {
   try {
-    const apiUrl = "https://bambu-ecomm-in2g.vercel.app/api/categories";
-    const url = apiUrl.endsWith("/categories")
-      ? apiUrl
-      : apiUrl.replace(/\/$/, "") + "/categories";
-    const response = yield call(axios.get, url);
-    yield put(fetchCategoriesSuccess(response.data));
+    const categories = yield call([
+      categoryService,
+      categoryService.getAllCategories,
+    ]);
+    yield put(fetchCategoriesSuccess(categories));
   } catch (error: unknown) {
     yield put(
       fetchCategoriesFailure(

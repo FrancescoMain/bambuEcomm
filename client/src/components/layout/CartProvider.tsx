@@ -9,7 +9,7 @@ import {
   clearCart,
   setCart,
 } from "@/redux/cartSlice";
-import axios from "axios";
+import apiService from "@/api/apiService";
 import {
   addCartItemApi,
   removeCartItemApi,
@@ -80,21 +80,15 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
   const getCartItemId = (productId: number) => {
     const item = cartItems.find((i) => i.productId === productId);
     return item?.cartItemId;
-  };
-
-  // --- CART PERSISTENCE LOGIC ---
+  }; // --- CART PERSISTENCE LOGIC ---
   useEffect(() => {
     const loadCart = async () => {
       if (currentUser) {
         try {
-          const res = await axios.get(`${API_URL}/cart`, {
-            headers: {
-              Authorization: `Bearer ${getToken()}`,
-            },
-          });
+          const response = await apiService.get<any>("/cart");
           dispatch(clearCart());
-          if (res.data && Array.isArray(res.data.items)) {
-            const newCart: CartItem[] = res.data.items.map(
+          if (response && Array.isArray(response.items)) {
+            const newCart: CartItem[] = response.items.map(
               (item: BackendCartItem) => ({
                 productId: item.productId,
                 titolo: item.product.titolo,
@@ -144,12 +138,10 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
     try {
       if (currentUser) {
         try {
-          await addCartItemApi(item.productId, item.quantity, getToken());
-          const res = await axios.get(`${API_URL}/cart`, {
-            headers: { Authorization: `Bearer ${getToken()}` },
-          });
-          if (res.data && Array.isArray(res.data.items)) {
-            const newCart: CartItem[] = res.data.items.map(
+          await addCartItemApi(item.productId, item.quantity);
+          const response = await apiService.get<any>("/cart");
+          if (response && Array.isArray(response.items)) {
+            const newCart: CartItem[] = response.items.map(
               (item: BackendCartItem) => ({
                 productId: item.productId,
                 titolo: item.product.titolo,
@@ -179,12 +171,10 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
         const cartItemId = getCartItemId(productId);
         if (cartItemId) {
           try {
-            await removeCartItemApi(cartItemId, getToken());
-            const res = await axios.get(`${API_URL}/cart`, {
-              headers: { Authorization: `Bearer ${getToken()}` },
-            });
-            if (res.data && Array.isArray(res.data.items)) {
-              const newCart: CartItem[] = res.data.items.map(
+            await removeCartItemApi(cartItemId);
+            const response = await apiService.get<any>("/cart");
+            if (response && Array.isArray(response.items)) {
+              const newCart: CartItem[] = response.items.map(
                 (item: BackendCartItem) => ({
                   productId: item.productId,
                   titolo: item.product.titolo,
@@ -215,12 +205,10 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
         const cartItemId = getCartItemId(productId);
         if (cartItemId) {
           try {
-            await updateCartItemQuantityApi(cartItemId, quantity, getToken());
-            const res = await axios.get(`${API_URL}/cart`, {
-              headers: { Authorization: `Bearer ${getToken()}` },
-            });
-            if (res.data && Array.isArray(res.data.items)) {
-              const newCart: CartItem[] = res.data.items.map(
+            await updateCartItemQuantityApi(cartItemId, quantity);
+            const response = await apiService.get<any>("/cart");
+            if (response && Array.isArray(response.items)) {
+              const newCart: CartItem[] = response.items.map(
                 (item: BackendCartItem) => ({
                   productId: item.productId,
                   titolo: item.product.titolo,

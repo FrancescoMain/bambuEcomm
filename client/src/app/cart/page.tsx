@@ -3,12 +3,9 @@
 import React from "react";
 import { useRouter } from "next/navigation";
 import { useSelector } from "react-redux";
-import axios from "axios";
 import ProductCard from "@/components/layout/ProductCard";
 import { useCartActions } from "@/components/layout/CartProvider";
-
-const API_URL =
-  process.env.NEXT_PUBLIC_API_URL || "https://bambu-ecomm-in2g.vercel.app/api";
+import cartPageService from "@/api/cartPageService";
 
 // Tipi TypeScript per i prodotti e il carrello
 interface CartItem {
@@ -77,18 +74,16 @@ const CartPage = () => {
     const first = cartItems[0];
     if (!first || !first.productId) return;
     // Recupera la categoria dal primo prodotto (assumendo che sia in redux o backend)
-    axios.get(`${API_URL}/products/${first.productId}`).then((res) => {
+    cartPageService.getProductById(first.productId).then((res) => {
       const prod = res.data;
       const lastCat = prod.categoria?.[prod.categoria.length - 1]?.name;
       if (!lastCat) return;
-      axios
-        .get(`${API_URL}/products`, {
-          params: {
-            category: lastCat,
-            limit: 10,
-            sortBy: "createdAt",
-            sortOrder: "desc",
-          },
+      cartPageService
+        .getProducts({
+          category: lastCat,
+          limit: 10,
+          sortBy: "createdAt",
+          sortOrder: "desc",
         })
         .then((res2) => {
           const data: Product[] =

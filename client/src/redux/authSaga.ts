@@ -1,4 +1,5 @@
 import { call, put, takeLatest, all, select } from "redux-saga/effects";
+import { PayloadAction } from "@reduxjs/toolkit";
 import {
   loginRequest,
   loginSuccess,
@@ -13,137 +14,65 @@ import {
   logoutSuccess,
   logoutFailure,
   setToken,
-  User, // Import User interface from authSlice
 } from "./authSlice";
-import { RootState } from "./store"; // To get token from state
+import authService from "../api/authService";
+import { User } from "./authSlice";
+import { RootState } from "./store";
 
-// Define your API base URL
-// const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api'; // Adjust if your server runs elsewhere
-const API_BASE_URL = "https://bambu-ecomm-in2g.vercel.app/api"; // Backend Vercel
-
-interface ApiError extends Error {
-  response?: {
-    data?: {
-      message?: string;
-    };
-    status?: number;
-  };
-  message: string;
-}
-
-// Helper to get the token from the state
+// Selector per ottenere il token dallo stato
 const getToken = (state: RootState) => state.auth.token;
 
-// --- API Call Functions ---
-async function apiLogin(credentials: { email: string; password: string }) {
-  // Send email and password as JSON body
-  const response = await fetch(`${API_BASE_URL}/auth/login`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(credentials),
-  });
-  if (!response.ok) {
-    const errorData = await response.json();
-    throw new Error(errorData.message || `Error ${response.status}`);
-  }
-  return response.json(); // Expected: { message: string, token: string, user: User }
-}
-
-async function apiRegister(userData: {
-  username: string;
-  password: string;
-  email: string;
-}) {
-  const response = await fetch(`${API_BASE_URL}/auth/register`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(userData),
-  });
-  if (!response.ok) {
-    const errorData = await response.json();
-    throw new Error(errorData.message || `Error ${response.status}`);
-  }
-  return response.json(); // Expected: { message: string, user: User (without password) }
-}
-
-async function apiGetCurrentUser(token: string | null) {
-  if (!token) throw new Error("No token provided for getCurrentUser");
-  const response = await fetch(`${API_BASE_URL}/auth/me`, {
-    method: "GET",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
-    },
-  });
-  if (!response.ok) {
-    const errorData = await response.json();
-    throw new Error(errorData.message || `Error ${response.status}`);
-  }
-  return response.json(); // Expected: User object
-}
-
-async function apiLogout(token: string | null) {
-  // Logout might not need a token if it just clears client side
-  // If your backend invalidates tokens, send it.
-  const headers: HeadersInit = { "Content-Type": "application/json" };
-  if (token) {
-    headers["Authorization"] = `Bearer ${token}`;
-  }
-  const response = await fetch(`${API_BASE_URL}/auth/logout`, {
-    method: "POST",
-    headers,
-  });
-  if (!response.ok) {
-    const errorData = await response.json();
-    throw new Error(errorData.message || `Error ${response.status}`);
-  }
-  return response.json(); // Expected: { message: string }
-}
-
 // --- SAGA WORKERS ---
-function* handleLogin(action: {
-  payload: { email: string; password: string };
-}) {
+function* handleLogin(
+  action: PayloadAction<{ email: string; password: string }>
+) {
   try {
-    const { email, password } = action.payload;
-    const response: { user: User; token: string; message: string } = yield call(
-      apiLogin,
-      { email, password }
+    // Utilizziamo authService per gestire il login
+    const response = yield call(
+      [authService, authService.login],
+      action.payload
     );
+
+    // Il token e l'utente vengono già gestiti all'interno del servizio authService
+    // Qui impostiamo solo lo stato di Redux
     yield put(loginSuccess({ user: response.user, token: response.token }));
-  } catch (e) {
-    const error = e as ApiError;
-    yield put(loginFailure(error.message || "Login fallito"));
+
+    // Reindirizza dopo il login se necessario
+    if (typeof window !== "undefined") {
+      const redirectPath = localStorage.getItem("redirectAfterLogin");
+      if (redirectPath) {
+        localStorage.removeItem("redirectAfterLogin");
+        window.location.href = redirectPath;
+      }
+    }
+  } catch (error: any) {
+    const errorMessage =
+      error.response?.data?.message || error.message || "Login fallito";
+    yield put(loginFailure(errorMessage));
   }
 }
 
-function* handleRegister(action: {
-  payload: { name: string; email: string; password: string };
-}) {
+function* handleRegister(
+  action: PayloadAction<{ name: string; email: string; password: string }>
+) {
   try {
-    // Map name to username for API compatibility
-    const { name, email, password } = action.payload;
-    const response: { user: User; message: string } = yield call(apiRegister, {
-      username: name,
-      email,
-      password,
-    });
+    // Utilizziamo authService
+    const response = yield call(
+      [authService, authService.register],
+      action.payload
+    );
+
     yield put(registerSuccess({ user: response.user }));
-    // Optional: dispatch loginRequest if registration implies login
-    // Or show a message to check email / login manually
-  } catch (e) {
-    const error = e as ApiError;
-    yield put(registerFailure(error.message || "Registrazione fallita"));
+  } catch (error: any) {
+    const errorMessage =
+      error.response?.data?.message || error.message || "Registrazione fallita";
+    yield put(registerFailure(errorMessage));
   }
 }
 
 function* handleGetCurrentUser() {
   try {
-    const token: string | null = yield select(getToken); // Get token from state first
-
-    // The logic to extract token from action.payload has been removed.
-    // The saga now relies on the token being present in the Redux state,
-    // which should have been initialized from localStorage by authSlice.initialState.
+    const token: string | null = yield select(getToken);
 
     if (!token) {
       yield put(
@@ -151,48 +80,64 @@ function* handleGetCurrentUser() {
       );
       return;
     }
-    const user: User = yield call(apiGetCurrentUser, token);
+
+    // Utilizziamo authService invece di apiService
+    const user: User = yield call([authService, authService.getCurrentUser]);
+
     yield put(getCurrentUserSuccess(user));
-  } catch (e) {
-    const error = e as ApiError;
-    yield put(
-      getCurrentUserFailure(error.message || "Recupero utente fallito")
-    );
-    // If 401 or 403, might want to clear token from localStorage via another action
+  } catch (error: any) {
+    const errorMessage =
+      error.response?.data?.message ||
+      error.message ||
+      "Recupero utente fallito";
+    yield put(getCurrentUserFailure(errorMessage));
+
+    // Se 401 o 403, potremmo voler cancellare il token
     if (error.response?.status === 401 || error.response?.status === 403) {
-      yield put(setToken(null)); // Clears token from state and localStorage via authSlice
+      yield put(setToken(null));
     }
   }
 }
 
 function* handleLogout() {
   try {
-    const token: string | null = yield select(getToken);
-    yield call(apiLogout, token); // Pass token if your backend uses it for logout
+    // Utilizziamo authService invece di apiService
+    yield call([authService, authService.logout]);
+
     yield put(logoutSuccess());
-  } catch (e) {
-    const error = e as ApiError;
-    yield put(logoutFailure(error.message || "Logout fallito"));
+
+    // Reindirizza alla home dopo il logout
+    if (typeof window !== "undefined") {
+      window.location.href = "/";
+    }
+  } catch (error: any) {
+    const errorMessage =
+      error.response?.data?.message || error.message || "Logout fallito";
+    yield put(logoutFailure(errorMessage));
+
+    // Anche in caso di errore nel logout, facciamo il logout localmente
+    yield put(logoutSuccess());
   }
 }
 
 // --- SAGA WATCHERS ---
 function* watchLoginRequest() {
-  yield takeLatest(loginRequest, handleLogin);
+  yield takeLatest(loginRequest.type, handleLogin);
 }
 
 function* watchRegisterRequest() {
-  yield takeLatest(registerRequest, handleRegister);
+  yield takeLatest(registerRequest.type, handleRegister);
 }
 
 function* watchGetCurrentUserRequest() {
-  yield takeLatest(getCurrentUserRequest, handleGetCurrentUser);
+  yield takeLatest(getCurrentUserRequest.type, handleGetCurrentUser);
 }
 
 function* watchLogoutRequest() {
-  yield takeLatest(logoutRequest, handleLogout);
+  yield takeLatest(logoutRequest.type, handleLogout);
 }
 
+// --- SAGA PRINCIPALE ---
 export default function* authSaga() {
   yield all([
     watchLoginRequest(),
