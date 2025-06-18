@@ -30,29 +30,65 @@ export default function ProductCrud() {
   const [form, setForm] = useState<
     Partial<Product> & { categoriaId?: number; imageFile?: File }
   >({});
+  const [formLoading, setFormLoading] = useState(false);
+
+  // Stato per paginazione e filtri
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(10);
+  const [search, setSearch] = useState("");
+  const [searchInput, setSearchInput] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState("");
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
+
+  useEffect(() => {
+    const delayDebounce = setTimeout(() => {
+      if (searchInput.length >= 3 || searchInput.length === 0) {
+        setSearch(searchInput);
+        setPage(1);
+      }
+    }, 1000); //
+    return () => clearTimeout(delayDebounce);
+  }, [searchInput]);
 
   useEffect(() => {
     fetchProducts();
     dispatch(fetchCategoriesStart());
-  }, []);
+  }, [page, limit, search, selectedCategory, sortOrder]);
 
   const fetchProducts = async () => {
     setLoading(true);
     setError(null);
     try {
       const res = await axios.get(`${API_URL}/products`, {
-        params: { limit: 100, sortBy: "createdAt", sortOrder: "desc" },
+        params: {
+          limit,
+          page,
+          sortBy: "titolo",
+          sortOrder,
+          search: search || undefined,
+          categoryId: selectedCategory || undefined,
+        },
       });
       setProducts(res.data.data || res.data.products || res.data);
+      setTotalPages(res.data.totalPages || 1);
     } catch (err) {
       setError("Errore nel recupero prodotti");
     }
     setLoading(false);
   };
 
+  // Stato per pagine totali
+  const [totalPages, setTotalPages] = useState(1);
+
   const handleEdit = (product: Product) => {
     setEditProduct(product);
-    setForm(product);
+    setForm({
+      ...product,
+      categoriaId:
+        product.categoria && product.categoria.length > 0
+          ? Number(product.categoria[0].id)
+          : undefined,
+    });
     setShowForm(true);
   };
 
@@ -77,6 +113,8 @@ export default function ProductCrud() {
     const { name, value, type, files } = e.target as HTMLInputElement;
     if (type === "file" && files && files[0]) {
       setForm((f) => ({ ...f, imageFile: files[0] }));
+    } else if (name === "categoriaId") {
+      setForm((f) => ({ ...f, categoriaId: value ? Number(value) : undefined }));
     } else {
       setForm((f) => ({ ...f, [name]: value }));
     }
@@ -102,10 +140,11 @@ export default function ProductCrud() {
 
   const handleFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setFormLoading(true);
     try {
       let imageUrl = form.immagine;
       if (form.imageFile) {
-        imageUrl = await handleImageUpload(form.imageFile);
+        imageUrl = (await handleImageUpload(form.imageFile)) || undefined;
       }
       const payload = {
         titolo: form.titolo,
@@ -130,6 +169,7 @@ export default function ProductCrud() {
     } catch {
       alert("Errore durante il salvataggio");
     }
+    setFormLoading(false);
   };
 
   return (
@@ -153,6 +193,38 @@ export default function ProductCrud() {
         <div className="text-red-600">{error}</div>
       ) : (
         <div className="overflow-x-auto">
+          {/* Filtri sopra la tabella */}
+          <div className="flex flex-wrap gap-2 mb-4 items-end">
+            <input
+              type="text"
+              placeholder="Cerca per nome... "
+              className="border rounded px-2 py-1"
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
+            />
+            <select
+              className="border rounded px-2 py-1 min-w-[200px]"
+              value={selectedCategory}
+              onChange={(e) => {
+                setSelectedCategory(e.target.value);
+                setPage(1);
+              }}
+            >
+              <option value="">Tutte le categorie</option>
+              {parentCategories.map((cat) => (
+                <option key={cat.id} value={cat.id}>
+                  {cat.name}
+                </option>
+              ))}
+            </select>
+            <button
+              type="button"
+              className="ml-2 px-2 py-1 bg-gray-200 rounded text-xs"
+              onClick={() => setSortOrder(sortOrder === "asc" ? "desc" : "asc")}
+            >
+              Ordina per nome {sortOrder === "asc" ? "↓" : "↑"}
+            </button>
+          </div>
           <table className="w-full min-w-[900px] whitespace-nowrap border rounded-xl bg-white">
             <thead>
               <tr className="bg-[#e8f2ec]">
@@ -204,6 +276,26 @@ export default function ProductCrud() {
           </table>
         </div>
       )}
+      {/* Paginazione */}
+      <div className="flex justify-center items-center gap-2 mt-4">
+        <button
+          className="px-3 py-1 rounded bg-gray-200 disabled:opacity-50"
+          onClick={() => setPage((p) => Math.max(1, p - 1))}
+          disabled={page === 1}
+        >
+          &lt;
+        </button>
+        <span>
+          Pagina {page} di {totalPages}
+        </span>
+        <button
+          className="px-3 py-1 rounded bg-gray-200 disabled:opacity-50"
+          onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+          disabled={page === totalPages}
+        >
+          &gt;
+        </button>
+      </div>
       {/* Form prodotto */}
       {showForm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
@@ -270,12 +362,14 @@ export default function ProductCrud() {
                 value={form.immagine || ""}
                 onChange={handleFormChange}
                 placeholder="URL immagine o carica file"
+                required
               />
               <input
                 type="file"
                 accept="image/*"
                 className="w-full border rounded px-3 py-2"
                 onChange={handleFormChange}
+                required={!form.immagine}
               />
               {form.immagine && (
                 <img
@@ -294,6 +388,7 @@ export default function ProductCrud() {
                 className="w-full border rounded px-3 py-2"
                 value={form.descrizione || ""}
                 onChange={handleFormChange}
+                required
               />
             </div>
             <div className="mb-2">
@@ -317,8 +412,31 @@ export default function ProductCrud() {
             </div>
             <button
               type="submit"
-              className="mt-4 w-full bg-[#51946b] text-white font-semibold py-2 rounded"
+              className="mt-4 w-full bg-[#51946b] text-white font-semibold py-2 rounded flex items-center justify-center"
+              disabled={formLoading}
             >
+              {formLoading ? (
+                <svg
+                  className="animate-spin h-5 w-5 mr-2 text-white"
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                >
+                  <circle
+                    className="opacity-25"
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    strokeWidth="4"
+                  ></circle>
+                  <path
+                    className="opacity-75"
+                    fill="currentColor"
+                    d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+                  ></path>
+                </svg>
+              ) : null}
               Salva
             </button>
           </form>

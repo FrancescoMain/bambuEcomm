@@ -311,3 +311,23 @@ export const clearCart = async (
     res.status(500).json({ message: "Errore interno del server." });
   }
 };
+
+// Svuota tutti i carrelli che non sono stati modificati da più di 24 ore
+export const cleanupOldCarts = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const cutoff = new Date(Date.now() - 24 * 60 * 60 * 1000);
+    // Trova tutti i carrelli "vecchi"
+    const oldCarts = await prisma.cart.findMany({
+      where: { updatedAt: { lt: cutoff } },
+      select: { id: true },
+    });
+    // Svuota i carrelli trovati
+    for (const cart of oldCarts) {
+      await prisma.cartItem.deleteMany({ where: { cartId: cart.id } });
+    }
+    res.status(200).json({ message: `Svuotati ${oldCarts.length} carrelli vecchi.` });
+  } catch (error) {
+    console.error("Errore durante la pulizia dei carrelli vecchi:", error);
+    res.status(500).json({ message: "Errore interno del server." });
+  }
+};

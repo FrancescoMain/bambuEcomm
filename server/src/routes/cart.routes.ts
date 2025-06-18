@@ -6,6 +6,7 @@ import {
   updateCartItemQuantity,
   removeItemFromCart,
   clearCart,
+  cleanupOldCarts,
 } from "../controllers/cart.controller";
 import { authenticateToken } from "../middleware/auth.middleware";
 
@@ -56,5 +57,8 @@ router.delete(
 
 // DELETE /api/cart - Svuota il carrello dell'utente corrente
 router.delete("/", clearCart);
+
+// Endpoint pubblico per la pulizia dei carrelli vecchi (da chiamare da Vercel cron)
+router.post("/cleanup", cleanupOldCarts);
 
 export default router;
