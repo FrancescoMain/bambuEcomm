@@ -80,14 +80,9 @@ export const createOrder = async (
     let totalAmount = new Prisma.Decimal(0);
     const orderItemsData: Prisma.OrderItemCreateManyOrderInput[] = [];
 
-    // Validazione stock e preparazione dati OrderItem
+    // Validazione e preparazione dati OrderItem
     for (const item of cart.items) {
-      if (item.product.stock < item.quantity) {
-        res.status(400).json({
-          message: `Prodotto '${item.product.titolo}' non disponibile in quantità sufficiente. Stock disponibile: ${item.product.stock}, Richiesti: ${item.quantity}.`,
-        });
-        return; // Interrompe se un prodotto non è disponibile
-      }
+      // Rimosso controllo stock: il modello non lo prevede più
       totalAmount = totalAmount.plus(
         new Prisma.Decimal(item.product.prezzo).times(item.quantity)
       );
@@ -127,19 +122,12 @@ export const createOrder = async (
         },
       });
 
-      // Aggiornamento stock prodotti
-      for (const item of cart.items) {
-        await tx.product.update({
-          where: { id: item.productId },
-          data: { stock: { decrement: item.quantity } },
-        });
-      }
+      // Rimosso aggiornamento stock prodotti
 
       // Svuotamento carrello
       await tx.cartItem.deleteMany({
         where: { cartId: cart.id },
       });
-
       return order;
     });
 

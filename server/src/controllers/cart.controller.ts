@@ -83,7 +83,7 @@ export const addItemToCart = async (
       });
     }
 
-    // Controlla se il prodotto esiste ed è disponibile
+    // Controlla se il prodotto esiste
     const product = await prisma.product.findUnique({
       where: { id: productId },
     });
@@ -93,10 +93,7 @@ export const addItemToCart = async (
       return;
     }
 
-    if (product.stock < quantity) {
-      res.status(400).json({ message: "Quantità richiesta non disponibile." });
-      return;
-    }
+    // Rimosso controllo stock: il modello non lo prevede più
 
     // Controlla se l'articolo è già nel carrello
     const existingCartItem = await prisma.cartItem.findFirst({
@@ -186,11 +183,7 @@ export const updateCartItemQuantity = async (
       return;
     }
 
-    if (cartItem.product.stock < quantity) {
-      res.status(400).json({ message: "Quantità richiesta non disponibile." });
-      return;
-    }
-
+    // Rimosso controllo stock: il modello non lo prevede più
     await prisma.cartItem.update({
       where: { id: parseInt(cartItemId, 10) },
       data: { quantity },

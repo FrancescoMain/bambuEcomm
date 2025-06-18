@@ -18,7 +18,6 @@ export const getAllProducts = async (
     sortBy = "createdAt", // e.g., titolo, prezzo, createdAt
     sortOrder = "desc", // asc or desc
     search,
-    stato,
   } = req.query;
 
   const pageNum = parseInt(page as string, 10);
@@ -42,13 +41,7 @@ export const getAllProducts = async (
     where.OR = [
       { titolo: { contains: search as string, mode: "insensitive" } },
       { descrizione: { contains: search as string, mode: "insensitive" } },
-      { descrizioneBreve: { contains: search as string, mode: "insensitive" } },
-      { codiceProdotto: { contains: search as string, mode: "insensitive" } },
-      { codiceEAN: { contains: search as string, mode: "insensitive" } },
     ];
-  }
-  if (stato) {
-    where.stato = stato as string;
   }
 
   const orderBy: any = {};
@@ -122,53 +115,33 @@ export const createProduct = async (
     return;
   }
   const {
-    codiceProdotto,
-    codiceEAN,
     titolo,
-    immagine,
-    url,
-    stock,
     descrizione,
-    descrizioneBreve,
-    stato,
     prezzo,
+    immagine,
     categoriaId,
   } = req.body;
-  if (
-    !codiceProdotto ||
-    !titolo ||
-    prezzo === undefined ||
-    stock === undefined ||
-    categoriaId === undefined
-  ) {
+  if (!titolo || prezzo === undefined || categoriaId === undefined) {
     res.status(400).json({
-      message:
-        "codiceProdotto, titolo, prezzo, stock e categoriaId sono obbligatori.",
+      message: "titolo, prezzo e categoriaId sono obbligatori.",
     });
     return;
   }
   const parsedPrezzo = parseFloat(prezzo);
-  const parsedStock = parseInt(stock, 10);
   const parsedCategoriaId = parseInt(categoriaId, 10);
-  if (isNaN(parsedPrezzo) || isNaN(parsedStock) || isNaN(parsedCategoriaId)) {
+  if (isNaN(parsedPrezzo) || isNaN(parsedCategoriaId)) {
     res
       .status(400)
-      .json({ message: "Prezzo, stock o categoriaId non validi." });
+      .json({ message: "Prezzo o categoriaId non validi." });
     return;
   }
   try {
     const product = await prisma.product.create({
       data: {
-        codiceProdotto,
-        codiceEAN,
         titolo,
-        immagine,
-        url,
-        stock: parsedStock,
         descrizione,
-        descrizioneBreve,
-        stato,
         prezzo: parsedPrezzo,
+        immagine,
         categoria: {
           connect: { id: parsedCategoriaId },
         },
@@ -225,32 +198,18 @@ export const updateProduct = async (
     return;
   }
   const {
-    codiceProdotto,
-    codiceEAN,
     titolo,
-    immagine,
-    url,
-    stock,
     descrizione,
-    descrizioneBreve,
-    stato,
     prezzo,
+    immagine,
     categoriaId,
   } = req.body;
   try {
     const dataToUpdate: any = {};
-    if (codiceProdotto !== undefined)
-      dataToUpdate.codiceProdotto = codiceProdotto;
-    if (codiceEAN !== undefined) dataToUpdate.codiceEAN = codiceEAN;
     if (titolo !== undefined) dataToUpdate.titolo = titolo;
-    if (immagine !== undefined) dataToUpdate.immagine = immagine;
-    if (url !== undefined) dataToUpdate.url = url;
-    if (stock !== undefined) dataToUpdate.stock = parseInt(stock, 10);
     if (descrizione !== undefined) dataToUpdate.descrizione = descrizione;
-    if (descrizioneBreve !== undefined)
-      dataToUpdate.descrizioneBreve = descrizioneBreve;
-    if (stato !== undefined) dataToUpdate.stato = stato;
     if (prezzo !== undefined) dataToUpdate.prezzo = parseFloat(prezzo);
+    if (immagine !== undefined) dataToUpdate.immagine = immagine;
     if (categoriaId !== undefined) {
       const parsedCategoriaId = parseInt(categoriaId, 10);
       if (isNaN(parsedCategoriaId)) {
