@@ -82,8 +82,7 @@ const CartPage = () => {
         sortOrder: "desc",
       })
       .then((res) => {
-        const data: Product[] =
-          res.data.data || res.data.products || res.data;
+        const data: Product[] = res.data.data || res.data.products || res.data;
         setRelatedProducts(data);
       });
   }, [cartItems]);
