@@ -1,17 +1,36 @@
 import apiService from "./apiService";
 
-// Tipologia dei prodotti
+// Tipologia dei prodotti dalla API (struttura reale)
 export interface Product {
   id: number;
-  name: string;
-  description: string;
-  price: number;
+  titolo: string; // nome del prodotto
+  descrizione: string; // descrizione
+  prezzo: string; // prezzo come stringa
   stock: number;
-  images: string[];
-  categoryId: number;
+  immagine: string; // singola immagine come stringa
   createdAt: string;
   updatedAt: string;
-  variants?: ProductVariant[];
+  categoria: {
+    // array di categorie
+    id: number;
+    name: string;
+    description: string | null;
+    createdAt: string;
+    updatedAt: string;
+    parentId: number | null;
+  }[];
+  varianti?: {
+    // struttura varianti
+    id: number;
+    nome: string;
+    productId: number;
+    valori: {
+      id: number;
+      nome: string;
+      immagine: string;
+      typeId: number;
+    }[];
+  }[];
 }
 
 export interface ProductVariant {
@@ -22,15 +41,36 @@ export interface ProductVariant {
   stock: number;
 }
 
+// Tipo per la risposta paginata dell'API
+export interface PaginatedProductsResponse {
+  data: Product[];
+  totalPages: number;
+  currentPage: number;
+  totalProducts: number;
+}
+
 // API per ottenere i prodotti più recenti
-export async function fetchLatestProducts(limit = 10): Promise<Product[]> {
-  return apiService.get<Product[]>("/products", {
-    params: {
-      limit,
-      sortBy: "createdAt",
-      sortOrder: "desc",
-    },
-  });
+export async function fetchLatestProducts(
+  limit = 10
+): Promise<PaginatedProductsResponse> {
+  console.log("🌐 ProductAPI: Chiamata fetchLatestProducts con limit:", limit);
+  try {
+    const result = await apiService.get<PaginatedProductsResponse>(
+      "/products",
+      {
+        params: {
+          limit,
+          sortBy: "createdAt",
+          sortOrder: "desc",
+        },
+      }
+    );
+    console.log("✅ ProductAPI: Risposta ricevuta:", result);
+    return result;
+  } catch (error) {
+    console.error("❌ ProductAPI: Errore in fetchLatestProducts:", error);
+    throw error;
+  }
 }
 
 // API per ottenere un singolo prodotto

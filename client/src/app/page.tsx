@@ -4,7 +4,11 @@ import React, { useEffect, useState } from "react";
 import ProductCard from "@/components/layout/ProductCard";
 import SearchBar from "@/components/layout/SearchBar";
 import { useRouter } from "next/navigation";
-import { fetchLatestProducts, Product } from "@/api/productApi";
+import {
+  fetchLatestProducts,
+  Product,
+  PaginatedProductsResponse,
+} from "@/api/productApi";
 import { useCartActions } from "@/components/layout/CartProvider";
 import { useLoading } from "@/components/layout/LoadingContext";
 import { useSelector } from "react-redux";
@@ -21,10 +25,10 @@ type LocalProduct = {
 // Funzione per convertire Product API in LocalProduct
 const convertApiProductToLocal = (apiProduct: Product): LocalProduct => ({
   id: apiProduct.id,
-  titolo: apiProduct.name,
-  immagine: apiProduct.images?.[0] || "/file.svg",
-  prezzo: apiProduct.price,
-  categoria: [{ name: `Category ${apiProduct.categoryId}` }], // Placeholder - andrebbe sostituito con il nome reale
+  titolo: apiProduct.titolo, // ✅ Corretto: usa 'titolo'
+  immagine: apiProduct.immagine || "/file.svg", // ✅ Corretto: usa 'immagine'
+  prezzo: parseFloat(apiProduct.prezzo) || 0, // ✅ Corretto: converte stringa in numero
+  categoria: apiProduct.categoria?.map((cat) => ({ name: cat.name })) || [], // ✅ Corretto: usa array categoria
 });
 
 // Tipi locali per il carrello
@@ -86,19 +90,27 @@ export default function Home() {
   // State for page loading
   const [pageLoading, setPageLoading] = useState(false);
   useEffect(() => {
+    console.log("🚀 Homepage: Iniziando caricamento prodotti...");
     setLoading(true);
     fetchLatestProducts(10)
-      .then((data) => {
-        // Converti i dati API in formato locale
-        const products = Array.isArray(data)
-          ? data.map(convertApiProductToLocal)
+      .then((response: PaginatedProductsResponse) => {
+        console.log("✅ Homepage: Dati ricevuti dall'API:", response);
+        // Converti i dati API in formato locale - accediamo alla proprietà data
+        const productsArray = response.data || [];
+        const products = Array.isArray(productsArray)
+          ? productsArray.map(convertApiProductToLocal)
           : [];
+        console.log("🔄 Homepage: Prodotti convertiti:", products);
         setLatestProducts(products);
         setFeaturedProducts(products); // Per ora uguale alle novità
         setBestSellerProducts(products); // Per ora uguale alle novità
         setError("");
+        console.log("✅ Homepage: State aggiornato, prodotti impostati");
       })
-      .catch(() => setError("Errore nel caricamento dei prodotti"))
+      .catch((error) => {
+        console.error("❌ Homepage: Errore caricamento prodotti:", error);
+        setError("Errore nel caricamento dei prodotti");
+      })
       .finally(() => setLoading(false));
   }, [setLoading]);
 
@@ -123,70 +135,79 @@ export default function Home() {
         {/* Featured Products */}
         <h2 className="text-[#0e1a13] text-xl md:text-2xl font-bold leading-tight tracking-[-0.015em] px-2 md:px-4 pb-3 pt-5">
           Prodotti in evidenza
-        </h2>
+        </h2>{" "}
         <div className="flex overflow-x-auto no-scrollbar">
           <div className="flex items-stretch p-2 md:p-4 gap-3">
-            {error ? (
-              <div className="text-red-500 px-4 py-2">{error}</div>
-            ) : featuredProducts.length === 0 ? (
-              <div className="text-gray-500 px-4 py-2">Nessun prodotto</div>
-            ) : (
-              featuredProducts.map((product) => (
-                <ProductCard
-                  key={product.id}
-                  product={{
-                    id: String(product.id),
-                    titolo: product.titolo,
-                    prezzo:
-                      typeof product.prezzo === "number"
-                        ? product.prezzo
-                        : parseFloat(product.prezzo as string) || 0,
-                    immagine: product.immagine || "/file.svg",
-                    categoria: product.categoria?.[0]?.name || "",
-                  }}
-                  isInCart={cartItems.some(
-                    (item: CartItem) =>
-                      String(item.productId) === String(product.id)
-                  )}
-                  onAddToCart={handleAddToCartAdapter}
-                  onClick={() => handleProductClick(product.id)}
-                />
-              ))
-            )}
+            {(() => {
+              console.log(
+                "🖼️ Homepage: Rendering prodotti in evidenza:",
+                featuredProducts
+              );
+              return error ? (
+                <div className="text-red-500 px-4 py-2">{error}</div>
+              ) : featuredProducts.length === 0 ? (
+                <div className="text-gray-500 px-4 py-2">Nessun prodotto</div>
+              ) : (
+                featuredProducts.map((product) => (
+                  <ProductCard
+                    key={product.id}
+                    product={{
+                      id: String(product.id),
+                      titolo: product.titolo,
+                      prezzo:
+                        typeof product.prezzo === "number"
+                          ? product.prezzo
+                          : parseFloat(product.prezzo as string) || 0,
+                      immagine: product.immagine || "/file.svg",
+                      categoria: product.categoria?.[0]?.name || "",
+                    }}
+                    isInCart={cartItems.some(
+                      (item: CartItem) =>
+                        String(item.productId) === String(product.id)
+                    )}
+                    onAddToCart={handleAddToCartAdapter}
+                    onClick={() => handleProductClick(product.id)}
+                  />
+                ))
+              );
+            })()}
           </div>
         </div>
         {/* New Arrivals */}
         <h2 className="text-[#0e1a13] text-xl md:text-2xl font-bold leading-tight tracking-[-0.015em] px-2 md:px-4 pb-3 pt-5">
           Novità
-        </h2>
+        </h2>{" "}
         <div className="flex overflow-x-auto no-scrollbar">
           <div className="flex items-stretch p-2 md:p-4 gap-3">
-            {error ? (
-              <div className="text-red-500 px-4 py-2">{error}</div>
-            ) : latestProducts.length === 0 ? (
-              <div className="text-gray-500 px-4 py-2">Nessun prodotto</div>
-            ) : (
-              latestProducts.map((product) => (
-                <ProductCard
-                  key={product.id}
-                  product={{
-                    id: String(product.id),
-                    titolo: product.titolo,
-                    prezzo:
-                      typeof product.prezzo === "number"
-                        ? product.prezzo
-                        : parseFloat(product.prezzo as string) || 0,
-                    immagine: product.immagine || "/file.svg",
-                    categoria: product.categoria?.[0]?.name || "",
-                  }}
-                  isInCart={cartItems.some(
-                    (item: CartItem) =>
-                      String(item.productId) === String(product.id)
-                  )}
-                  onAddToCart={handleAddToCartAdapter}
-                />
-              ))
-            )}
+            {(() => {
+              console.log("🆕 Homepage: Rendering novità:", latestProducts);
+              return error ? (
+                <div className="text-red-500 px-4 py-2">{error}</div>
+              ) : latestProducts.length === 0 ? (
+                <div className="text-gray-500 px-4 py-2">Nessun prodotto</div>
+              ) : (
+                latestProducts.map((product) => (
+                  <ProductCard
+                    key={product.id}
+                    product={{
+                      id: String(product.id),
+                      titolo: product.titolo,
+                      prezzo:
+                        typeof product.prezzo === "number"
+                          ? product.prezzo
+                          : parseFloat(product.prezzo as string) || 0,
+                      immagine: product.immagine || "/file.svg",
+                      categoria: product.categoria?.[0]?.name || "",
+                    }}
+                    isInCart={cartItems.some(
+                      (item: CartItem) =>
+                        String(item.productId) === String(product.id)
+                    )}
+                    onAddToCart={handleAddToCartAdapter}
+                  />
+                ))
+              );
+            })()}
           </div>
         </div>
         {/* Loader overlay */}

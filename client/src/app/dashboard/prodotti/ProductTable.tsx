@@ -27,31 +27,49 @@ export default function ProductTable({
 
   return (
     <div className="overflow-x-auto">
-      <table className="w-full min-w-[900px] whitespace-nowrap border rounded-xl bg-white">
+      <table className="w-full min-w-[900px] whitespace-nowrap">
         <thead>
           <tr className="bg-[#e8f2ec]">
-            <th className="p-2">ID</th>
-            <th className="p-2">Titolo</th>
-            <th className="p-2">Prezzo</th>
-            <th className="p-2">Categoria</th>
-            <th className="p-2">Immagine</th>
-            <th className="p-2">Stock</th>
-            <th className="p-2">Varianti</th>
-            <th className="p-2">Azioni</th>
+            <th className="p-3 text-left text-sm font-semibold text-gray-600">
+              ID
+            </th>
+            <th className="p-3 text-left text-sm font-semibold text-gray-600">
+              Titolo
+            </th>
+            <th className="p-3 text-left text-sm font-semibold text-gray-600">
+              Prezzo
+            </th>
+            <th className="p-3 text-left text-sm font-semibold text-gray-600">
+              Categoria
+            </th>
+            <th className="p-3 text-left text-sm font-semibold text-gray-600">
+              Immagine
+            </th>
+            <th className="p-3 text-left text-sm font-semibold text-gray-600">
+              Stock
+            </th>
+            <th className="p-3 text-left text-sm font-semibold text-gray-600">
+              Varianti
+            </th>
+            <th className="p-3 text-left text-sm font-semibold text-gray-600">
+              Azioni
+            </th>
           </tr>
         </thead>
-        <tbody>
+        <tbody className="bg-white divide-y divide-gray-200">
           {products.map((p) => (
-            <tr key={p.id} className="border-t hover:bg-[#f3f7f4]">
-              <td className="p-2">{p.id}</td>
-              <td className="p-2">{p.titolo}</td>
-              <td className="p-2">€ {Number(p.prezzo).toFixed(2)}</td>
-              <td className="p-2">
+            <tr key={p.id} className="hover:bg-[#f3f7f4]">
+              <td className="p-3 text-sm text-gray-800">{p.id}</td>
+              <td className="p-3 text-sm text-gray-800">{p.titolo}</td>
+              <td className="p-3 text-sm text-gray-800">
+                € {Number(p.prezzo).toFixed(2)}
+              </td>
+              <td className="p-3 text-sm text-gray-800">
                 {p.categoria && p.categoria.length > 0
                   ? p.categoria.map((c) => c.name).join(", ")
                   : "-"}
               </td>
-              <td className="p-2">
+              <td className="p-3 text-sm text-gray-800">
                 {p.immagine && (
                   <img
                     src={p.immagine}
@@ -60,8 +78,8 @@ export default function ProductTable({
                   />
                 )}
               </td>
-              <td className="p-2">{p.stock ?? 0}</td>
-              <td className="p-2">
+              <td className="p-3 text-sm text-gray-800">{p.stock ?? 0}</td>
+              <td className="p-3 text-sm text-gray-800">
                 {p.varianti && p.varianti.length > 0
                   ? `${p.varianti.length} tipi, ${p.varianti.reduce(
                       (sum, type) => sum + (type.valori?.length || 0),
@@ -69,19 +87,21 @@ export default function ProductTable({
                     )} valori`
                   : "-"}
               </td>
-              <td className="p-2 flex gap-2">
-                <button
-                  className="bg-blue-600 text-white px-2 py-1 rounded text-xs"
-                  onClick={() => onEdit(p)}
-                >
-                  Modifica
-                </button>
-                <button
-                  className="bg-red-600 text-white px-2 py-1 rounded text-xs"
-                  onClick={() => onDelete(p.id)}
-                >
-                  Elimina
-                </button>
+              <td className="p-3 text-sm text-gray-800">
+                <div className="flex items-center gap-2">
+                  <button
+                    className="bg-blue-600 text-white px-3 py-1 rounded text-xs font-semibold"
+                    onClick={() => onEdit(p)}
+                  >
+                    Modifica
+                  </button>
+                  <button
+                    className="bg-red-600 text-white px-3 py-1 rounded text-xs font-semibold"
+                    onClick={() => onDelete(p.id)}
+                  >
+                    Elimina
+                  </button>
+                </div>
               </td>
             </tr>
           ))}

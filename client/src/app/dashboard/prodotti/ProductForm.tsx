@@ -1,7 +1,8 @@
 "use client";
-import React, { useState, useEffect } from "react";
+import React, { useEffect } from "react";
 import { Product, ProductFormData } from "./types";
 import VariantsForm from "./VariantsForm";
+import { FiX } from "react-icons/fi";
 
 interface ProductFormProps {
   product: Product | null;
@@ -22,7 +23,6 @@ export default function ProductForm({
   formLoading,
   categories,
 }: ProductFormProps) {
-  // Log delle varianti all'avvio del componente
   useEffect(() => {
     console.log("ProductForm initialized with variants:", formData.varianti);
   }, [formData.varianti]);
@@ -32,9 +32,11 @@ export default function ProductForm({
       HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
     >
   ) => {
-    const { name, value, type, files } = e.target as HTMLInputElement;
-    if (type === "file" && files && files[0]) {
-      onFormChange({ ...formData, imageFile: files[0] });
+    const { name, value, type } = e.target;
+    const target = e.target as HTMLInputElement;
+
+    if (type === "file" && target.files && target.files[0]) {
+      onFormChange({ ...formData, [name]: target.files[0] });
     } else if (name === "categoriaId") {
       onFormChange({
         ...formData,
@@ -65,154 +67,226 @@ export default function ProductForm({
 
   return (
     <form
-      className="bg-white rounded-lg shadow-lg max-w-lg w-full p-6 relative max-h-[90vh] overflow-y-auto my-4 flex flex-col"
+      className="bg-white rounded-lg w-full flex flex-col overflow-auto"
       onSubmit={onSubmit}
+      noValidate
     >
-      <button
-        type="button"
-        className="absolute top-2 right-2 text-gray-500 hover:text-gray-800 p-2 rounded-full focus:outline-none focus:ring-2 focus:ring-[#51946b]"
-        onClick={onCancel}
-        aria-label="Chiudi"
-      >
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          fill="none"
-          viewBox="0 0 24 24"
-          strokeWidth={2}
-          stroke="currentColor"
-          className="w-5 h-5"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            d="M6 18L18 6M6 6l12 12"
-          />
-        </svg>
-      </button>
-      <h3 className="text-xl font-bold mb-4">
-        {product ? "Modifica prodotto" : "Nuovo prodotto"}
-      </h3>
-      <div className="mb-2">
-        <label className="block text-sm font-medium mb-1">Titolo</label>
-        <input
-          name="titolo"
-          className="w-full border rounded px-3 py-2"
-          value={formData.titolo || ""}
-          onChange={handleInputChange}
-          required
-        />
-      </div>
-      <div className="mb-2">
-        <label className="block text-sm font-medium mb-1">Prezzo</label>
-        <input
-          name="prezzo"
-          type="number"
-          step="0.01"
-          className="w-full border rounded px-3 py-2"
-          value={formData.prezzo || ""}
-          onChange={handleInputChange}
-          required
-        />
-      </div>
-      <div className="mb-2">
-        <label className="block text-sm font-medium mb-1">Immagine</label>
-        <input
-          name="immagine"
-          className="w-full border rounded px-3 py-2 mb-1"
-          value={formData.immagine || ""}
-          onChange={handleInputChange}
-          placeholder="URL immagine o carica file"
-          required
-        />
-        <input
-          type="file"
-          accept="image/*"
-          className="w-full border rounded px-3 py-2"
-          onChange={handleInputChange}
-          required={!formData.immagine}
-        />
-        {formData.immagine && (
-          <img
-            src={formData.immagine}
-            alt="preview"
-            className="h-16 mt-2 rounded"
-          />
-        )}
-      </div>
-      <div className="mb-2">
-        <label className="block text-sm font-medium mb-1">Descrizione</label>
-        <textarea
-          name="descrizione"
-          className="w-full border rounded px-3 py-2"
-          value={formData.descrizione || ""}
-          onChange={handleInputChange}
-          required
-        />
-      </div>
-      <div className="mb-2">
-        <label className="block text-sm font-medium mb-1">Categoria</label>
-        <select
-          name="categoriaId"
-          className="w-full border rounded px-3 py-2"
-          value={formData.categoriaId || ""}
-          onChange={handleInputChange}
-          required
-        >
-          <option value="">Seleziona categoria</option>
-          {categories.map((cat) => (
-            <option key={cat.id} value={cat.id}>
-              {cat.name}
-            </option>
-          ))}
-        </select>
-      </div>{" "}
-      <div className="mb-2">
-        <label className="block text-sm font-medium mb-1">Stock</label>
-        <input
-          name="stock"
-          type="number"
-          min="0"
-          className="w-full border rounded px-3 py-2"
-          value={formData.stock ?? 0}
-          onChange={handleInputChange}
-          required
-        />
-      </div>
-      <VariantsForm
-        variants={formData.varianti || []}
-        onChange={handleVariantsChange}
-        onImageUpload={handleVariantImageUpload}
-      />
-      <div className="sticky bottom-0 bg-white pt-4 border-t mt-4">
+      {/* Form Header */}
+      <div className="flex justify-between items-center p-4 border-b sticky top-0 bg-white z-10">
+        <h3 className="text-xl font-bold text-gray-800">
+          {product ? "Modifica Prodotto" : "Nuovo Prodotto"}
+        </h3>
         <button
-          type="submit"
-          className="w-full bg-[#51946b] text-white font-semibold py-2 rounded flex items-center justify-center"
-          disabled={formLoading}
+          type="button"
+          className="text-gray-500 hover:text-gray-800 p-2 rounded-full focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#51946b]"
+          onClick={onCancel}
+          aria-label="Chiudi"
         >
-          {formLoading ? (
-            <svg
-              className="animate-spin h-5 w-5 mr-2 text-white"
-              xmlns="http://www.w3.org/2000/svg"
-              fill="none"
-              viewBox="0 0 24 24"
-            >
-              <circle
-                className="opacity-25"
-                cx="12"
-                cy="12"
-                r="10"
-                stroke="currentColor"
-                strokeWidth="4"
-              ></circle>
-              <path
-                className="opacity-75"
-                fill="currentColor"
-                d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
-              ></path>
-            </svg>
-          ) : null}
-          Salva
+          <FiX className="w-6 h-6" />
         </button>
+      </div>
+
+      {/* Form Content */}
+      <div className="p-6 flex-grow">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Titolo */}
+          <div className="md:col-span-2">
+            <label
+              htmlFor="titolo"
+              className="block text-sm font-medium mb-1 text-gray-700"
+            >
+              Titolo
+            </label>
+            <input
+              id="titolo"
+              name="titolo"
+              className="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-[#51946b] focus:outline-none"
+              value={formData.titolo || ""}
+              onChange={handleInputChange}
+              required
+            />
+          </div>
+
+          {/* Prezzo e Stock */}
+          <div>
+            <label
+              htmlFor="prezzo"
+              className="block text-sm font-medium mb-1 text-gray-700"
+            >
+              Prezzo
+            </label>
+            <input
+              id="prezzo"
+              name="prezzo"
+              type="number"
+              step="0.01"
+              className="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-[#51946b] focus:outline-none"
+              value={formData.prezzo || ""}
+              onChange={handleInputChange}
+              required
+            />
+          </div>
+          <div>
+            <label
+              htmlFor="stock"
+              className="block text-sm font-medium mb-1 text-gray-700"
+            >
+              Stock
+            </label>
+            <input
+              id="stock"
+              name="stock"
+              type="number"
+              min="0"
+              className="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-[#51946b] focus:outline-none"
+              value={formData.stock ?? 0}
+              onChange={handleInputChange}
+              required
+            />
+          </div>
+
+          {/* Categoria */}
+          <div className="md:col-span-2">
+            <label
+              htmlFor="categoriaId"
+              className="block text-sm font-medium mb-1 text-gray-700"
+            >
+              Categoria
+            </label>
+            <select
+              id="categoriaId"
+              name="categoriaId"
+              className="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-[#51946b] focus:outline-none"
+              value={formData.categoriaId || ""}
+              onChange={handleInputChange}
+              required
+            >
+              <option value="">Seleziona una categoria</option>
+              {categories.map((cat) => (
+                <option key={cat.id} value={cat.id}>
+                  {cat.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Descrizione */}
+          <div className="md:col-span-2">
+            <label
+              htmlFor="descrizione"
+              className="block text-sm font-medium mb-1 text-gray-700"
+            >
+              Descrizione
+            </label>
+            <textarea
+              id="descrizione"
+              name="descrizione"
+              rows={5}
+              className="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-[#51946b] focus:outline-none"
+              value={formData.descrizione || ""}
+              onChange={handleInputChange}
+            />
+          </div>
+
+          {/* Immagine */}
+          <div className="md:col-span-2">
+            <label className="block text-sm font-medium mb-1 text-gray-700">
+              Immagine Principale
+            </label>
+            <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md">
+              <div className="space-y-1 text-center">
+                {formData.imageFile ? (
+                  <p className="text-sm text-gray-600">
+                    {formData.imageFile.name}
+                  </p>
+                ) : (
+                  formData.immagine && (
+                    <img
+                      src={formData.immagine}
+                      alt="Preview"
+                      className="mx-auto h-24 w-auto rounded-md"
+                    />
+                  )
+                )}
+                <div className="flex text-sm text-gray-600">
+                  <label
+                    htmlFor="imageFile"
+                    className="relative cursor-pointer bg-white rounded-md font-medium text-[#51946b] hover:text-[#3d7a57] focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-[#51946b]"
+                  >
+                    <span>Carica un file</span>
+                    <input
+                      id="imageFile"
+                      name="imageFile"
+                      type="file"
+                      className="sr-only"
+                      onChange={handleInputChange}
+                      accept="image/*"
+                    />
+                  </label>
+                  <p className="pl-1">o incolla un URL</p>
+                </div>
+                <input
+                  name="immagine"
+                  className="w-full border rounded-lg px-3 py-1 mt-2 text-sm"
+                  value={formData.immagine || ""}
+                  onChange={handleInputChange}
+                  placeholder="https://example.com/image.jpg"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Varianti */}
+          <div className="md:col-span-2">
+            <VariantsForm
+              variants={formData.varianti || []}
+              onChange={handleVariantsChange}
+              onImageUpload={handleVariantImageUpload}
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Form Footer */}
+      <div className="p-4 border-t bg-white z-10 md:sticky md:bottom-0">
+        <div className="flex justify-end gap-4">
+          <button
+            type="button"
+            onClick={onCancel}
+            className="px-4 py-2 bg-gray-200 text-gray-800 font-semibold rounded-lg hover:bg-gray-300 transition-colors"
+          >
+            Annulla
+          </button>
+          <button
+            type="submit"
+            className="w-full md:w-auto bg-[#51946b] text-white font-semibold py-2 px-6 rounded-lg flex items-center justify-center hover:bg-opacity-90 transition-colors disabled:bg-gray-400"
+            disabled={formLoading}
+          >
+            {formLoading ? (
+              <svg
+                className="animate-spin h-5 w-5 mr-3 text-white"
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+              >
+                <circle
+                  className="opacity-25"
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  strokeWidth="4"
+                ></circle>
+                <path
+                  className="opacity-75"
+                  fill="currentColor"
+                  d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+                ></path>
+              </svg>
+            ) : null}
+            {product ? "Salva Modifiche" : "Crea Prodotto"}
+          </button>
+        </div>
       </div>
     </form>
   );

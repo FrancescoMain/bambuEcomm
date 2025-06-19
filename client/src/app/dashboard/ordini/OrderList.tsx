@@ -1,7 +1,10 @@
 "use client";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import { useSelector } from "react-redux";
 import { RootState } from "@/redux/store";
+import OrderCard from "./OrderCard";
+import OrderDetailModal from "./OrderDetailModal";
+import { FiSearch } from "react-icons/fi";
 
 export interface Order {
   id: string;
@@ -31,12 +34,7 @@ export default function OrderList() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
-  const [editStatus, setEditStatus] = useState<string>("");
-  const [saving, setSaving] = useState(false);
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(
-    null
-  );
-  const [detailOrder, setDetailOrder] = useState<Order | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
     const fetchOrders = async () => {
@@ -51,296 +49,201 @@ export default function OrderList() {
         });
         if (!res.ok) throw new Error("Errore nel recupero ordini");
         const data = await res.json();
-        // Mappa i dati per supportare guest e user
         const mapped = (data.data || data.orders || []).map(
-          (order: Record<string, unknown>): Order => ({
-            id: String(order.id),
-            createdAt: String(order.createdAt),
-            status: String(order.status),
-            total: Number(order.totalAmount),
-            customerName:
-              order.user &&
-              typeof order.user === "object" &&
-              "name" in order.user &&
-              order.user.name
-                ? String((order.user as { name?: string }).name)
-                : (
-                    String(order.nome || "") +
-                    (order.cognome ? " " + String(order.cognome) : "")
-                  ).trim() || "Guest",
-            customerEmail:
-              order.user &&
-              typeof order.user === "object" &&
-              "email" in order.user &&
-              order.user.email
-                ? String((order.user as { email?: string }).email)
-                : String(order.guestEmail || ""),
-            orderItems: Array.isArray(order.orderItems)
-              ? order.orderItems.map((item: unknown) => {
-                  const oi = item as Record<string, unknown>;
-                  return {
-                    id: Number(oi.id),
-                    product:
-                      oi.product &&
-                      typeof oi.product === "object" &&
-                      "titolo" in oi.product
-                        ? {
-                            titolo: String(
-                              (oi.product as { titolo?: string }).titolo
-                            ),
-                          }
+          (order: Record<string, unknown>): Order => {
+            const user = order.user as
+              | { name?: string; email?: string }
+              | undefined;
+            const guestName = [order.nome, order.cognome]
+              .filter(Boolean)
+              .join(" ");
+
+            return {
+              id: String(order.id),
+              createdAt: String(order.createdAt),
+              status: String(order.status),
+              total: Number(order.totalAmount),
+              customerName: user?.name || guestName || "Guest",
+              customerEmail: user?.email || String(order.guestEmail || "N/A"),
+              orderItems: Array.isArray(order.orderItems)
+                ? order.orderItems.map((item: unknown) => {
+                    const oi = item as Record<string, unknown>;
+                    const product = oi.product as
+                      | { titolo?: string }
+                      | undefined;
+                    return {
+                      id: Number(oi.id),
+                      product: product
+                        ? { titolo: String(product.titolo) }
                         : undefined,
-                    quantity: Number(oi.quantity),
-                    priceAtPurchase: oi.priceAtPurchase as number | string,
-                  };
-                })
-              : [],
-            via: order.via ? String(order.via) : undefined,
-            numero: order.numero ? String(order.numero) : undefined,
-            cap: order.cap ? String(order.cap) : undefined,
-            citta: order.citta ? String(order.citta) : undefined,
-            stato: order.stato ? String(order.stato) : undefined,
-            telefono: order.telefono ? String(order.telefono) : undefined,
-            note: order.note ? String(order.note) : undefined,
-          })
+                      quantity: Number(oi.quantity),
+                      priceAtPurchase: oi.priceAtPurchase as number | string,
+                    };
+                  })
+                : [],
+              via: String(order.via || ""),
+              numero: String(order.numero || ""),
+              cap: String(order.cap || ""),
+              citta: String(order.citta || ""),
+              stato: String(order.stato || ""),
+              telefono: String(order.telefono || ""),
+              note: String(order.note || ""),
+            };
+          }
         );
         setOrders(mapped);
       } catch (err) {
-        setError("Errore nel recupero ordini");
+        setError(
+          err instanceof Error ? err.message : "An unknown error occurred"
+        );
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     };
-    fetchOrders();
+
+    if (token) {
+      fetchOrders();
+    }
   }, [token]);
 
-  const handleEdit = (order: Order) => {
-    setSelectedOrder(order);
-    setEditStatus(order.status);
-  };
-
-  const handleDelete = async (orderId: string) => {
-    setShowDeleteConfirm(orderId);
-  };
-
-  const confirmDelete = async (orderId: string) => {
+  const handleUpdateStatus = async (orderId: string, newStatus: string) => {
     try {
       const apiUrl =
         process.env.NEXT_PUBLIC_API_URL ||
         "https://bambu-ecomm-in2g.vercel.app/api";
-      const res = await fetch(`${apiUrl}/orders/${orderId}`, {
-        method: "DELETE",
-        headers: token ? { Authorization: `Bearer ${token}` } : undefined,
-      });
-      if (!res.ok) throw new Error("Errore eliminazione ordine");
-      setOrders((prev) => prev.filter((o) => o.id !== orderId));
-      setShowDeleteConfirm(null);
-    } catch {
-      alert("Errore durante l'eliminazione");
-      setShowDeleteConfirm(null);
-    }
-  };
-
-  const handleSave = async () => {
-    if (!selectedOrder) return;
-    setSaving(true);
-    try {
-      const apiUrl =
-        process.env.NEXT_PUBLIC_API_URL ||
-        "https://bambu-ecomm-in2g.vercel.app/api";
-      const res = await fetch(`${apiUrl}/orders/${selectedOrder.id}`, {
+      const res = await fetch(`${apiUrl}/orders/${orderId}/status`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ status: editStatus }),
+        body: JSON.stringify({ status: newStatus }),
       });
-      if (!res.ok) throw new Error("Errore aggiornamento ordine");
-      setOrders((prev) =>
-        prev.map((o) =>
-          o.id === selectedOrder.id ? { ...o, status: editStatus } : o
+      if (!res.ok) throw new Error("Failed to update status");
+      setOrders((prevOrders) =>
+        prevOrders.map((o) =>
+          o.id === orderId ? { ...o, status: newStatus } : o
         )
       );
-      setSelectedOrder(null);
-    } catch {
-      alert("Errore durante il salvataggio");
+    } catch (error) {
+      console.error("Error updating status:", error);
+      // Optionally show an error message to the user
     }
-    setSaving(false);
   };
 
-  // Stato ordine: traduzione IT
-  const statoLabel = (status: string) => {
-    switch (status) {
-      case "PAID":
-        return "Pagato";
-      case "SHIPPED":
-        return "Spedito";
-      case "CANCELLED":
-        return "Cancellato";
-      default:
-        return status;
-    }
-  };
+  const filteredOrders = useMemo(() => {
+    return orders.filter(
+      (order) =>
+        order.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        order.customerName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        order.customerEmail.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+  }, [orders, searchQuery]);
 
   if (loading) return <div>Caricamento ordini...</div>;
-  if (error) return <div className="text-red-600">{error}</div>;
+  if (error) return <div className="text-red-500">Errore: {error}</div>;
 
   return (
-    <div>
-      <h2 className="text-xl font-bold mb-4">Ordini</h2>
-      <div className="w-full overflow-x-auto">
-        <div className="max-h-[60vh] overflow-y-auto rounded-xl border border-[#dce5df] bg-white">
-          <table className="w-full min-w-[700px] whitespace-nowrap">
-            <thead>
-              <tr className="bg-[#e8f2ec]">
-                <th className="p-2">ID</th>
-                <th className="p-2">Data</th>
-                <th className="p-2">Cliente</th>
-                <th className="p-2">Email</th>
-                <th className="p-2">Totale</th>
-                <th className="p-2">Stato</th>
-                <th className="p-2">Azioni</th>
-              </tr>
-            </thead>
-            <tbody>
-              {orders.map((order) => (
-                <tr
-                  key={order.id}
-                  className="border-t cursor-pointer hover:bg-[#f3f7f4]"
-                  onClick={() => setDetailOrder(order)}
-                >
-                  <td className="p-2">{order.id}</td>
-                  <td className="p-2">
-                    {new Date(order.createdAt).toLocaleString()}
-                  </td>
-                  <td className="p-2">{order.customerName}</td>
-                  <td className="p-2">{order.customerEmail}</td>
-                  <td className="p-2">€ {order.total.toFixed(2)}</td>
-                  <td className="p-2">{statoLabel(order.status)}</td>
-                  <td className="p-2 flex gap-2">
-                    {selectedOrder?.id === order.id ? (
-                      <>
-                        <button
-                          className="bg-green-600 text-white px-2 py-1 rounded text-xs"
-                          onClick={handleSave}
-                          disabled={saving}
-                        >
-                          Salva
-                        </button>
-                        <button
-                          className="bg-gray-300 text-gray-700 px-2 py-1 rounded text-xs"
-                          onClick={() => setSelectedOrder(null)}
-                        >
-                          Annulla
-                        </button>
-                      </>
-                    ) : (
-                      <>
-                        <button
-                          className="bg-blue-600 text-white px-2 py-1 rounded text-xs"
-                          onClick={() => handleEdit(order)}
-                        >
-                          Modifica
-                        </button>
-                        <button
-                          className="bg-red-600 text-white px-2 py-1 rounded text-xs"
-                          onClick={() => handleDelete(order.id)}
-                        >
-                          Elimina
-                        </button>
-                      </>
-                    )}
-                    {showDeleteConfirm === order.id && (
-                      <div className="fixed inset-0 flex items-center justify-center z-50 bg-black bg-opacity-30">
-                        <div className="bg-white p-6 rounded shadow-lg flex flex-col items-center">
-                          <div className="mb-4 text-lg font-semibold">
-                            Sei sicuro di voler eliminare questo ordine?
-                          </div>
-                          <div className="flex gap-4">
-                            <button
-                              className="bg-red-600 text-white px-4 py-2 rounded"
-                              onClick={() => confirmDelete(order.id)}
-                            >
-                              Conferma
-                            </button>
-                            <button
-                              className="bg-gray-300 text-gray-700 px-4 py-2 rounded"
-                              onClick={() => setShowDeleteConfirm(null)}
-                            >
-                              Annulla
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+    <div className="container mx-auto px-4 py-8">
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold text-gray-800">Gestione Ordini</h1>
+        <div className="relative mt-4">
+          <FiSearch className="absolute top-1/2 left-3 -translate-y-1/2 text-gray-400" />
+          <input
+            type="text"
+            placeholder="Cerca per ID, nome o email..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#51946b] focus:outline-none"
+          />
         </div>
       </div>
-      {/* Modale dettaglio ordine */}
-      {detailOrder && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
-          <div className="bg-white rounded-lg shadow-lg max-w-2xl w-full p-6 relative">
-            <button
-              className="absolute top-2 right-2 text-gray-500 hover:text-gray-800"
-              onClick={() => setDetailOrder(null)}
-            >
-              &times;
-            </button>
-            <h3 className="text-xl font-bold mb-2">
-              Dettaglio Ordine #{detailOrder.id}
-            </h3>
-            <div className="mb-2 text-sm text-gray-700">
-              Data: {new Date(detailOrder.createdAt).toLocaleString()}
-            </div>
-            <div className="mb-2 text-sm text-gray-700">
-              Stato: {statoLabel(detailOrder.status)}
-            </div>
-            <div className="mb-2 text-sm text-gray-700">
-              Cliente: {detailOrder.customerName}
-            </div>
-            <div className="mb-2 text-sm text-gray-700">
-              Email: {detailOrder.customerEmail}
-            </div>
-            {/* Mostra prodotti */}
-            {detailOrder.orderItems && detailOrder.orderItems.length > 0 && (
-              <div className="mb-4">
-                <div className="font-semibold mb-1">Prodotti:</div>
-                <ul className="list-disc pl-5">
-                  {detailOrder.orderItems.map((item) => (
-                    <li key={item.id} className="mb-1">
-                      {item.product?.titolo || "Prodotto"} x{item.quantity}{" "}
-                      &ndash; €{Number(item.priceAtPurchase).toFixed(2)}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-            {/* Mostra indirizzo se presente */}
-            {detailOrder.via && (
-              <div className="mb-2 text-sm text-gray-700">
-                Indirizzo: {detailOrder.via} {detailOrder.numero},{" "}
-                {detailOrder.cap} {detailOrder.citta} ({detailOrder.stato})
-              </div>
-            )}
-            {detailOrder.telefono && (
-              <div className="mb-2 text-sm text-gray-700">
-                Telefono: {detailOrder.telefono}
-              </div>
-            )}
-            {detailOrder.note && (
-              <div className="mb-2 text-sm text-gray-700">
-                Note: {detailOrder.note}
-              </div>
-            )}
-            <div className="mt-4 font-bold text-lg">
-              Totale: € {detailOrder.total.toFixed(2)}
-            </div>
-          </div>
-        </div>
+
+      {/* Mobile View */}
+      <div className="lg:hidden">
+        {filteredOrders.map((order) => (
+          <OrderCard
+            key={order.id}
+            order={order}
+            onViewDetails={() => setSelectedOrder(order)}
+          />
+        ))}
+      </div>
+
+      {/* Desktop View */}
+      <div className="hidden lg:block bg-white shadow-md rounded-lg overflow-x-auto">
+        <table className="min-w-full divide-y divide-gray-200">
+          <thead className="bg-gray-50">
+            <tr>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                ID Ordine
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Cliente
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Data
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Stato
+              </th>
+              <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Totale
+              </th>
+              <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Azioni
+              </th>
+            </tr>
+          </thead>
+          <tbody className="bg-white divide-y divide-gray-200">
+            {filteredOrders.map((order) => (
+              <tr key={order.id} className="hover:bg-gray-50">
+                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                  #{order.id}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                  {order.customerName}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  {new Date(order.createdAt).toLocaleDateString("it-IT")}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap">
+                  <span
+                    className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                      selectedOrder?.id === order.id
+                        ? "bg-blue-100 text-blue-800"
+                        : "bg-green-100 text-green-800"
+                    }`}
+                  >
+                    {order.status}
+                  </span>
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                  {new Intl.NumberFormat("it-IT", {
+                    style: "currency",
+                    currency: "EUR",
+                  }).format(order.total)}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
+                  <button
+                    onClick={() => setSelectedOrder(order)}
+                    className="text-[#51946b] hover:text-[#3d7a57] transition-colors"
+                  >
+                    Vedi Dettagli
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {selectedOrder && (
+        <OrderDetailModal
+          order={selectedOrder}
+          onClose={() => setSelectedOrder(null)}
+          onUpdateStatus={handleUpdateStatus}
+        />
       )}
     </div>
   );

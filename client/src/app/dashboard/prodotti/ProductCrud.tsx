@@ -9,6 +9,7 @@ import { ProductService } from "./ProductService";
 import ProductTable from "./ProductTable";
 import ProductForm from "./ProductForm";
 import ProductFilters from "./ProductFilters";
+import ProductCard from "./ProductCard";
 import Pagination from "./Pagination";
 
 export default function ProductCrud() {
@@ -33,6 +34,20 @@ export default function ProductCrud() {
   const [totalPages, setTotalPages] = useState(1);
   // Inizializza il servizio prodotti
   const productService = new ProductService(token || undefined);
+
+  useEffect(() => {
+    // Blocca lo scroll del body quando la modale è aperta
+    if (showForm) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "unset";
+    }
+
+    // Funzione di cleanup per ripristinare lo scroll quando il componente viene smontato
+    return () => {
+      document.body.style.overflow = "unset";
+    };
+  }, [showForm]);
 
   useEffect(() => {
     const delayDebounce = setTimeout(() => {
@@ -171,19 +186,37 @@ export default function ProductCrud() {
     setPage(newPage);
   };
 
+  if (showForm) {
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
+        <div className="w-full max-w-4xl max-h-[95vh] bg-white rounded-lg shadow-xl flex flex-col overflow-hidden">
+          <ProductForm
+            product={editProduct}
+            formData={form}
+            onFormChange={handleFormChange}
+            onSubmit={handleFormSubmit}
+            onCancel={handleCancel}
+            formLoading={formLoading}
+            categories={parentCategories}
+          />
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="p-4">
-      <div className="flex justify-between items-center mb-4">
-        <h2 className="text-xl font-bold">Prodotti</h2>
+      <div className="flex flex-col md:flex-row md:justify-between md:items-center mb-4 gap-4">
+        <h2 className="text-2xl font-bold">Prodotti</h2>
         <button
-          className="bg-[#51946b] text-white px-4 py-2 rounded font-semibold"
+          className="w-full md:w-auto bg-[#51946b] text-white px-4 py-2 rounded-lg font-semibold hover:bg-opacity-90 transition-colors shadow-sm"
           onClick={() => {
             setShowForm(true);
             setEditProduct(null);
             setForm({ stock: 0, varianti: [] });
           }}
         >
-          + Nuovo prodotto
+          + Nuovo Prodotto
         </button>
       </div>
       <ProductFilters
@@ -195,31 +228,35 @@ export default function ProductCrud() {
         onSortOrderChange={handleSortOrderChange}
         categories={parentCategories}
       />
-      <ProductTable
-        products={products}
-        loading={loading}
-        error={error}
-        onEdit={handleEdit}
-        onDelete={handleDelete}
-      />
+
+      {/* Vista a Griglia per Mobile */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 lg:hidden">
+        {products.map((product) => (
+          <ProductCard
+            key={product.id}
+            product={product}
+            onEdit={handleEdit}
+            onDelete={handleDelete}
+          />
+        ))}
+      </div>
+
+      {/* Vista a Tabella per Desktop */}
+      <div className="hidden lg:block">
+        <ProductTable
+          products={products}
+          loading={loading}
+          error={error}
+          onEdit={handleEdit}
+          onDelete={handleDelete}
+        />
+      </div>
+
       <Pagination
         currentPage={page}
         totalPages={totalPages}
         onPageChange={handlePageChange}
       />
-      {showForm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40 overflow-auto py-8">
-          <ProductForm
-            product={editProduct}
-            formData={form}
-            onFormChange={handleFormChange}
-            onSubmit={handleFormSubmit}
-            onCancel={handleCancel}
-            formLoading={formLoading}
-            categories={parentCategories}
-          />
-        </div>
-      )}{" "}
     </div>
   );
 }

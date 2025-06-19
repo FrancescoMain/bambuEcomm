@@ -123,62 +123,60 @@ export default function VariantsForm({
               key={variantType.id || `new-type-${typeIndex}`}
               className="border rounded p-3 bg-gray-50"
             >
-              <div
-                className="flex items-center mb-2 cursor-pointer"
-                onClick={() => toggleVariantExpanded(typeIndex)}
-              >
-                <div className="flex-grow">
-                  <div className="flex items-center">
-                    <span className="mr-2 text-gray-500">
-                      {expandedVariants[typeIndex] ? (
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          strokeWidth={1.5}
-                          stroke="currentColor"
-                          className="w-4 h-4"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            d="m4.5 15.75 7.5-7.5 7.5 7.5"
-                          />
-                        </svg>
-                      ) : (
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          strokeWidth={1.5}
-                          stroke="currentColor"
-                          className="w-4 h-4"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            d="m19.5 8.25-7.5 7.5-7.5-7.5"
-                          />
-                        </svg>
-                      )}
-                    </span>
-                    <input
-                      type="text"
-                      className="flex-grow border rounded px-2 py-1 mr-2"
-                      placeholder="Nome tipo (es. Colore, Taglia)"
-                      value={variantType.nome || ""}
-                      onChange={(e) => {
-                        e.stopPropagation();
-                        handleVariantTypeChange(typeIndex, e.target.value);
-                      }}
-                      onClick={(e) => e.stopPropagation()}
-                      required
-                    />
-                  </div>
+              <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2 mb-2">
+                <div
+                  className="flex-grow flex items-center cursor-pointer"
+                  onClick={() => toggleVariantExpanded(typeIndex)}
+                >
+                  <span className="mr-2 text-gray-500">
+                    {expandedVariants[typeIndex] ? (
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        strokeWidth={1.5}
+                        stroke="currentColor"
+                        className="w-4 h-4"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="m4.5 15.75 7.5-7.5 7.5 7.5"
+                        />
+                      </svg>
+                    ) : (
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        strokeWidth={1.5}
+                        stroke="currentColor"
+                        className="w-4 h-4"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="m19.5 8.25-7.5 7.5-7.5-7.5"
+                        />
+                      </svg>
+                    )}
+                  </span>
+                  <input
+                    type="text"
+                    className="flex-grow border rounded px-2 py-1"
+                    placeholder="Nome tipo (es. Colore, Taglia)"
+                    value={variantType.nome || ""}
+                    onChange={(e) => {
+                      e.stopPropagation();
+                      handleVariantTypeChange(typeIndex, e.target.value);
+                    }}
+                    onClick={(e) => e.stopPropagation()}
+                    required
+                  />
                 </div>
                 <button
                   type="button"
-                  className="bg-red-600 text-white px-2 py-1 rounded text-xs"
+                  className="bg-red-600 text-white px-2 py-1 rounded text-xs w-full md:w-auto flex-shrink-0"
                   onClick={(e) => {
                     e.stopPropagation();
                     handleRemoveVariantType(typeIndex);
@@ -208,12 +206,12 @@ export default function VariantsForm({
                           key={
                             value.id || `new-value-${typeIndex}-${valueIndex}`
                           }
-                          className="flex items-start border-b pb-2"
+                          className="flex flex-col md:flex-row items-start gap-2 border-b pb-2"
                         >
-                          <div className="flex-grow">
+                          <div className="flex-grow w-full space-y-2">
                             <input
                               type="text"
-                              className="w-full border rounded px-2 py-1 mb-1"
+                              className="w-full border rounded px-2 py-1"
                               placeholder="Nome valore (es. Rosso, XL)"
                               value={value.nome || ""}
                               onChange={(e) =>
@@ -227,7 +225,7 @@ export default function VariantsForm({
                               required
                             />
 
-                            <div className="flex items-center">
+                            <div className="flex flex-col sm:flex-row items-center gap-2">
                               <input
                                 type="text"
                                 className="w-full border rounded px-2 py-1 text-xs"
@@ -242,11 +240,13 @@ export default function VariantsForm({
                                   )
                                 }
                               />
-                              <span className="mx-1 text-xs">o</span>
+                              <span className="mx-1 text-xs hidden sm:inline">
+                                o
+                              </span>
                               <input
                                 type="file"
                                 accept="image/*"
-                                className="text-xs"
+                                className="text-xs w-full sm:w-auto"
                                 onChange={(e) => {
                                   if (e.target.files && e.target.files[0]) {
                                     handleVariantValueImageUpload(
@@ -270,7 +270,7 @@ export default function VariantsForm({
 
                           <button
                             type="button"
-                            className="bg-red-500 text-white px-2 py-1 rounded text-xs ml-2"
+                            className="bg-red-500 text-white px-2 py-1 rounded text-xs w-full md:w-auto flex-shrink-0"
                             onClick={() =>
                               handleRemoveVariantValue(typeIndex, valueIndex)
                             }
