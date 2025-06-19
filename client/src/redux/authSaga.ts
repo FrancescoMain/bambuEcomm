@@ -1,4 +1,13 @@
-import { call, put, takeLatest, all, select } from "redux-saga/effects";
+import {
+  call,
+  put,
+  takeLatest,
+  all,
+  select,
+  SelectEffect,
+  CallEffect,
+  PutEffect,
+} from "redux-saga/effects";
 import { PayloadAction } from "@reduxjs/toolkit";
 import {
   loginRequest,
@@ -19,13 +28,36 @@ import authService from "../api/authService";
 import { User } from "./authSlice";
 import { RootState } from "./store";
 
+// Tipi per gli effetti saga
+type AuthEffect = CallEffect | PutEffect | SelectEffect;
+
+// Interfacce per le risposte delle API
+interface LoginResponse {
+  user: User;
+  token: string;
+}
+
+interface RegisterResponse {
+  user: User;
+}
+
+interface GetCurrentUserResponse {
+  user: User;
+}
+
 // Selector per ottenere il token dallo stato
 const getToken = (state: RootState) => state.auth.token;
+
+// Tipo per la risposta del login
+interface LoginResponse {
+  user: User;
+  token: string;
+}
 
 // --- SAGA WORKERS ---
 function* handleLogin(
   action: PayloadAction<{ email: string; password: string }>
-) {
+): Generator<AuthEffect, void, LoginResponse> {
   try {
     // Utilizziamo authService per gestire il login
     const response = yield call(
@@ -54,7 +86,7 @@ function* handleLogin(
 
 function* handleRegister(
   action: PayloadAction<{ name: string; email: string; password: string }>
-) {
+): Generator<AuthEffect, void, RegisterResponse> {
   try {
     // Utilizziamo authService
     const response = yield call(
@@ -70,7 +102,7 @@ function* handleRegister(
   }
 }
 
-function* handleGetCurrentUser() {
+function* handleGetCurrentUser(): Generator<AuthEffect, void, any> {
   try {
     const token: string | null = yield select(getToken);
 
@@ -99,7 +131,7 @@ function* handleGetCurrentUser() {
   }
 }
 
-function* handleLogout() {
+function* handleLogout(): Generator<AuthEffect, void, void> {
   try {
     // Utilizziamo authService invece di apiService
     yield call([authService, authService.logout]);
