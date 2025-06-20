@@ -1,110 +1,110 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
   directUrl = env("DIRECT_URL")
 }
 
 model User {
-  id          Int       @id @default(autoincrement())
-  email       String    @unique
-  password    String    // Ricorda di hashare la password prima di salvarla
-  name        String?
-  role        Role      @default(USER)
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  orders      Order[]
-  addresses   Address[]
-  cart        Cart?     // Un utente può avere un carrello
+  id            Int                  @id @default(autoincrement())
+  email         String               @unique
+  password      String
+  name          String?
+  role          Role                 @default(USER)
+  createdAt     DateTime             @default(now())
+  updatedAt     DateTime             @updatedAt
+  addresses     Address[]
+  cart          Cart?
   notifications Notification[]
-  // Per il backoffice, potresti voler aggiungere campi come lastLogin, isActive, etc.
+  orders        Order[]
+  resetTokens   PasswordResetToken[]
+}
+
+model PasswordResetToken {
+  id        Int      @id @default(autoincrement())
+  token     String   @unique
+  userId    Int
+  expiresAt DateTime
+  used      Boolean  @default(false)
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model Product {
-  id         Int        @id @default(autoincrement())
-  titolo     String
+  id          Int                  @id @default(autoincrement())
+  createdAt   DateTime             @default(now())
+  updatedAt   DateTime             @updatedAt
   descrizione String?
-  prezzo     Decimal    @db.Decimal(10, 2)
-  immagine   String?    // URL Cloudinary
-  categoria  Category[] @relation("ProductCategories")
-  createdAt  DateTime   @default(now())
-  updatedAt  DateTime   @updatedAt
-  stock      Int        @default(0) // Nuovo campo stock
-  // Relazioni inverse per OrderItem, CartItem, Promotion
-  orderItems OrderItem[]
-  cartItems  CartItem[]
-  promotions Promotion[] @relation("ProductPromotions")
-  varianti   ProductVariantType[]
+  immagine    String?
+  prezzo      Decimal              @db.Decimal(10, 2)
+  titolo      String
+  stock       Int                  @default(0)
+  cartItems   CartItem[]
+  orderItems  OrderItem[]
+  varianti    ProductVariantType[]
+  categoria   Category[]           @relation("ProductCategories")
+  promotions  Promotion[]          @relation("ProductPromotions")
 }
 
 model Category {
-  id          Int       @id @default(autoincrement())
-  name        String    @unique
+  id          Int         @id @default(autoincrement())
+  name        String      @unique
   description String?
-  products    Product[] @relation("ProductCategories")
-  promotions  Promotion[] @relation("CategoryPromotions") // Categorie incluse in promozioni
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
   parentId    Int?
-  parent      Category? @relation("CategoryHierarchy", fields: [parentId], references: [id])
-  children    Category[] @relation("CategoryHierarchy")
+  parent      Category?   @relation("CategoryHierarchy", fields: [parentId], references: [id])
+  children    Category[]  @relation("CategoryHierarchy")
+  promotions  Promotion[] @relation("CategoryPromotions")
+  products    Product[]   @relation("ProductCategories")
 }
 
 model Order {
-  id                Int           @id @default(autoincrement())
-  userId            Int? // ora opzionale per supportare guest
-  user              User?          @relation(fields: [userId], references: [id])
-  totalAmount       Decimal       @db.Decimal(10, 2)
-  status            OrderStatus   @default(PENDING)
-  paymentIntentId   String?       @unique // Per Stripe
-  createdAt         DateTime      @default(now())
-  updatedAt         DateTime      @updatedAt
-  orderItems        OrderItem[]
+  id                Int         @id @default(autoincrement())
+  userId            Int?
+  totalAmount       Decimal     @db.Decimal(10, 2)
+  status            OrderStatus @default(PENDING)
+  paymentIntentId   String?     @unique
+  createdAt         DateTime    @default(now())
+  updatedAt         DateTime    @updatedAt
   shippingAddressId Int?
-  shippingAddress   Address?      @relation("ShippingAddress", fields: [shippingAddressId], references: [id])
   billingAddressId  Int?
-  billingAddress    Address?      @relation("BillingAddress", fields: [billingAddressId], references: [id])
-  guestEmail        String?       // Email guest se ordine senza utente
-  nome              String?
+  cap               String?
+  citta             String?
   cognome           String?
+  guestEmail        String?
+  nome              String?
+  note              String?
+  numero            String?
+  stato             String?
   telefono          String?
   via               String?
-  numero            String?
-  citta             String?
-  cap               String?
-  stato             String?
-  note              String?
-  // Potresti aggiungere campi come shippingMethod, trackingNumber, etc.
+  billingAddress    Address?    @relation("BillingAddress", fields: [billingAddressId], references: [id])
+  shippingAddress   Address?    @relation("ShippingAddress", fields: [shippingAddressId], references: [id])
+  user              User?       @relation(fields: [userId], references: [id])
+  orderItems        OrderItem[]
 }
 
 model OrderItem {
   id              Int      @id @default(autoincrement())
   orderId         Int
-  order           Order    @relation(fields: [orderId], references: [id])
   productId       Int
-  product         Product  @relation(fields: [productId], references: [id])
   quantity        Int
-  priceAtPurchase Decimal  @db.Decimal(10, 2) // Prezzo del prodotto al momento dell'acquisto
+  priceAtPurchase Decimal  @db.Decimal(10, 2)
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
+  order           Order    @relation(fields: [orderId], references: [id])
+  product         Product  @relation(fields: [productId], references: [id])
 
-  @@unique([orderId, productId]) // Un prodotto può apparire una sola volta per ordine (aggiorna la quantità invece)
+  @@unique([orderId, productId])
 }
 
 model Address {
   id                Int      @id @default(autoincrement())
   userId            Int
-  user              User     @relation(fields: [userId], references: [id])
   street            String
   city              String
   postalCode        String
@@ -113,82 +113,76 @@ model Address {
   isDefaultBilling  Boolean  @default(false)
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
-
-  shippingOrders    Order[] @relation("ShippingAddress")
-  billingOrders     Order[] @relation("BillingAddress")
+  user              User     @relation(fields: [userId], references: [id])
+  billingOrders     Order[]  @relation("BillingAddress")
+  shippingOrders    Order[]  @relation("ShippingAddress")
 }
-
-// Nuovi Modelli
 
 model Cart {
   id        Int        @id @default(autoincrement())
-  userId    Int        @unique // Ogni utente ha un solo carrello
-  user      User       @relation(fields: [userId], references: [id])
+  userId    Int        @unique
   createdAt DateTime   @default(now())
   updatedAt DateTime   @updatedAt
+  user      User       @relation(fields: [userId], references: [id])
   items     CartItem[]
 }
 
 model CartItem {
   id        Int      @id @default(autoincrement())
   cartId    Int
-  cart      Cart     @relation(fields: [cartId], references: [id])
   productId Int
-  product   Product  @relation(fields: [productId], references: [id])
   quantity  Int
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  cart      Cart     @relation(fields: [cartId], references: [id])
+  product   Product  @relation(fields: [productId], references: [id])
 
-  @@unique([cartId, productId]) // Un prodotto può apparire una sola volta nel carrello (aggiorna la quantità)
+  @@unique([cartId, productId])
 }
 
 model Promotion {
   id                 Int        @id @default(autoincrement())
   name               String
   description        String?
-  discountPercentage Decimal?   @db.Decimal(5, 2) // Es. 10.50 per 10.50%
-  discountAmount     Decimal?   @db.Decimal(10, 2) // Es. 5.00 per 5€ di sconto
+  discountPercentage Decimal?   @db.Decimal(5, 2)
+  discountAmount     Decimal?   @db.Decimal(10, 2)
   startDate          DateTime
   endDate            DateTime
   isActive           Boolean    @default(true)
-  code               String?    @unique // Codice coupon opzionale
+  code               String?    @unique
   createdAt          DateTime   @default(now())
   updatedAt          DateTime   @updatedAt
-
-  // Relazioni per applicare promozioni a prodotti o categorie specifiche
-  products           Product[]  @relation("ProductPromotions")
   categories         Category[] @relation("CategoryPromotions")
-
-  // Assicurati che ci sia o una percentuale o un importo fisso, non entrambi o nessuno (può essere gestito a livello di logica applicativa)
+  products           Product[]  @relation("ProductPromotions")
 }
 
 model Notification {
-  id               Int               @id @default(autoincrement())
-  userId           Int?              // A quale utente è destinata (se null, potrebbe essere per admin)
-  user             User?             @relation(fields: [userId], references: [id])
-  type             NotificationType
-  message          String
-  isRead           Boolean           @default(false)
-  relatedEntityType String?           // Es. "Order", "Product"
-  relatedEntityId  Int?              // ID dell'entità correlata
-  createdAt        DateTime          @default(now())
-  updatedAt        DateTime          @updatedAt
+  id                Int              @id @default(autoincrement())
+  userId            Int?
+  type              NotificationType
+  message           String
+  isRead            Boolean          @default(false)
+  relatedEntityType String?
+  relatedEntityId   Int?
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+  user              User?            @relation(fields: [userId], references: [id])
 }
 
 model ProductVariantType {
   id        Int                   @id @default(autoincrement())
   nome      String
-  product   Product               @relation(fields: [productId], references: [id])
   productId Int
+  product   Product               @relation(fields: [productId], references: [id])
   valori    ProductVariantValue[]
 }
 
 model ProductVariantValue {
-  id        Int    @id @default(autoincrement())
-  nome      String
-  immagine  String?
-  type      ProductVariantType    @relation(fields: [typeId], references: [id])
-  typeId    Int
+  id       Int                @id @default(autoincrement())
+  nome     String
+  immagine String?
+  typeId   Int
+  type     ProductVariantType @relation(fields: [typeId], references: [id])
 }
 
 enum Role {
@@ -197,30 +191,27 @@ enum Role {
 }
 
 enum OrderStatus {
-  PENDING     // Ordine creato, in attesa di azioni (es. pagamento)
-  AWAITING_PAYMENT // In attesa di conferma pagamento (es. redirect da Stripe)
-  PROCESSING  // Pagamento ricevuto/confermato, ordine in preparazione
-  SHIPPED     // Ordine spedito
-  DELIVERED   // Ordine consegnato
-  CANCELLED   // Ordine cancellato dall'utente o admin
-  FAILED      // Pagamento fallito o altro errore
-  REFUNDED    // Ordine rimborsato
+  PENDING
+  AWAITING_PAYMENT
+  PROCESSING
+  SHIPPED
+  DELIVERED
+  CANCELLED
+  FAILED
+  REFUNDED
 }
 
 enum NotificationType {
-  // Notifiche Utente
   ORDER_CONFIRMATION
   ORDER_SHIPPED
   ORDER_DELIVERED
   ORDER_CANCELLED_USER
   PASSWORD_RESET_REQUEST
   ACCOUNT_UPDATED
-
-  // Notifiche Admin
   NEW_ORDER_PLACED_ADMIN
   LOW_STOCK_WARNING_ADMIN
   ORDER_CANCELLED_BY_USER_ADMIN
   NEW_USER_REGISTERED_ADMIN
-  PRODUCT_REVIEW_SUBMITTED_ADMIN // Se implementerai le review
-  CONTACT_FORM_SUBMITTED_ADMIN   // Se avrai un form di contatto
+  PRODUCT_REVIEW_SUBMITTED_ADMIN
+  CONTACT_FORM_SUBMITTED_ADMIN
 }
