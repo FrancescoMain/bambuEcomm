@@ -87,7 +87,8 @@ export const loginUser = async (
     if (!isPasswordValid) {
       res.status(400).json({ message: "Credenziali non valide" });
       return;
-    }    const token = jwt.sign({ userId: user.id, role: user.role }, JWT_SECRET, {
+    }
+    const token = jwt.sign({ userId: user.id, role: user.role }, JWT_SECRET, {
       expiresIn: "24h",
     });
 

@@ -138,12 +138,11 @@ export default function Home() {
               <h1 className="text-4xl lg:text-6xl font-bold leading-tight">
                 La tua <span className="text-yellow-300">Cartolibreria</span> di
                 fiducia
-              </h1>
+              </h1>{" "}
               <p className="text-xl lg:text-2xl text-gray-100">
-                Scopri libri, cancelleria e materiali per l'arte. Tutto quello
-                che ti serve per studiare e creare.
+                Scopri libri, cancelleria e materiali per l&apos;arte. Tutto
+                quello che ti serve per studiare e creare.
               </p>
-
               {/* Search Bar Hero */}
               <div className="relative max-w-lg">
                 <input
@@ -173,7 +172,6 @@ export default function Home() {
                   </svg>
                 </button>
               </div>
-
               <div className="flex flex-wrap gap-4">
                 <button
                   onClick={() => router.push("/products")}
