@@ -193,12 +193,10 @@ export const createProduct = async (
         include: { categoria: true, varianti: { include: { valori: true } } },
       });
 
-      res
-        .status(201)
-        .json({
-          message: "Prodotto creato con successo",
-          product: updatedProduct,
-        });
+      res.status(201).json({
+        message: "Prodotto creato con successo",
+        product: updatedProduct,
+      });
       return;
     }
 
@@ -455,7 +453,25 @@ export const deleteProduct = async (
       res.status(404).json({ message: "Prodotto non trovato" });
       return;
     }
+
+    // Eliminazione in cascata: prima le varianti, poi il prodotto
+    // 1. Elimina tutti i valori delle varianti associate al prodotto
+    await prisma.productVariantValue.deleteMany({
+      where: {
+        type: {
+          productId: productId,
+        },
+      },
+    });
+
+    // 2. Elimina tutti i tipi di varianti del prodotto
+    await prisma.productVariantType.deleteMany({
+      where: { productId: productId },
+    });
+
+    // 3. Ora possiamo eliminare il prodotto in sicurezza
     await prisma.product.delete({ where: { id: productId } });
+
     res.json({ message: "Prodotto eliminato con successo" });
   } catch (error) {
     if (error instanceof Prisma.PrismaClientKnownRequestError) {
