@@ -18,7 +18,6 @@ export interface HeaderViewProps {
   categoriesLoading: boolean;
   cartItems: CartItem[];
   cartTotal: number;
-  searchQuery: string;
   onMenuOpen: () => void;
   onMenuClose: () => void;
   onProfileMenuToggle: () => void;
@@ -32,8 +31,6 @@ export interface HeaderViewProps {
   onCartItemQuantityChange: (productId: number, quantity: number) => void;
   onGoToCart: () => void;
   onGoToCheckout: () => void;
-  onSearchChange: (query: string) => void;
-  onSearchSubmit: () => void;
   pathname: string;
 }
 
@@ -51,7 +48,6 @@ function HeaderView({
   categoriesLoading,
   cartItems,
   cartTotal,
-  searchQuery,
   onMenuOpen,
   onMenuClose,
   onProfileMenuToggle,
@@ -65,8 +61,6 @@ function HeaderView({
   onCartItemQuantityChange,
   onGoToCart,
   onGoToCheckout,
-  onSearchChange,
-  onSearchSubmit,
   pathname,
 }: HeaderViewProps) {
   return (
@@ -153,25 +147,11 @@ function HeaderView({
               </nav>{" "}
               {/* Search Bar Desktop */}
               <div className="flex-1 max-w-lg mx-6">
-                <form
-                  onSubmit={(e) => {
-                    e.preventDefault();
-                    onSearchSubmit();
-                  }}
-                  className="relative"
-                >
+                <div className="relative">
                   <input
                     type="text"
-                    value={searchQuery}
-                    onChange={(e) => onSearchChange(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") {
-                        e.preventDefault();
-                        onSearchSubmit();
-                      }
-                    }}
                     placeholder="Cerca prodotti..."
-                    className="w-full px-4 py-2 pl-10 pr-12 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-[#51946b] focus:border-transparent"
+                    className="w-full px-4 py-2 pl-10 pr-4 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-[#51946b] focus:border-transparent"
                   />
                   <svg
                     className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400"
@@ -186,26 +166,7 @@ function HeaderView({
                       d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
                     />
                   </svg>
-                  <button
-                    type="submit"
-                    className="absolute right-2 top-1/2 transform -translate-y-1/2 p-1.5 bg-[#51946b] text-white rounded-full hover:bg-[#3d7a57] transition-colors focus:outline-none focus:ring-2 focus:ring-[#51946b] focus:ring-offset-1"
-                    aria-label="Cerca"
-                  >
-                    <svg
-                      className="h-4 w-4"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                      />
-                    </svg>
-                  </button>
-                </form>
+                </div>
               </div>
               {/* Actions Desktop */}
               <div className="flex items-center space-x-4 flex-shrink-0">
@@ -337,14 +298,10 @@ function HeaderView({
                     <h1 className="text-lg font-bold text-[#51946b]">Bambù</h1>
                   </div>
                 </Link>
-              </div>{" "}
+              </div>
               {/* Mobile Actions */}
               <div className="flex items-center space-x-2">
-                <button
-                  onClick={onSearchSubmit}
-                  className="p-2 text-gray-700 hover:text-[#51946b] transition-colors"
-                  aria-label="Cerca prodotti"
-                >
+                <button className="p-2 text-gray-700">
                   <svg
                     className="h-5 w-5"
                     fill="none"
@@ -427,67 +384,8 @@ function HeaderView({
                   strokeWidth={2}
                   d="M6 18L18 6M6 6l12 12"
                 />
-              </svg>{" "}
+              </svg>
             </button>
-
-            {/* Mobile Search Bar */}
-            <div className="mb-6">
-              <form
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  onSearchSubmit();
-                  onMenuClose();
-                }}
-                className="relative"
-              >
-                <input
-                  type="text"
-                  value={searchQuery}
-                  onChange={(e) => onSearchChange(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") {
-                      e.preventDefault();
-                      onSearchSubmit();
-                      onMenuClose();
-                    }
-                  }}
-                  placeholder="Cerca prodotti..."
-                  className="w-full px-4 py-3 pl-10 pr-12 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#51946b] focus:border-transparent"
-                />
-                <svg
-                  className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                  />
-                </svg>
-                <button
-                  type="submit"
-                  className="absolute right-2 top-1/2 transform -translate-y-1/2 p-2 bg-[#51946b] text-white rounded-lg hover:bg-[#3d7a57] transition-colors focus:outline-none focus:ring-2 focus:ring-[#51946b] focus:ring-offset-1"
-                  aria-label="Cerca"
-                >
-                  <svg
-                    className="h-4 w-4"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                    />
-                  </svg>
-                </button>
-              </form>
-            </div>
 
             <div className="flex flex-col gap-4">
               <h2 className="text-lg font-bold">Categorie</h2>

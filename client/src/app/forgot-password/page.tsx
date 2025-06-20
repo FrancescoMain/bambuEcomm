@@ -15,14 +15,14 @@ export default function ForgotPasswordPage() {
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    
+
     try {
       // TODO: Implementare la chiamata API per il reset password
       // await authService.forgotPassword(email);
-      
+
       // Simulazione per ora
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
+      await new Promise((resolve) => setTimeout(resolve, 2000));
+
       setEmailSent(true);
       toast.success("Email di reset inviata con successo!");
     } catch (error) {
@@ -38,7 +38,10 @@ export default function ForgotPasswordPage() {
         <div className="max-w-md w-full">
           {/* Logo */}
           <div className="text-center mb-8">
-            <Link href="/" className="inline-flex items-center justify-center mb-6">
+            <Link
+              href="/"
+              className="inline-flex items-center justify-center mb-6"
+            >
               <Image
                 src="/bambu-logo.jpg"
                 alt="Cartolibreria Bambù"
@@ -71,16 +74,16 @@ export default function ForgotPasswordPage() {
                 />
               </svg>
             </div>
-            
+
             <h2 className="text-2xl font-bold text-gray-900 mb-4">
               Email inviata!
             </h2>
-            
+
             <p className="text-gray-600 mb-6">
               Abbiamo inviato le istruzioni per il reset della password a{" "}
               <span className="font-medium text-gray-900">{email}</span>
             </p>
-            
+
             <div className="space-y-4">
               <button
                 onClick={() => {
@@ -91,7 +94,7 @@ export default function ForgotPasswordPage() {
               >
                 Invia di nuovo
               </button>
-                <Link
+              <Link
                 href="/login"
                 onClick={() => setLoading(true)}
                 className="block w-full text-center py-3 px-4 border border-gray-300 rounded-lg text-gray-700 font-medium hover:bg-gray-50 transition-colors"
@@ -107,8 +110,18 @@ export default function ForgotPasswordPage() {
               href="/"
               className="text-gray-600 hover:text-[#51946b] transition-colors inline-flex items-center"
             >
-              <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+              <svg
+                className="w-4 h-4 mr-2"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M10 19l-7-7m0 0l7-7m-7 7h18"
+                />
               </svg>
               Torna alla home
             </Link>
@@ -123,7 +136,10 @@ export default function ForgotPasswordPage() {
       <div className="max-w-md w-full">
         {/* Logo and Welcome */}
         <div className="text-center mb-8">
-          <Link href="/" className="inline-flex items-center justify-center mb-6">
+          <Link
+            href="/"
+            className="inline-flex items-center justify-center mb-6"
+          >
             <Image
               src="/bambu-logo.jpg"
               alt="Cartolibreria Bambù"
@@ -141,7 +157,8 @@ export default function ForgotPasswordPage() {
             Password dimenticata?
           </h2>
           <p className="text-gray-600">
-            Inserisci la tua email e ti invieremo le istruzioni per reimpostare la password
+            Inserisci la tua email e ti invieremo le istruzioni per reimpostare
+            la password
           </p>
         </div>
 
@@ -150,8 +167,8 @@ export default function ForgotPasswordPage() {
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Email Field */}
             <div>
-              <label 
-                htmlFor="email" 
+              <label
+                htmlFor="email"
                 className="block text-sm font-medium text-gray-700 mb-2"
               >
                 Email
@@ -218,18 +235,30 @@ export default function ForgotPasswordPage() {
                 "Invia email di reset"
               )}
             </button>
-          </form>          {/* Back to Login */}
+          </form>{" "}
+          {/* Back to Login */}
           <div className="mt-6 text-center">
             <Link
               href="/login"
               onClick={() => setLoading(true)}
               className="text-[#51946b] hover:text-[#3d7a57] font-medium transition-colors inline-flex items-center"
             >
-              <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+              <svg
+                className="w-4 h-4 mr-2"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M10 19l-7-7m0 0l7-7m-7 7h18"
+                />
               </svg>
               Torna al login
-            </Link>          </div>
+            </Link>{" "}
+          </div>
         </div>
 
         {/* Back to Home */}
@@ -239,8 +268,18 @@ export default function ForgotPasswordPage() {
             onClick={() => setLoading(true)}
             className="text-gray-600 hover:text-[#51946b] transition-colors inline-flex items-center"
           >
-            <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+            <svg
+              className="w-4 h-4 mr-2"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M10 19l-7-7m0 0l7-7m-7 7h18"
+              />
             </svg>
             Torna alla home
           </Link>
