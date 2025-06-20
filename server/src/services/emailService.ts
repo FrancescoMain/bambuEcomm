@@ -1,4 +1,4 @@
-import { Resend } from 'resend';
+import { Resend } from "resend";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
@@ -45,8 +45,8 @@ class EmailService {
   private adminEmail: string;
 
   constructor() {
-    this.fromEmail = process.env.FROM_EMAIL || 'noreply@bambu-ecomm.com';
-    this.adminEmail = process.env.ADMIN_EMAIL || 'cartoleriabambu@icloud.com';
+    this.fromEmail = process.env.FROM_EMAIL || "noreply@bambu-ecomm.com";
+    this.adminEmail = process.env.ADMIN_EMAIL || "cartoleriabambu@icloud.com";
   }
 
   /**
@@ -62,10 +62,10 @@ class EmailService {
         text: emailData.text,
       });
 
-      console.log('✅ Email inviata con successo:', result);
+      console.log("✅ Email inviata con successo:", result);
       return true;
     } catch (error) {
-      console.error('❌ Errore invio email:', error);
+      console.error("❌ Errore invio email:", error);
       return false;
     }
   }
@@ -76,7 +76,7 @@ class EmailService {
   async sendWelcomeEmail(userData: UserData): Promise<boolean> {
     const emailData: EmailTemplate = {
       to: userData.email,
-      subject: '🌿 Benvenuto in Bambu Ecomm!',
+      subject: "🌿 Benvenuto in Bambu Ecomm!",
       html: this.generateWelcomeTemplate(userData),
       text: `Ciao ${userData.name}! Benvenuto in Bambu Ecomm. Grazie per esserti registrato!`,
     };
@@ -90,7 +90,7 @@ class EmailService {
   async sendPasswordResetEmail(resetData: PasswordResetData): Promise<boolean> {
     const emailData: EmailTemplate = {
       to: resetData.email,
-      subject: '🔐 Reset Password - Bambu Ecomm',
+      subject: "🔐 Reset Password - Bambu Ecomm",
       html: this.generatePasswordResetTemplate(resetData),
       text: `Ciao ${resetData.name}! Clicca su questo link per resettare la password: ${resetData.resetUrl}`,
     };
@@ -101,12 +101,14 @@ class EmailService {
   /**
    * Email conferma iscrizione newsletter
    */
-  async sendNewsletterConfirmationEmail(newsletterData: NewsletterData): Promise<boolean> {
+  async sendNewsletterConfirmationEmail(
+    newsletterData: NewsletterData
+  ): Promise<boolean> {
     const emailData: EmailTemplate = {
       to: newsletterData.email,
-      subject: '📧 Iscrizione Newsletter Confermata - Bambu Ecomm',
+      subject: "📧 Iscrizione Newsletter Confermata - Bambu Ecomm",
       html: this.generateNewsletterConfirmationTemplate(newsletterData),
-      text: 'Grazie per esserti iscritto alla nostra newsletter!',
+      text: "Grazie per esserti iscritto alla nostra newsletter!",
     };
 
     return await this.sendEmail(emailData);
@@ -143,7 +145,9 @@ class EmailService {
   /**
    * Email ordine spedito (al cliente)
    */
-  async sendOrderShippedEmail(orderData: OrderData & { trackingNumber?: string }): Promise<boolean> {
+  async sendOrderShippedEmail(
+    orderData: OrderData & { trackingNumber?: string }
+  ): Promise<boolean> {
     const emailData: EmailTemplate = {
       to: orderData.customerEmail,
       subject: `📦 Ordine Spedito #${orderData.orderId} - Bambu Ecomm`,
@@ -157,7 +161,9 @@ class EmailService {
   /**
    * Email ordine cancellato (al cliente)
    */
-  async sendOrderCancelledEmail(orderData: OrderData & { cancelReason?: string }): Promise<boolean> {
+  async sendOrderCancelledEmail(
+    orderData: OrderData & { cancelReason?: string }
+  ): Promise<boolean> {
     const emailData: EmailTemplate = {
       to: orderData.customerEmail,
       subject: `❌ Ordine Cancellato #${orderData.orderId} - Bambu Ecomm`,
@@ -246,7 +252,9 @@ class EmailService {
     `;
   }
 
-  private generateNewsletterConfirmationTemplate(newsletterData: NewsletterData): string {
+  private generateNewsletterConfirmationTemplate(
+    newsletterData: NewsletterData
+  ): string {
     return `
       <!DOCTYPE html>
       <html>
@@ -280,14 +288,18 @@ class EmailService {
   }
 
   private generateOrderConfirmationTemplate(orderData: OrderData): string {
-    const itemsHtml = orderData.items.map(item => `
+    const itemsHtml = orderData.items
+      .map(
+        (item) => `
       <tr>
         <td style="padding: 10px; border-bottom: 1px solid #eee;">${item.name}</td>
         <td style="padding: 10px; border-bottom: 1px solid #eee; text-align: center;">${item.quantity}</td>
         <td style="padding: 10px; border-bottom: 1px solid #eee; text-align: right;">€${item.price.toFixed(2)}</td>
         <td style="padding: 10px; border-bottom: 1px solid #eee; text-align: right; font-weight: bold;">€${(item.quantity * item.price).toFixed(2)}</td>
       </tr>
-    `).join('');
+    `
+      )
+      .join("");
 
     return `
       <!DOCTYPE html>
@@ -343,13 +355,17 @@ class EmailService {
   }
 
   private generateOrderAdminTemplate(orderData: OrderData): string {
-    const itemsHtml = orderData.items.map(item => `
+    const itemsHtml = orderData.items
+      .map(
+        (item) => `
       <tr>
         <td style="padding: 8px; border-bottom: 1px solid #eee;">${item.name}</td>
         <td style="padding: 8px; border-bottom: 1px solid #eee; text-align: center;">${item.quantity}</td>
         <td style="padding: 8px; border-bottom: 1px solid #eee; text-align: right;">€${(item.quantity * item.price).toFixed(2)}</td>
       </tr>
-    `).join('');
+    `
+      )
+      .join("");
 
     return `
       <!DOCTYPE html>
@@ -400,7 +416,9 @@ class EmailService {
     `;
   }
 
-  private generateOrderShippedTemplate(orderData: OrderData & { trackingNumber?: string }): string {
+  private generateOrderShippedTemplate(
+    orderData: OrderData & { trackingNumber?: string }
+  ): string {
     return `
       <!DOCTYPE html>
       <html>
@@ -419,13 +437,17 @@ class EmailService {
             <h2 style="color: #28a745; margin-top: 0;">Ciao ${orderData.customerName}! 🚀</h2>
             <p>Ottime notizie! Il tuo ordine è stato spedito e sta arrivando da te.</p>
             
-            ${orderData.trackingNumber ? `
+            ${
+              orderData.trackingNumber
+                ? `
               <div style="background: white; padding: 20px; border-radius: 5px; margin: 20px 0; border-left: 4px solid #28a745;">
                 <h3 style="color: #28a745; margin-top: 0;">📱 Tracking</h3>
                 <p><strong>Numero di Tracking:</strong> <code style="background: #f8f9fa; padding: 5px 10px; border-radius: 3px;">${orderData.trackingNumber}</code></p>
                 <p>Puoi tracciare il tuo pacco usando questo numero sul sito del corriere.</p>
               </div>
-            ` : ''}
+            `
+                : ""
+            }
             
             <div style="background: #d4edda; border: 1px solid #c3e6cb; padding: 15px; border-radius: 5px; margin: 20px 0;">
               <p style="margin: 0; color: #155724;"><strong>📅 Consegna Stimata:</strong> 2-3 giorni lavorativi</p>
@@ -440,7 +462,9 @@ class EmailService {
     `;
   }
 
-  private generateOrderCancelledTemplate(orderData: OrderData & { cancelReason?: string }): string {
+  private generateOrderCancelledTemplate(
+    orderData: OrderData & { cancelReason?: string }
+  ): string {
     return `
       <!DOCTYPE html>
       <html>
@@ -459,11 +483,15 @@ class EmailService {
             <h2 style="color: #dc3545; margin-top: 0;">Ciao ${orderData.customerName},</h2>
             <p>Il tuo ordine #${orderData.orderId} è stato cancellato.</p>
             
-            ${orderData.cancelReason ? `
+            ${
+              orderData.cancelReason
+                ? `
               <div style="background: #f8d7da; border: 1px solid #f5c6cb; padding: 15px; border-radius: 5px; margin: 20px 0;">
                 <p style="margin: 0; color: #721c24;"><strong>Motivo:</strong> ${orderData.cancelReason}</p>
               </div>
-            ` : ''}
+            `
+                : ""
+            }
             
             <div style="background: #d1ecf1; border: 1px solid #bee5eb; padding: 15px; border-radius: 5px; margin: 20px 0;">
               <p style="margin: 0; color: #0c5460;"><strong>💰 Rimborso:</strong> Se hai già pagato, il rimborso sarà processato entro 3-5 giorni lavorativi.</p>

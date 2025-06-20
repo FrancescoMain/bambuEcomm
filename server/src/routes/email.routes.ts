@@ -1,5 +1,5 @@
-import { Router } from 'express';
-import { testEmailService } from '../controllers/emailTest.controller';
+import { Router } from "express";
+import { testEmailService } from "../controllers/emailTest.controller";
 
 const router = Router();
 
@@ -8,6 +8,6 @@ const router = Router();
  * POST /api/email/test
  * Body: { type: 'welcome' | 'password-reset' | 'newsletter' | 'order-confirmation' | 'order-admin' | 'order-shipped' | 'order-cancelled' }
  */
-router.post('/test', testEmailService);
+router.post("/test", testEmailService);
 
 export default router;
