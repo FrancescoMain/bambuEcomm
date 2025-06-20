@@ -63,172 +63,311 @@ function HeaderView({
   pathname,
 }: HeaderViewProps) {
   return (
-    <header className="fixed top-0 left-0 w-full z-50 md:static md:relative flex items-center justify-between whitespace-nowrap border-b border-solid border-b-[#e8f2ec] px-4 md:px-10 py-3 bg-white">
-      <HeaderStatic />
-      <div className="flex flex-1 justify-end items-center gap-4  md:gap-8">
-        {isLoading ? (
-          <span>Loading...</span>
-        ) : currentUser ? (
-          <button className="text-sm font-bold hidden md:inline">
-            {currentUser.name}
-          </button>
-        ) : (
-          <a href="/login" className="text-sm font-bold" onClick={onLoginClick}>
-            Login
-          </a>
-        )}
-        <button
-          className="flex max-w-[480px] cursor-pointer items-center justify-center overflow-visible rounded-lg h-10 bg-[#e8f2ec] text-[#0e1a13] gap-2 text-sm font-bold leading-normal tracking-[0.015em] min-w-0 px-2.5 cart-button relative"
-          aria-label="Apri carrello"
-          onClick={onCartSidebarOpen}
-        >
-          <div
-            className="text-[#0e1a13]"
-            data-icon="ShoppingBag"
-            data-size="20px"
-            data-weight="regular"
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="20px"
-              height="20px"
-              fill="currentColor"
-              viewBox="0 0 256 256"
-            >
-              <path d="M216,40H40A16,16,0,0,0,24,56V200a16,16,0,0,0,16,16H216a16,16,0,0,0,16-16V56A16,16,0,0,0,216,40Zm0,160H40V56H216V200ZM176,88a48,48,0,0,1-96,0,8,8,0,0,1,16,0,32,32,0,0,0,64,0,8,8,0,0,1,16,0Z"></path>
-            </svg>
-          </div>
-          {cartCount > 0 && (
-            <span className="pointer-events-none select-none absolute -top-1.5 -right-1.5 bg-[#39e079] text-white text-xs font-bold rounded-full px-2 py-0.5 min-w-[22px] text-center border-2 border-white shadow z-10">
-              {cartCount}
-            </span>
-          )}
-        </button>
-        <button
-          className="md:hidden ml-2 p-2 rounded-lg bg-[#e8f2ec] text-[#0e1a13] hamburger-menu"
-          onClick={onMenuOpen}
-          aria-label="Apri menu"
-        >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            fill="none"
-            viewBox="0 0 24 24"
-            strokeWidth="1.5"
-            stroke="currentColor"
-            className="w-6 h-6"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="M3.75 5.25h16.5m-16.5 6h16.5m-16.5 6h16.5"
-            />
-          </svg>
-        </button>
-        {currentUser && (
-          <div className="relative profile-menu">
-            <button
-              className="hidden md:flex bg-center bg-no-repeat aspect-square bg-cover rounded-full size-10"
-              style={{
-                backgroundImage:
-                  "url('https://lh3.googleusercontent.com/aida-public/AB6AXuCyYqkvxBHMRZhQXlELKzPCtdW-vqwBt8jKo2Dt_lV4ZyRk4UUvREYy-74B4Y_9OW6EjNbruNBM0GrrrE9XCC86Kwa8zrQGuTKvKkFl6XDNgeu7qF0oZFJr-R8PyxEtdlkdcHCcxWp3MvDY-IRUvvNmVXjnqe1jbeaEY7UgbNWvmprGwfCp8SDyjfow3Qn4KRqTeS_e8_LO17l3Idp-ZCtYmEl30LF_YSEFL1XFYeXyfYR6DwETvFLdpGE6J-drwJYxm75_2L0IgIyZ')",
-              }}
-              onClick={onProfileMenuToggle}
-              aria-label="Apri menu profilo"
-            ></button>
-            {profileMenuOpen && (
-              <div className="absolute right-0 mt-2 w-48 bg-white shadow-lg rounded-lg py-2">
-                <a
-                  href="#"
-                  className="block px-4 py-2 text-sm text-[#0e1a13] hover:bg-[#e8f2ec]"
-                >
-                  I miei Ordini
-                </a>
-                {currentUser.role === "ADMIN" && (
-                  <a
-                    href="/dashboard"
-                    className="block px-4 py-2 text-sm text-[#0e1a13] hover:bg-[#e8f2ec]"
-                  >
-                    Dashboard
-                  </a>
-                )}
-                <a
-                  href="#"
-                  className="block px-4 py-2 text-sm text-[#0e1a13] hover:bg-[#e8f2ec]"
-                >
-                  Informazioni
-                </a>
-                <a
-                  href="#logout"
-                  className="block px-4 py-2 text-sm text-red-500 hover:bg-[#e8f2ec]"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    onLogout();
-                  }}
-                >
-                  Logout
-                </a>
+    <>
+      {/* Header Principal */}
+      <header className="sticky top-0 left-0 w-full z-50 bg-white shadow-md">
+        {/* Desktop Header */}
+        <div className="hidden lg:block">
+          <div className="max-w-7xl mx-auto px-4 py-4">
+            <div className="flex items-center justify-between">
+              {/* Logo */}
+              <div className="flex items-center">
+                <HeaderStatic />
               </div>
-            )}
+
+              {/* Navigation Menu Desktop */}
+              <nav className="flex items-center space-x-8">
+                <div className="relative group category-menu">
+                  <button className="flex items-center text-gray-700 hover:text-[#51946b] font-medium transition-colors">
+                    Categorie
+                    <svg
+                      className="ml-1 h-4 w-4"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M19 9l-7 7-7-7"
+                      />
+                    </svg>
+                  </button>
+                  {/* Dropdown Categories */}
+                  <div className="absolute top-full left-0 mt-2 w-64 bg-white rounded-lg shadow-lg border opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200">
+                    <div className="p-4">
+                      {categoriesLoading ? (
+                        <div className="text-gray-500">Caricamento...</div>
+                      ) : (
+                        <div className="grid grid-cols-1 gap-2">
+                          {parentCategories.map((category) => (
+                            <button
+                              key={category.id}
+                              onClick={() => onCategoryClick(category.name)}
+                              className="text-left px-3 py-2 text-gray-700 hover:bg-[#e8f2ec] hover:text-[#51946b] rounded-md transition-colors"
+                            >
+                              {category.name}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+                <a
+                  href="/products"
+                  className="text-gray-700 hover:text-[#51946b] font-medium transition-colors"
+                >
+                  Tutti i Prodotti
+                </a>
+                <a
+                  href="/about"
+                  className="text-gray-700 hover:text-[#51946b] font-medium transition-colors"
+                >
+                  Chi Siamo
+                </a>
+              </nav>
+
+              {/* Search Bar Desktop */}
+              <div className="flex-1 max-w-md mx-8">
+                <div className="relative">
+                  <input
+                    type="text"
+                    placeholder="Cerca prodotti..."
+                    className="w-full px-4 py-2 pl-10 pr-4 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-[#51946b] focus:border-transparent"
+                  />
+                  <svg
+                    className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                    />
+                  </svg>
+                </div>
+              </div>
+
+              {/* Actions Desktop */}
+              <div className="flex items-center space-x-4">
+                {/* Cart Button */}
+                <button
+                  onClick={onCartSidebarOpen}
+                  className="relative p-2 text-gray-700 hover:text-[#51946b] transition-colors cart-button"
+                  aria-label="Carrello"
+                >
+                  <svg
+                    className="h-6 w-6"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M3 3h2l.4 2M7 13h10l4-8H5.4m0 0L7 13m0 0l-1.5 6h9M7 13v6a1 1 0 001 1h9a1 1 0 001-1v-6"
+                    />
+                  </svg>
+                  {cartCount > 0 && (
+                    <span className="absolute -top-1 -right-1 bg-[#51946b] text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
+                      {cartCount}
+                    </span>
+                  )}
+                </button>
+
+                {/* User Menu */}
+                {isLoading ? (
+                  <div className="w-8 h-8 bg-gray-200 rounded-full animate-pulse"></div>
+                ) : currentUser ? (
+                  <div className="relative profile-menu">
+                    <button
+                      onClick={onProfileMenuToggle}
+                      className="flex items-center space-x-2 text-gray-700 hover:text-[#51946b] transition-colors"
+                    >
+                      <div className="w-8 h-8 bg-[#51946b] text-white rounded-full flex items-center justify-center font-semibold">
+                        {currentUser.name?.charAt(0).toUpperCase()}
+                      </div>
+                      <span className="font-medium">{currentUser.name}</span>
+                    </button>
+
+                    {profileMenuOpen && (
+                      <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border py-2">
+                        <a
+                          href="/orders"
+                          className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                        >
+                          I miei Ordini
+                        </a>
+                        {currentUser.role === "ADMIN" && (
+                          <a
+                            href="/dashboard"
+                            className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                          >
+                            Dashboard
+                          </a>
+                        )}
+                        <a
+                          href="/profile"
+                          className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                        >
+                          Profilo
+                        </a>
+                        <hr className="my-2" />
+                        <button
+                          onClick={onLogout}
+                          className="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-50"
+                        >
+                          Logout
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <button
+                    onClick={onLoginClick}
+                    className="bg-[#51946b] text-white px-4 py-2 rounded-full font-medium hover:bg-[#3d7a57] transition-colors"
+                  >
+                    Accedi
+                  </button>
+                )}
+              </div>
+            </div>
           </div>
-        )}
-      </div>
-      {/* Mobile menu overlay with smooth slide-in/out */}
+        </div>
+
+        {/* Mobile Header */}
+        <div className="lg:hidden">
+          <div className="px-4 py-3">
+            <div className="flex items-center justify-between">
+              {/* Mobile Menu Button */}
+              <button
+                onClick={onMenuOpen}
+                className="p-2 text-gray-700 hamburger-menu"
+                aria-label="Menu"
+              >
+                <svg
+                  className="h-6 w-6"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M4 6h16M4 12h16M4 18h16"
+                  />
+                </svg>
+              </button>
+
+              {/* Logo Mobile */}
+              <div className="flex-1 flex justify-center">
+                <HeaderStatic />
+              </div>
+
+              {/* Mobile Actions */}
+              <div className="flex items-center space-x-2">
+                <button className="p-2 text-gray-700">
+                  <svg
+                    className="h-5 w-5"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                    />
+                  </svg>
+                </button>
+                <button
+                  onClick={onCartSidebarOpen}
+                  className="relative p-2 text-gray-700 cart-button"
+                  aria-label="Carrello"
+                >
+                  <svg
+                    className="h-5 w-5"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M3 3h2l.4 2M7 13h10l4-8H5.4m0 0L7 13m0 0l-1.5 6h9M7 13v6a1 1 0 001 1h9a1 1 0 001-1v-6"
+                    />
+                  </svg>
+                  {cartCount > 0 && (
+                    <span className="absolute -top-1 -right-1 bg-[#51946b] text-white text-xs font-bold rounded-full h-4 w-4 flex items-center justify-center">
+                      {cartCount}
+                    </span>
+                  )}
+                </button>
+                {currentUser && (
+                  <button className="p-1">
+                    <div className="w-6 h-6 bg-[#51946b] text-white rounded-full flex items-center justify-center text-xs font-semibold">
+                      {currentUser.name?.charAt(0).toUpperCase()}
+                    </div>
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      {/* Mobile menu overlay */}
       {menuVisible && (
         <div
-          className={`fixed inset-0 z-50 bg-black/40 md:hidden pointer-events-all touch-action-none transition-opacity duration-300 ${
+          className={`fixed inset-0 z-50 bg-black/40 lg:hidden transition-opacity duration-300 ${
             menuOpen ? "opacity-100" : "opacity-0"
           }`}
-          style={{ WebkitTapHighlightColor: "transparent" }}
           onClick={onMenuClose}
         >
           <div
-            className={`fixed top-0 left-0 w-3/4 max-w-xs h-full bg-white shadow-lg flex flex-col gap-6 p-6 overflow-auto z-50 touch-action-none pointer-events-auto transition-transform transition-opacity duration-300 ease-in-out ${
-              menuOpen
-                ? "translate-x-0 opacity-100"
-                : "-translate-x-full opacity-0"
+            className={`fixed top-0 left-0 w-3/4 max-w-xs h-full bg-white shadow-lg flex flex-col gap-6 p-6 overflow-auto z-50 transition-transform duration-300 ease-in-out ${
+              menuOpen ? "translate-x-0" : "-translate-x-full"
             }`}
-            style={{ WebkitTapHighlightColor: "transparent" }}
             onClick={(e) => e.stopPropagation()}
           >
             <button
               className="self-end mb-4"
-              onClick={(e) => {
-                e.stopPropagation();
-                onMenuClose();
-              }}
+              onClick={onMenuClose}
               aria-label="Chiudi menu"
             >
               <svg
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-                strokeWidth="1.5"
-                stroke="currentColor"
                 className="w-6 h-6"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
               >
                 <path
                   strokeLinecap="round"
                   strokeLinejoin="round"
+                  strokeWidth={2}
                   d="M6 18L18 6M6 6l12 12"
                 />
               </svg>
             </button>
+
             <div className="flex flex-col gap-4">
-              <h2 className="text-[#0e1a13] text-lg font-bold">Categorie</h2>
+              <h2 className="text-lg font-bold">Categorie</h2>
               {categoriesLoading ? (
-                <div className="px-4 py-2 text-sm text-gray-500">
-                  Caricamento...
-                </div>
-              ) : parentCategories.length === 0 ? (
-                <div className="px-4 py-2 text-sm text-gray-500">
-                  Nessuna categoria
-                </div>
+                <div className="text-gray-500">Caricamento...</div>
               ) : (
                 parentCategories.map((cat) => (
                   <button
                     key={cat.id}
-                    className="block text-left w-full px-4 py-2 text-sm text-[#0e1a13] hover:bg-[#e8f2ec] truncate"
-                    title={cat.name}
+                    className="text-left px-4 py-2 text-gray-700 hover:bg-gray-100 rounded"
                     onClick={() => onCategoryClick(cat.name)}
                   >
                     {cat.name}
@@ -236,228 +375,187 @@ function HeaderView({
                 ))
               )}
             </div>
+
             {currentUser && (
               <div className="flex flex-col gap-4 mt-6">
-                <h2 className="text-[#0e1a13] text-lg font-bold">Profilo</h2>
+                <h2 className="text-lg font-bold">Profilo</h2>
                 <a
-                  href="#informazioni"
-                  className="block px-4 py-2 text-sm text-[#0e1a13] hover:bg-[#e8f2ec]"
-                  onClick={(e) => e.stopPropagation()}
+                  href="/orders"
+                  className="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded"
                 >
-                  Informazioni
+                  I miei Ordini
                 </a>
                 {currentUser.role === "ADMIN" && (
                   <a
                     href="/dashboard"
-                    className="block px-4 py-2 text-sm text-[#0e1a13] hover:bg-[#e8f2ec]"
-                    onClick={(e) => e.stopPropagation()}
+                    className="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded"
                   >
                     Dashboard
                   </a>
                 )}
-                <a
-                  href="#ordini"
-                  className="block px-4 py-2 text-sm text-[#0e1a13] hover:bg-[#e8f2ec]"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  Ordini
-                </a>
-                <a
-                  href="#logout"
-                  className="block px-4 py-2 text-sm text-red-500 hover:bg-[#e8f2ec]"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    onLogout();
-                  }}
+                <button
+                  onClick={onLogout}
+                  className="text-left px-4 py-2 text-red-600 hover:bg-gray-100 rounded"
                 >
                   Logout
-                </a>
+                </button>
               </div>
             )}
-            <a
-              href="/search"
-              className="block px-4 py-2 text-sm text-[#0e1a13] hover:bg-[#e8f2ec] mt-6"
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                onMenuClose();
-                if (pathname !== "/search") {
-                  onCategoryClick("");
-                }
-              }}
-            >
-              Esplora
-            </a>
+
+            {!currentUser && (
+              <button
+                onClick={onLoginClick}
+                className="bg-[#51946b] text-white px-4 py-2 rounded-full"
+              >
+                Accedi
+              </button>
+            )}
           </div>
         </div>
       )}
-      {/* Cart Sidebar Overlay */}
+
+      {/* Cart Sidebar */}
       {cartSidebarVisible && (
         <>
           <div
-            className={`fixed inset-0 z-40 bg-black/40 pointer-events-auto transition-opacity duration-300 ${
+            className={`fixed inset-0 z-40 bg-black/40 transition-opacity duration-300 ${
               cartSidebarOpen ? "opacity-100" : "opacity-0"
             }`}
             onClick={onCartSidebarClose}
-          ></div>
+          />
           <aside
             className={`fixed top-0 right-0 h-full w-full max-w-sm bg-white shadow-2xl z-50 flex flex-col transition-transform duration-300 ease-in-out ${
               cartSidebarOpen ? "translate-x-0" : "translate-x-full"
             }`}
-            onClick={(e) => e.stopPropagation()}
           >
             {cartSidebarLoading && (
               <div className="absolute inset-0 bg-white/70 z-50 flex items-center justify-center">
-                <div className="w-12 h-12 border-4 border-[#39e079] border-t-transparent rounded-full animate-spin"></div>
+                <div className="w-8 h-8 border-4 border-[#51946b] border-t-transparent rounded-full animate-spin" />
               </div>
             )}
-            <div className="flex items-center justify-between p-4 border-b border-[#e8f2ec]">
-              <h2 className="text-lg font-bold text-[#0e1a13]">
-                Il tuo carrello
-              </h2>
+
+            <div className="flex items-center justify-between p-4 border-b">
+              <h2 className="text-lg font-bold">Il tuo carrello</h2>
               <button
-                className="p-2 rounded-full hover:bg-[#e8f2ec]"
                 onClick={onCartSidebarClose}
-                aria-label="Chiudi carrello"
+                className="p-2 hover:bg-gray-100 rounded"
               >
                 <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  strokeWidth="1.5"
-                  stroke="currentColor"
                   className="w-6 h-6"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
                 >
                   <path
                     strokeLinecap="round"
                     strokeLinejoin="round"
+                    strokeWidth={2}
                     d="M6 18L18 6M6 6l12 12"
                   />
                 </svg>
               </button>
             </div>
-            <div className="flex-1 overflow-y-auto overflow-x-auto p-4 flex flex-col gap-4">
+
+            <div className="flex-1 overflow-y-auto p-4">
               {cartItems.length === 0 ? (
-                <div className="text-center text-[#51946b]">
-                  Il carrello è vuoto.
+                <div className="text-center text-gray-500">
+                  Il carrello è vuoto
                 </div>
               ) : (
-                cartItems.map((item: CartItem) => (
-                  <div
-                    key={item.productId}
-                    className="flex items-start gap-3 border-b pb-3 last:border-b-0"
-                  >
-                    <a
-                      href={`/product/${item.productId}`}
-                      className="w-16 h-16 flex-shrink-0 bg-center bg-cover rounded-lg border border-[#e8f2ec] mt-1 block"
-                      style={{ backgroundImage: `url('${item.immagine}')` }}
-                      onClick={(e) => {
-                        e.preventDefault();
-                        onCartItemClick(item.productId);
-                      }}
-                      aria-label={item.titolo}
-                    ></a>
-                    <div className="flex-1 flex flex-col justify-start min-w-0">
-                      <a
-                        href={`/product/${item.productId}`}
-                        className="font-bold text-[#0e1a13] text-sm truncate hover:underline"
-                        onClick={(e) => {
-                          e.preventDefault();
-                          onCartItemClick(item.productId);
-                        }}
-                        aria-label={item.titolo}
-                      >
-                        {item.titolo}
-                      </a>
-                      <div className="text-xs text-[#51946b] mb-1">
-                        €{" "}
-                        {Number.isFinite(Number(item.prezzo))
-                          ? Number(item.prezzo).toFixed(2)
-                          : "0.00"}
-                      </div>
-                      <div className="flex items-center gap-2 mt-1">
-                        <button
-                          className="px-2 py-1 bg-[#e8f2ec] rounded text-[#0e1a13] text-sm font-bold"
-                          onClick={() => {
-                            if (item.quantity > 1) {
+                <div className="space-y-4">
+                  {cartItems.map((item) => (
+                    <div
+                      key={item.productId}
+                      className="flex items-start gap-3 pb-3 border-b last:border-b-0"
+                    >
+                      <img
+                        src={item.immagine || "/file.svg"}
+                        alt={item.titolo}
+                        className="w-16 h-16 object-cover rounded border cursor-pointer"
+                        onClick={() => onCartItemClick(item.productId)}
+                      />
+                      <div className="flex-1 min-w-0">
+                        <h3
+                          className="font-medium text-sm cursor-pointer hover:text-[#51946b]"
+                          onClick={() => onCartItemClick(item.productId)}
+                        >
+                          {item.titolo}
+                        </h3>
+                        <p className="text-sm text-[#51946b] mb-2">
+                          € {Number(item.prezzo).toFixed(2)}
+                        </p>
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => {
+                              if (item.quantity > 1) {
+                                onCartItemQuantityChange(
+                                  item.productId,
+                                  item.quantity - 1
+                                );
+                              } else {
+                                onCartItemRemove(item.productId);
+                              }
+                            }}
+                            className="px-2 py-1 bg-gray-200 rounded text-sm"
+                          >
+                            -
+                          </button>
+                          <span className="text-sm font-medium min-w-[24px] text-center">
+                            {item.quantity}
+                          </span>
+                          <button
+                            onClick={() =>
                               onCartItemQuantityChange(
                                 item.productId,
-                                item.quantity - 1
-                              );
-                            } else {
-                              onCartItemRemove(item.productId);
+                                item.quantity + 1
+                              )
                             }
-                          }}
-                          aria-label="Diminuisci quantità"
-                        >
-                          -
-                        </button>
-                        <span className="text-[#0e1a13] text-sm font-bold min-w-[24px] text-center">
-                          {item.quantity}
-                        </span>
-                        <button
-                          className="px-2 py-1 bg-[#e8f2ec] rounded text-[#0e1a13] text-sm font-bold"
-                          onClick={() =>
-                            onCartItemQuantityChange(
-                              item.productId,
-                              item.quantity + 1
-                            )
-                          }
-                          aria-label="Aumenta quantità"
-                        >
-                          +
-                        </button>
-                        <button
-                          className="ml-2 text-red-500 hover:text-red-700 text-xs"
-                          onClick={() => onCartItemRemove(item.productId)}
-                          aria-label="Rimuovi dal carrello"
-                        >
-                          Rimuovi
-                        </button>
+                            className="px-2 py-1 bg-gray-200 rounded text-sm"
+                          >
+                            +
+                          </button>
+                          <button
+                            onClick={() => onCartItemRemove(item.productId)}
+                            className="ml-2 text-red-500 text-xs hover:text-red-700"
+                          >
+                            Rimuovi
+                          </button>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))
+                  ))}
+                </div>
               )}
             </div>
-            <div className="p-4 border-t border-[#e8f2ec] bg-[#f8faf9]">
-              <div className="flex justify-between items-center mb-4">
-                <span className="font-bold text-[#0e1a13]">Totale</span>
-                <span className="font-bold text-[#51946b] text-lg">
-                  € {cartTotal.toFixed(2)}
-                </span>
+
+            {cartItems.length > 0 && (
+              <div className="p-4 border-t bg-gray-50">
+                <div className="flex justify-between items-center mb-4">
+                  <span className="font-bold">Totale</span>
+                  <span className="font-bold text-lg text-[#51946b]">
+                    € {cartTotal.toFixed(2)}
+                  </span>
+                </div>
+                <div className="space-y-2">
+                  <button
+                    onClick={onGoToCart}
+                    className="w-full py-2 border border-[#51946b] text-[#51946b] rounded font-medium hover:bg-[#51946b] hover:text-white transition-colors"
+                  >
+                    Vai al carrello
+                  </button>
+                  <button
+                    onClick={onGoToCheckout}
+                    className="w-full py-2 bg-[#51946b] text-white rounded font-medium hover:bg-[#3d7a57] transition-colors"
+                  >
+                    Checkout
+                  </button>
+                </div>
               </div>
-              <div className="flex flex-col gap-2">
-                <button
-                  className="w-full text-center py-2 rounded bg-[#e8f2ec] text-[#0e1a13] font-bold hover:bg-[#d1e7db] transition disabled:opacity-50 disabled:cursor-not-allowed"
-                  onClick={onGoToCart}
-                  disabled={!cartItems || cartItems.length === 0}
-                >
-                  Vai al carrello
-                </button>
-                <button
-                  className="w-full text-center py-2 rounded bg-[#39e079] text-white font-bold hover:bg-[#2fc96a] transition disabled:opacity-50 disabled:cursor-not-allowed"
-                  onClick={onGoToCheckout}
-                  disabled={!cartItems || cartItems.length === 0}
-                >
-                  Vai al checkout
-                </button>
-              </div>
-            </div>
+            )}
           </aside>
         </>
       )}
-      <style jsx global>{`
-        @media (max-width: 768px) {
-          body,
-          .main-content,
-          .layout-content-container {
-            padding-top: 34px !important;
-          }
-        }
-      `}</style>
-    </header>
+    </>
   );
 }
 
