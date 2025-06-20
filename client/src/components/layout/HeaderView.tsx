@@ -1,5 +1,6 @@
 import React from "react";
-import HeaderStatic from "./HeaderStatic";
+import Image from "next/image";
+import Link from "next/link";
 import type { CartItem } from "@/redux/cartSlice";
 import type { User } from "@/redux/authSlice";
 
@@ -17,6 +18,7 @@ export interface HeaderViewProps {
   categoriesLoading: boolean;
   cartItems: CartItem[];
   cartTotal: number;
+  searchQuery: string;
   onMenuOpen: () => void;
   onMenuClose: () => void;
   onProfileMenuToggle: () => void;
@@ -30,6 +32,8 @@ export interface HeaderViewProps {
   onCartItemQuantityChange: (productId: number, quantity: number) => void;
   onGoToCart: () => void;
   onGoToCheckout: () => void;
+  onSearchChange: (query: string) => void;
+  onSearchSubmit: () => void;
   pathname: string;
 }
 
@@ -47,6 +51,7 @@ function HeaderView({
   categoriesLoading,
   cartItems,
   cartTotal,
+  searchQuery,
   onMenuOpen,
   onMenuClose,
   onProfileMenuToggle,
@@ -60,6 +65,8 @@ function HeaderView({
   onCartItemQuantityChange,
   onGoToCart,
   onGoToCheckout,
+  onSearchChange,
+  onSearchSubmit,
   pathname,
 }: HeaderViewProps) {
   return (
@@ -68,15 +75,31 @@ function HeaderView({
       <header className="sticky top-0 left-0 w-full z-50 bg-white shadow-md">
         {/* Desktop Header */}
         <div className="hidden lg:block">
+          {" "}
           <div className="max-w-7xl mx-auto px-4 py-4">
-            <div className="flex items-center justify-between">
+            <div className="flex items-center gap-8">
               {/* Logo */}
-              <div className="flex items-center">
-                <HeaderStatic />
-              </div>
-
+              <div className="flex items-center flex-shrink-0">
+                <Link
+                  href="/"
+                  className="flex items-center hover:opacity-80 transition-opacity"
+                >
+                  <Image
+                    src="/bambu-logo.jpg"
+                    alt="Cartolibreria Bambù"
+                    width={44}
+                    height={44}
+                    priority
+                    className="object-contain"
+                  />
+                  <div className="ml-3">
+                    <h1 className="text-xl font-bold text-[#51946b]">Bambù</h1>
+                    <p className="text-xs text-gray-600">Cartolibreria</p>
+                  </div>
+                </Link>
+              </div>{" "}
               {/* Navigation Menu Desktop */}
-              <nav className="flex items-center space-x-8">
+              <nav className="flex items-center space-x-6">
                 <div className="relative group category-menu">
                   <button className="flex items-center text-gray-700 hover:text-[#51946b] font-medium transition-colors">
                     Categorie
@@ -114,9 +137,9 @@ function HeaderView({
                       )}
                     </div>
                   </div>
-                </div>
+                </div>{" "}
                 <a
-                  href="/products"
+                  href="/search"
                   className="text-gray-700 hover:text-[#51946b] font-medium transition-colors"
                 >
                   Tutti i Prodotti
@@ -127,15 +150,28 @@ function HeaderView({
                 >
                   Chi Siamo
                 </a>
-              </nav>
-
+              </nav>{" "}
               {/* Search Bar Desktop */}
-              <div className="flex-1 max-w-md mx-8">
-                <div className="relative">
+              <div className="flex-1 max-w-lg mx-6">
+                <form
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    onSearchSubmit();
+                  }}
+                  className="relative"
+                >
                   <input
                     type="text"
+                    value={searchQuery}
+                    onChange={(e) => onSearchChange(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        onSearchSubmit();
+                      }
+                    }}
                     placeholder="Cerca prodotti..."
-                    className="w-full px-4 py-2 pl-10 pr-4 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-[#51946b] focus:border-transparent"
+                    className="w-full px-4 py-2 pl-10 pr-12 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-[#51946b] focus:border-transparent"
                   />
                   <svg
                     className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400"
@@ -150,11 +186,29 @@ function HeaderView({
                       d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
                     />
                   </svg>
-                </div>
+                  <button
+                    type="submit"
+                    className="absolute right-2 top-1/2 transform -translate-y-1/2 p-1.5 bg-[#51946b] text-white rounded-full hover:bg-[#3d7a57] transition-colors focus:outline-none focus:ring-2 focus:ring-[#51946b] focus:ring-offset-1"
+                    aria-label="Cerca"
+                  >
+                    <svg
+                      className="h-4 w-4"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                      />
+                    </svg>
+                  </button>
+                </form>
               </div>
-
               {/* Actions Desktop */}
-              <div className="flex items-center space-x-4">
+              <div className="flex items-center space-x-4 flex-shrink-0">
                 {/* Cart Button */}
                 <button
                   onClick={onCartSidebarOpen}
@@ -264,16 +318,33 @@ function HeaderView({
                     d="M4 6h16M4 12h16M4 18h16"
                   />
                 </svg>
-              </button>
-
+              </button>{" "}
               {/* Logo Mobile */}
               <div className="flex-1 flex justify-center">
-                <HeaderStatic />
-              </div>
-
+                <Link
+                  href="/"
+                  className="flex items-center hover:opacity-80 transition-opacity"
+                >
+                  <Image
+                    src="/bambu-logo.jpg"
+                    alt="Cartolibreria Bambù"
+                    width={32}
+                    height={32}
+                    priority
+                    className="object-contain"
+                  />
+                  <div className="ml-2">
+                    <h1 className="text-lg font-bold text-[#51946b]">Bambù</h1>
+                  </div>
+                </Link>
+              </div>{" "}
               {/* Mobile Actions */}
               <div className="flex items-center space-x-2">
-                <button className="p-2 text-gray-700">
+                <button
+                  onClick={onSearchSubmit}
+                  className="p-2 text-gray-700 hover:text-[#51946b] transition-colors"
+                  aria-label="Cerca prodotti"
+                >
                   <svg
                     className="h-5 w-5"
                     fill="none"
@@ -356,8 +427,67 @@ function HeaderView({
                   strokeWidth={2}
                   d="M6 18L18 6M6 6l12 12"
                 />
-              </svg>
+              </svg>{" "}
             </button>
+
+            {/* Mobile Search Bar */}
+            <div className="mb-6">
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  onSearchSubmit();
+                  onMenuClose();
+                }}
+                className="relative"
+              >
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => onSearchChange(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      onSearchSubmit();
+                      onMenuClose();
+                    }
+                  }}
+                  placeholder="Cerca prodotti..."
+                  className="w-full px-4 py-3 pl-10 pr-12 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#51946b] focus:border-transparent"
+                />
+                <svg
+                  className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                  />
+                </svg>
+                <button
+                  type="submit"
+                  className="absolute right-2 top-1/2 transform -translate-y-1/2 p-2 bg-[#51946b] text-white rounded-lg hover:bg-[#3d7a57] transition-colors focus:outline-none focus:ring-2 focus:ring-[#51946b] focus:ring-offset-1"
+                  aria-label="Cerca"
+                >
+                  <svg
+                    className="h-4 w-4"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                    />
+                  </svg>
+                </button>
+              </form>
+            </div>
 
             <div className="flex flex-col gap-4">
               <h2 className="text-lg font-bold">Categorie</h2>

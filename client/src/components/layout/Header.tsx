@@ -22,6 +22,7 @@ import {
   selectParentCategories,
   selectCategoriesLoading,
 } from "@/redux/categorySelectors";
+import { fetchCategoriesStart } from "@/redux/categorySlice";
 import headerService from "@/api/headerService";
 import { useCartActions } from "@/components/layout/CartProvider";
 
@@ -61,6 +62,7 @@ const Header: React.FC<HeaderProps> = ({
   const [cartSidebarOpenInternal, setCartSidebarOpenInternal] = useState(false);
   const [cartSidebarVisible, setCartSidebarVisible] = useState(false);
   const [cartSidebarLoading, setCartSidebarLoading] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
   const cartSidebarOpen =
     typeof showCartSidebar === "boolean"
       ? showCartSidebar
@@ -95,9 +97,12 @@ const Header: React.FC<HeaderProps> = ({
     setLoading(false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pathname, searchParamsString]);
-
   useEffect(() => {
     dispatch(getCurrentUserRequest()); // Dispatch dell'azione per ottenere l'utente
+  }, [dispatch]);
+
+  useEffect(() => {
+    dispatch(fetchCategoriesStart()); // Dispatch dell'azione per ottenere le categorie
   }, [dispatch]);
 
   const handleClickOutside = (event: MouseEvent | TouchEvent) => {
@@ -177,11 +182,21 @@ const Header: React.FC<HeaderProps> = ({
 
   // Helper: get token
   const getToken = () => localStorage.getItem("token") || "";
-
   // Helper: find cartItemId by productId
   const getCartItemId = (productId: number) => {
     const item = cartItems.find((i) => i.productId === productId);
     return item?.cartItemId;
+  };
+
+  // Search handlers
+  const handleSearchChange = (query: string) => {
+    setSearchQuery(query);
+  };
+
+  const handleSearchSubmit = () => {
+    if (searchQuery.trim()) {
+      router.push(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
+    }
   };
 
   // --- CART PERSISTENCE LOGIC ---
@@ -316,6 +331,9 @@ const Header: React.FC<HeaderProps> = ({
         router.push("/checkout");
         setCartSidebarOpen(false);
       }}
+      searchQuery={searchQuery}
+      onSearchChange={handleSearchChange}
+      onSearchSubmit={handleSearchSubmit}
       pathname={pathname || "/"} // Fornisce un valore di fallback sicuro
       // If you want to pass handleAddToCart to HeaderView, add it here
       // handleAddToCart={handleAddToCart}
