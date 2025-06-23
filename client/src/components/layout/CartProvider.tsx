@@ -50,6 +50,7 @@ export const CartActionsContext = createContext<
         productId: number,
         quantity: number
       ) => Promise<void>;
+      handleClearCart: () => Promise<void>;
     }
   | undefined
 >(undefined);
@@ -85,6 +86,7 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
     const loadCart = async () => {
       if (currentUser) {
         try {
+          console.log("🛒 Loading cart for logged user...");
           const response = await apiService.get<any>("/cart");
           dispatch(clearCart());
           if (response && Array.isArray(response.items)) {
@@ -99,11 +101,39 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
               })
             );
             dispatch(setCart(newCart));
+            console.log(
+              "✅ Cart loaded successfully:",
+              newCart.length,
+              "items"
+            );
+          } else {
+            console.log("📭 Empty cart from backend");
           }
         } catch (e) {
+          console.error("❌ Error loading cart from backend:", e);
           dispatch(clearCart());
+          // Fallback: tenta di caricare da localStorage se c'è un errore API
+          const cached =
+            typeof window !== "undefined" ? localStorage.getItem("cart") : null;
+          if (cached) {
+            try {
+              const items = JSON.parse(cached);
+              if (Array.isArray(items)) {
+                console.log("🔄 Fallback: Loading cart from localStorage");
+                items.forEach((item: CartItem) => {
+                  dispatch(addToCart(item));
+                });
+              }
+            } catch (localError) {
+              console.error(
+                "❌ Error loading cart from localStorage:",
+                localError
+              );
+            }
+          }
         }
       } else {
+        console.log("👤 Loading cart for guest user from localStorage...");
         dispatch(clearCart());
         const cached =
           typeof window !== "undefined" ? localStorage.getItem("cart") : null;
@@ -114,15 +144,24 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
               items.forEach((item: CartItem) => {
                 dispatch(addToCart(item));
               });
+              console.log("✅ Guest cart loaded:", items.length, "items");
             }
           } catch (e) {
-            // fallback: carrello vuoto
+            console.error("❌ Error loading guest cart:", e);
           }
+        } else {
+          console.log("📭 No guest cart found");
         }
       }
       setCartLoaded(true);
     };
-    loadCart();
+
+    // Aspetta che currentUser sia definitivamente impostato prima di caricare
+    const timer = setTimeout(() => {
+      loadCart();
+    }, 100);
+
+    return () => clearTimeout(timer);
   }, [currentUser, dispatch]);
 
   // Salva il carrello in localStorage se l'utente NON è loggato
@@ -232,6 +271,33 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
     }
   };
 
+  // --- CLEAR CART (USED AFTER SUCCESSFUL PAYMENT) ---
+  const handleClearCart = async () => {
+    console.log(
+      "🧹 CartProvider: Clearing cart for both backend and localStorage"
+    );
+    try {
+      if (currentUser) {
+        try {
+          // Clear backend cart - this will be done by the webhook
+          console.log(
+            "🧹 CartProvider: Backend cart will be cleared by webhook"
+          );
+        } catch (e) {
+          console.error("❌ CartProvider: Error clearing backend cart:", e);
+        }
+      }
+      // Always clear Redux state and localStorage
+      dispatch(clearCart());
+      if (typeof window !== "undefined") {
+        localStorage.removeItem("cart");
+        console.log("🧹 CartProvider: localStorage cart cleared");
+      }
+    } catch (error) {
+      console.error("❌ CartProvider: Error clearing cart:", error);
+    }
+  };
+
   if (!cartLoaded) {
     return (
       <div className="w-full flex justify-center items-center py-12 text-[#51946b]">
@@ -239,10 +305,14 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
       </div>
     );
   }
-
   return (
     <CartActionsContext.Provider
-      value={{ handleAddToCart, handleRemoveFromCart, handleUpdateQuantity }}
+      value={{
+        handleAddToCart,
+        handleRemoveFromCart,
+        handleUpdateQuantity,
+        handleClearCart,
+      }}
     >
       {children}
     </CartActionsContext.Provider>

@@ -55,6 +55,14 @@ export default function CheckoutPage() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
 
+  // Redirect se carrello vuoto
+  React.useEffect(() => {
+    if (!cartItems || cartItems.length === 0) {
+      console.log("🛒 Checkout: Carrello vuoto, redirect alla home");
+      router.push("/");
+    }
+  }, [cartItems, router]);
+
   // Calcolo totale carrello
   const total = cartItems.reduce(
     (sum, item) => sum + item.prezzo * item.quantity,

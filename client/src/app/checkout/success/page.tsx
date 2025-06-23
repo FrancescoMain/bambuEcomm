@@ -2,11 +2,11 @@
 
 import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useDispatch } from "react-redux";
-import { clearCart } from "@/redux/cartSlice";
+import { useCartActions } from "@/components/layout/CartProvider";
 
-export default function CheckoutSuccess() {  const router = useRouter();
-  const dispatch = useDispatch();
+export default function CheckoutSuccess() {
+  const router = useRouter();
+  const { handleClearCart } = useCartActions();
   const searchParams = useSearchParams();
   const sessionId = searchParams?.get("session_id") || null;
   const [loading, setLoading] = useState(true);
@@ -19,9 +19,9 @@ export default function CheckoutSuccess() {  const router = useRouter();
       return;
     }
     // Svuota il carrello dopo il successo del pagamento
-    dispatch(clearCart());
+    handleClearCart();
     setLoading(false);
-  }, [sessionId, dispatch]);
+  }, [sessionId, handleClearCart]);
 
   if (loading) {
     return (

@@ -56,6 +56,18 @@ const CartPage = () => {
     }
   }, [reduxCartItems]);
 
+  // Redirect se carrello vuoto
+  React.useEffect(() => {
+    if (cartItems && cartItems.length === 0) {
+      const timer = setTimeout(() => {
+        console.log("🛒 Carrello vuoto, redirect alla home");
+        router.push("/");
+      }, 2000); // Aspetta 2 secondi per dare tempo al carrello di caricarsi
+
+      return () => clearTimeout(timer);
+    }
+  }, [cartItems, router]);
+
   // Aggiorna localStorage se non loggato
   React.useEffect(() => {
     const token =

@@ -101,7 +101,46 @@ router.post(
               select: { id: true, name: true, email: true },
             },
           },
-        });
+        }); // 🛒 SVUOTA IL CARRELLO DOPO ORDINE COMPLETATO
+        console.log(
+          "🛒 Webhook - Svuotamento carrello per ordine:",
+          createdOrder.id
+        );
+        try {
+          if (userId) {
+            // Per utenti registrati: svuota il carrello nel database
+            // Prima trova il cart dell'utente
+            const userCart = await prisma.cart.findUnique({
+              where: { userId: userId },
+            });
+
+            if (userCart) {
+              // Elimina tutti i CartItem del cart
+              await prisma.cartItem.deleteMany({
+                where: { cartId: userCart.id },
+              });
+              console.log(
+                `✅ Webhook - Carrello DB svuotato per utente ${userId} (cart ID: ${userCart.id})`
+              );
+            } else {
+              console.log(
+                `ℹ️ Webhook - Nessun carrello trovato per utente ${userId}`
+              );
+            }
+          } else {
+            // Per guest: il carrello frontend si occuperà di svuotarsi
+            // tramite localStorage quando riceve la conferma di pagamento
+            console.log(
+              "ℹ️ Webhook - Ordine guest: carrello frontend gestito via localStorage"
+            );
+          }
+        } catch (cartError) {
+          console.error(
+            "❌ Webhook - Errore durante svuotamento carrello:",
+            cartError
+          );
+          // Non blocchiamo il webhook se lo svuotamento carrello fallisce
+        }
 
         // 🔥 INVIO EMAIL ORDINE CONFERMATO
         console.log(

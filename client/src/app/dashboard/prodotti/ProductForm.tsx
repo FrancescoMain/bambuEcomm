@@ -50,7 +50,6 @@ export default function ProductForm({
   const handleVariantsChange = (variants: any) => {
     onFormChange({ ...formData, varianti: variants });
   };
-
   const handleVariantImageUpload = (
     typeIndex: number,
     valueIndex: number,
@@ -64,11 +63,33 @@ export default function ProductForm({
       },
     });
   };
+  // Validazione form
+  const isFormValid = () => {
+    return (
+      formData.titolo?.trim() &&
+      formData.prezzo &&
+      parseFloat(String(formData.prezzo)) > 0 &&
+      formData.categoriaId &&
+      formData.descrizione?.trim()
+    );
+  };
 
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!isFormValid()) {
+      alert(
+        "Per favore compila tutti i campi obbligatori (Titolo, Prezzo > 0, Categoria, Descrizione)"
+      );
+      return;
+    }
+
+    onSubmit(e);
+  };
   return (
     <form
       className="bg-white rounded-lg w-full flex flex-col overflow-auto"
-      onSubmit={onSubmit}
+      onSubmit={handleSubmit}
       noValidate
     >
       {/* Form Header */}
@@ -84,10 +105,19 @@ export default function ProductForm({
         >
           <FiX className="w-6 h-6" />
         </button>
-      </div>
-
+      </div>{" "}
       {/* Form Content */}
       <div className="p-6 flex-grow">
+        {/* Messaggio di validazione */}
+        {!isFormValid() && (
+          <div className="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+            <p className="text-sm text-yellow-800">
+              <strong>Nota:</strong> I campi contrassegnati con * sono
+              obbligatori per creare il prodotto.
+            </p>
+          </div>
+        )}
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Titolo */}
           <div className="md:col-span-2">
@@ -95,35 +125,46 @@ export default function ProductForm({
               htmlFor="titolo"
               className="block text-sm font-medium mb-1 text-gray-700"
             >
-              Titolo
-            </label>
+              Titolo *
+            </label>{" "}
             <input
               id="titolo"
               name="titolo"
-              className="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-[#51946b] focus:outline-none"
+              className={`w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-[#51946b] focus:outline-none ${
+                !formData.titolo?.trim()
+                  ? "border-red-300 bg-red-50"
+                  : "border-gray-300"
+              }`}
               value={formData.titolo || ""}
               onChange={handleInputChange}
               required
+              placeholder="Inserisci il titolo del prodotto"
             />
           </div>
-
-          {/* Prezzo e Stock */}
+          {/* Prezzo e Stock */}{" "}
           <div>
             <label
               htmlFor="prezzo"
               className="block text-sm font-medium mb-1 text-gray-700"
             >
-              Prezzo
-            </label>
+              Prezzo *
+            </label>{" "}
             <input
               id="prezzo"
               name="prezzo"
               type="number"
               step="0.01"
-              className="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-[#51946b] focus:outline-none"
+              min="0.01"
+              className={`w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-[#51946b] focus:outline-none ${
+                !formData.prezzo || parseFloat(String(formData.prezzo)) <= 0
+                  ? "border-red-300 bg-red-50"
+                  : "border-gray-300"
+              }`}
               value={formData.prezzo || ""}
               onChange={handleInputChange}
               required
+              title="Il prezzo deve essere un numero positivo maggiore di zero"
+              placeholder="0.00"
             />
           </div>
           <div>
@@ -143,20 +184,23 @@ export default function ProductForm({
               onChange={handleInputChange}
               required
             />
-          </div>
-
+          </div>{" "}
           {/* Categoria */}
           <div className="md:col-span-2">
             <label
               htmlFor="categoriaId"
               className="block text-sm font-medium mb-1 text-gray-700"
             >
-              Categoria
-            </label>
+              Categoria *
+            </label>{" "}
             <select
               id="categoriaId"
               name="categoriaId"
-              className="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-[#51946b] focus:outline-none"
+              className={`w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-[#51946b] focus:outline-none ${
+                !formData.categoriaId
+                  ? "border-red-300 bg-red-50"
+                  : "border-gray-300"
+              }`}
               value={formData.categoriaId || ""}
               onChange={handleInputChange}
               required
@@ -169,25 +213,29 @@ export default function ProductForm({
               ))}
             </select>
           </div>
-
           {/* Descrizione */}
           <div className="md:col-span-2">
             <label
               htmlFor="descrizione"
               className="block text-sm font-medium mb-1 text-gray-700"
             >
-              Descrizione
-            </label>
+              Descrizione *
+            </label>{" "}
             <textarea
               id="descrizione"
               name="descrizione"
               rows={5}
-              className="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-[#51946b] focus:outline-none"
+              className={`w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-[#51946b] focus:outline-none ${
+                !formData.descrizione?.trim()
+                  ? "border-red-300 bg-red-50"
+                  : "border-gray-300"
+              }`}
               value={formData.descrizione || ""}
               onChange={handleInputChange}
+              required
+              placeholder="Inserisci una descrizione del prodotto"
             />
           </div>
-
           {/* Immagine */}
           <div className="md:col-span-2">
             <label className="block text-sm font-medium mb-1 text-gray-700">
@@ -235,7 +283,6 @@ export default function ProductForm({
               </div>
             </div>
           </div>
-
           {/* Varianti */}
           <div className="md:col-span-2">
             <VariantsForm
@@ -246,7 +293,6 @@ export default function ProductForm({
           </div>
         </div>
       </div>
-
       {/* Form Footer */}
       <div className="p-4 border-t bg-white z-10 md:sticky md:bottom-0">
         <div className="flex justify-end gap-4">
@@ -256,11 +302,15 @@ export default function ProductForm({
             className="px-4 py-2 bg-gray-200 text-gray-800 font-semibold rounded-lg hover:bg-gray-300 transition-colors"
           >
             Annulla
-          </button>
+          </button>{" "}
           <button
             type="submit"
-            className="w-full md:w-auto bg-[#51946b] text-white font-semibold py-2 px-6 rounded-lg flex items-center justify-center hover:bg-opacity-90 transition-colors disabled:bg-gray-400"
-            disabled={formLoading}
+            className={`w-full md:w-auto font-semibold py-2 px-6 rounded-lg flex items-center justify-center transition-colors ${
+              isFormValid() && !formLoading
+                ? "bg-[#51946b] text-white hover:bg-opacity-90"
+                : "bg-gray-400 text-gray-600 cursor-not-allowed"
+            }`}
+            disabled={formLoading || !isFormValid()}
           >
             {formLoading ? (
               <svg
