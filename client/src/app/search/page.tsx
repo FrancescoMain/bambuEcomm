@@ -299,11 +299,13 @@ function SearchPageContent() {
                 Home
               </button>
               <span className="text-gray-400">/</span>
-              <span className="text-gray-900 font-medium">Ricerca</span>
+              <span className="text-gray-900 font-medium">Ricerca</span>{" "}
               {query && (
                 <>
                   <span className="text-gray-400">/</span>
-                  <span className="text-[#51946b] font-medium">"{query}"</span>
+                  <span className="text-[#51946b] font-medium">
+                    &quot;{query}&quot;
+                  </span>
                 </>
               )}
             </nav>

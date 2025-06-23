@@ -412,9 +412,9 @@ const ProductDetailPage: React.FC = () => {
                   <h3 className="font-bold text-green-800">
                     Prodotto in Stock
                   </h3>
-                </div>
+                </div>{" "}
                 <ul className="space-y-2 text-green-700">
-                  <li>• Spedizione entro 48 ore dall'ordine</li>
+                  <li>• Spedizione entro 48 ore dall&apos;ordine</li>
                   <li>• Consegna stimata: 3-5 giorni lavorativi</li>
                   <li>• Tracciamento incluso</li>
                 </ul>
@@ -426,9 +426,9 @@ const ProductDetailPage: React.FC = () => {
                   <h3 className="font-bold text-yellow-800">
                     Prodotto non in Stock
                   </h3>
-                </div>
+                </div>{" "}
                 <ul className="space-y-2 text-yellow-700">
-                  <li>• Spedizione entro 96 ore dall'ordine</li>
+                  <li>• Spedizione entro 96 ore dall&apos;ordine</li>
                   <li>• Consegna stimata: 5-7 giorni lavorativi</li>
                   <li>• Ti avviseremo quando sarà pronto</li>
                 </ul>
