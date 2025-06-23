@@ -421,11 +421,12 @@ export const updateOrderStatus = async (
   }
 
   try {
-    const order = await prisma.order.findUnique({ where: { id: orderId } });
-
-    if (!order) {
+    const order = await prisma.order.findUnique({ where: { id: orderId } });    if (!order) {
       res.status(404).json({ message: "Ordine non trovato." });
-      return;    // Aggiorna solo lo stato dell'ordine.
+      return;
+    }
+    
+    // Aggiorna solo lo stato dell'ordine.
     const updatedOrder = await prisma.order.update({
       where: { id: orderId },
       data: { status: status as OrderStatus },
@@ -633,8 +634,7 @@ export const cancelOrder = async (
         message: "Ordine o prodotto non trovato durante la cancellazione.",
       });
       return;
-    }
-    res.status(500).json({
+    }    res.status(500).json({
       message:
         "Errore interno del server durante la cancellazione dell'ordine.",
       error: (error as Error).message,
@@ -642,10 +642,3 @@ export const cancelOrder = async (
     return;
   }
 };
-
-// TODO: Implementare le seguenti funzioni:
-// export const getOrderById = async (req: AuthenticatedRequest, res: Response): Promise<void> => {};
-// export const getUserOrders = async (req: AuthenticatedRequest, res: Response): Promise<void> => {};
-// export const getAllOrders = async (req: AuthenticatedRequest, res: Response): Promise<void> => {}; // Admin only
-// export const updateOrderStatus = async (req: AuthenticatedRequest, res: Response): Promise<void> => {}; // Admin only
-// export const cancelOrder = async (req: AuthenticatedRequest, res: Response): Promise<void> => {}; // User and Admin
