@@ -66,8 +66,9 @@ router.post(
             }
           } catch (e) {
             console.error("Errore parsing cart da metadata:", e);
-          }        }
-        
+          }
+        }
+
         const createdOrder = await prisma.order.create({
           data: {
             paymentIntentId: session.payment_intent as string,
@@ -103,11 +104,20 @@ router.post(
         });
 
         // 🔥 INVIO EMAIL ORDINE CONFERMATO
-        console.log("🔧 DEBUG: Webhook - Iniziando processo invio email per ordine:", createdOrder.id);
+        console.log(
+          "🔧 DEBUG: Webhook - Iniziando processo invio email per ordine:",
+          createdOrder.id
+        );
         try {
           // Determina email e nome cliente (utente registrato o guest)
-          const customerEmailFinal = createdOrder.user?.email || createdOrder.guestEmail || customerEmail;
-          const customerNameFinal = createdOrder.user?.name || `${nome || ''} ${cognome || ''}`.trim() || "Cliente";
+          const customerEmailFinal =
+            createdOrder.user?.email ||
+            createdOrder.guestEmail ||
+            customerEmail;
+          const customerNameFinal =
+            createdOrder.user?.name ||
+            `${nome || ""} ${cognome || ""}`.trim() ||
+            "Cliente";
 
           if (customerEmailFinal) {
             // Prepara i dati per l'email
@@ -133,32 +143,55 @@ router.post(
               },
             };
 
-            console.log("🔧 DEBUG: Webhook - Dati ordine preparati:", orderData);
+            console.log(
+              "🔧 DEBUG: Webhook - Dati ordine preparati:",
+              orderData
+            );
 
             // Email al cliente
-            console.log(`📧 Webhook - Tentativo invio email conferma ordine a: ${orderData.customerEmail}`);
-            const customerEmailSent = await emailService.sendOrderConfirmationEmail(orderData);
+            console.log(
+              `📧 Webhook - Tentativo invio email conferma ordine a: ${orderData.customerEmail}`
+            );
+            const customerEmailSent =
+              await emailService.sendOrderConfirmationEmail(orderData);
 
             if (customerEmailSent) {
-              console.log(`✅ Webhook - Email conferma ordine inviata al cliente: ${orderData.customerEmail}`);
+              console.log(
+                `✅ Webhook - Email conferma ordine inviata al cliente: ${orderData.customerEmail}`
+              );
             } else {
-              console.log(`⚠️ Webhook - Fallimento invio email conferma ordine al cliente: ${orderData.customerEmail}`);
+              console.log(
+                `⚠️ Webhook - Fallimento invio email conferma ordine al cliente: ${orderData.customerEmail}`
+              );
             }
 
             // Email all'admin
-            console.log(`📧 Webhook - Tentativo invio notifica ordine all'admin`);
-            const adminEmailSent = await emailService.sendOrderNotificationToAdmin(orderData);
+            console.log(
+              `📧 Webhook - Tentativo invio notifica ordine all'admin`
+            );
+            const adminEmailSent =
+              await emailService.sendOrderNotificationToAdmin(orderData);
 
             if (adminEmailSent) {
-              console.log(`✅ Webhook - Email notifica ordine inviata all'admin`);
+              console.log(
+                `✅ Webhook - Email notifica ordine inviata all'admin`
+              );
             } else {
-              console.log(`⚠️ Webhook - Fallimento invio email notifica ordine all'admin`);
+              console.log(
+                `⚠️ Webhook - Fallimento invio email notifica ordine all'admin`
+              );
             }
           } else {
-            console.error("❌ Webhook - Nessuna email trovata per l'ordine:", createdOrder.id);
+            console.error(
+              "❌ Webhook - Nessuna email trovata per l'ordine:",
+              createdOrder.id
+            );
           }
         } catch (emailError) {
-          console.error("❌ Webhook - Errore durante invio email ordine:", emailError);
+          console.error(
+            "❌ Webhook - Errore durante invio email ordine:",
+            emailError
+          );
           // Non blocchiamo il webhook se le email falliscono
         }
       }
