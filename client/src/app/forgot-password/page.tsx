@@ -5,6 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { toast } from "react-toastify";
 import { useLoading } from "@/components/layout/LoadingContext";
+import authService from "@/api/authService";
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("");
@@ -17,16 +18,16 @@ export default function ForgotPasswordPage() {
     setIsLoading(true);
 
     try {
-      // TODO: Implementare la chiamata API per il reset password
-      // await authService.forgotPassword(email);
-
-      // Simulazione per ora
-      await new Promise((resolve) => setTimeout(resolve, 2000));
+      const response = await authService.forgotPassword(email);
 
       setEmailSent(true);
-      toast.success("Email di reset inviata con successo!");
-    } catch (error) {
-      toast.error("Errore nell'invio dell'email. Riprova più tardi.");
+      toast.success(response.message || "Email di reset inviata con successo!");
+    } catch (error: any) {
+      console.error("Errore forgot password:", error);
+      toast.error(
+        error.response?.data?.message ||
+          "Errore nell'invio dell'email. Riprova più tardi."
+      );
     } finally {
       setIsLoading(false);
     }

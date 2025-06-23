@@ -59,7 +59,6 @@ class AuthService implements IAuthService {
       throw error;
     }
   }
-
   async logout(): Promise<void> {
     try {
       await apiService.post("/auth/logout");
@@ -82,6 +81,36 @@ class AuthService implements IAuthService {
         localStorage.removeItem("token");
       }
 
+      throw error;
+    }
+  }
+
+  async forgotPassword(email: string): Promise<{ message: string }> {
+    try {
+      return await apiService.post<{ message: string }>(
+        "/auth/request-password-reset",
+        { email }
+      );
+    } catch (error) {
+      console.error("Forgot password error:", error);
+      throw error;
+    }
+  }
+
+  async resetPassword(
+    token: string,
+    newPassword: string
+  ): Promise<{ message: string }> {
+    try {
+      return await apiService.post<{ message: string }>(
+        "/auth/reset-password",
+        {
+          token,
+          newPassword,
+        }
+      );
+    } catch (error) {
+      console.error("Reset password error:", error);
       throw error;
     }
   }
