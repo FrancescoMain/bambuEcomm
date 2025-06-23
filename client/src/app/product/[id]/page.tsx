@@ -19,23 +19,28 @@ type Product = {
   categoria?: { name: string }[];
   stock?: number;
   url?: string;
+  varianti?: {
+    id: number;
+    nome: string;
+    productId: number;
+    valori: {
+      id: number;
+      nome: string;
+      immagine?: string;
+      typeId: number;
+    }[];
+  }[];
 };
-
-// Colori disponibili (statici per ora)
-const availableColors = [
-  { name: "Rosso", value: "red", hex: "#EF4444" },
-  { name: "Blu", value: "blue", hex: "#3B82F6" },
-  { name: "Verde", value: "green", hex: "#10B981" },
-  { name: "Giallo", value: "yellow", hex: "#F59E0B" },
-  { name: "Nero", value: "black", hex: "#1F2937" },
-];
 
 const ProductDetailPage: React.FC = () => {
   const params = useParams();
   const productId = params?.id;
   const [product, setProduct] = useState<Product | null>(null);
   const [error, setError] = useState("");
-  const [selectedColor, setSelectedColor] = useState(availableColors[0]);
+  const [selectedVariants, setSelectedVariants] = useState<{
+    [variantTypeId: number]: any;
+  }>({});
+  const [currentImage, setCurrentImage] = useState<string>("");
   const [quantity, setQuantity] = useState(1);
 
   const { handleAddToCart } = useCartActions();
@@ -59,17 +64,57 @@ const ProductDetailPage: React.FC = () => {
     const found = categories.find((cat) => cat.name === lastCatName);
     return found?.id || null;
   }, [product, categories]);
-
   // Load product data
   useEffect(() => {
     if (!productId) return;
     setLoading(true);
     productDetailService
       .getProductById(productId.toString())
-      .then((product) => setProduct(product))
+      .then((product) => {
+        setProduct(product);
+
+        // Inizializza varianti selezionate con la prima variante di ogni tipo
+        if (product.varianti && product.varianti.length > 0) {
+          const initialVariants: { [variantTypeId: number]: any } = {};
+          product.varianti.forEach((variantType: any) => {
+            if (variantType.valori && variantType.valori.length > 0) {
+              initialVariants[variantType.id] = variantType.valori[0];
+            }
+          });
+          setSelectedVariants(initialVariants);
+
+          // Imposta l'immagine iniziale dalla prima variante o dall'immagine principale
+          const firstVariantWithImage = product.varianti
+            .flatMap((v: any) => v.valori)
+            .find((valor: any) => valor.immagine);
+
+          setCurrentImage(
+            firstVariantWithImage?.immagine || product.immagine || ""
+          );
+        } else {
+          setCurrentImage(product.immagine || "");
+        }
+      })
       .catch(() => setError("Prodotto non trovato"))
       .finally(() => setLoading(false));
   }, [productId, setLoading]);
+
+  // Handle variant selection
+  const handleVariantChange = (variantTypeId: number, selectedValue: any) => {
+    const newSelectedVariants = {
+      ...selectedVariants,
+      [variantTypeId]: selectedValue,
+    };
+    setSelectedVariants(newSelectedVariants);
+
+    // Aggiorna l'immagine se la variante selezionata ha un'immagine
+    if (selectedValue.immagine) {
+      setCurrentImage(selectedValue.immagine);
+    } else {
+      // Fallback all'immagine principale del prodotto se la variante non ha immagine
+      setCurrentImage(product?.immagine || "");
+    }
+  };
 
   // Load related products
   useEffect(() => {
@@ -212,12 +257,13 @@ const ProductDetailPage: React.FC = () => {
       <section className="py-12">
         <div className="max-w-7xl mx-auto px-4">
           <div className="grid lg:grid-cols-2 gap-12">
+            {" "}
             {/* Product Image */}
             <div className="bg-white rounded-2xl shadow-lg p-8 flex justify-center items-center">
-              {product.immagine ? (
+              {currentImage ? (
                 <div className="relative group cursor-zoom-in">
                   <Image
-                    src={product.immagine}
+                    src={currentImage}
                     alt={product.titolo}
                     width={500}
                     height={500}
@@ -243,7 +289,6 @@ const ProductDetailPage: React.FC = () => {
                 </div>
               )}
             </div>
-
             {/* Product Info */}
             <div className="space-y-8">
               {/* Price and Stock */}
@@ -267,47 +312,70 @@ const ProductDetailPage: React.FC = () => {
                     </span>
                   )}
                 </div>
-              </div>
-
-              {/* Color Variants */}
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">
-                  Colore:
-                </h3>
-                <div className="flex space-x-3">
-                  {availableColors.map((color) => (
-                    <button
-                      key={color.value}
-                      onClick={() => setSelectedColor(color)}
-                      className={`w-12 h-12 rounded-full border-4 transition-all ${
-                        selectedColor.value === color.value
-                          ? "border-[#51946b] scale-110"
-                          : "border-gray-300 hover:border-gray-400"
-                      }`}
-                      style={{ backgroundColor: color.hex }}
-                      title={color.name}
-                    >
-                      {selectedColor.value === color.value && (
-                        <svg
-                          className="w-6 h-6 text-white mx-auto"
-                          fill="currentColor"
-                          viewBox="0 0 20 20"
-                        >
-                          <path
-                            fillRule="evenodd"
-                            d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                            clipRule="evenodd"
-                          />
-                        </svg>
-                      )}
-                    </button>
+              </div>{" "}
+              {/* Product Variants */}
+              {product.varianti && product.varianti.length > 0 && (
+                <div className="space-y-6">
+                  {product.varianti.map((variantType) => (
+                    <div key={variantType.id}>
+                      <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                        {variantType.nome}:
+                      </h3>
+                      <div className="flex flex-wrap gap-3">
+                        {variantType.valori.map((valor) => (
+                          <button
+                            key={valor.id}
+                            onClick={() =>
+                              handleVariantChange(variantType.id, valor)
+                            }
+                            className={`relative border-2 rounded-lg p-3 transition-all min-w-[100px] ${
+                              selectedVariants[variantType.id]?.id === valor.id
+                                ? "border-[#51946b] bg-[#51946b]/10 scale-105"
+                                : "border-gray-300 hover:border-gray-400"
+                            }`}
+                          >
+                            {valor.immagine && (
+                              <div className="mb-2">
+                                <Image
+                                  src={valor.immagine}
+                                  alt={valor.nome}
+                                  width={60}
+                                  height={60}
+                                  className="w-full h-12 object-cover rounded mx-auto"
+                                />
+                              </div>
+                            )}
+                            <span className="text-sm font-medium block text-center">
+                              {valor.nome}
+                            </span>
+                            {selectedVariants[variantType.id]?.id ===
+                              valor.id && (
+                              <div className="absolute top-1 right-1 w-5 h-5 bg-[#51946b] rounded-full flex items-center justify-center">
+                                <svg
+                                  className="w-3 h-3 text-white"
+                                  fill="currentColor"
+                                  viewBox="0 0 20 20"
+                                >
+                                  <path
+                                    fillRule="evenodd"
+                                    d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                                    clipRule="evenodd"
+                                  />
+                                </svg>
+                              </div>
+                            )}
+                          </button>
+                        ))}
+                      </div>
+                      <p className="text-sm text-gray-600 mt-2">
+                        Selezionato:{" "}
+                        {selectedVariants[variantType.id]?.nome ||
+                          "Nessuna selezione"}
+                      </p>
+                    </div>
                   ))}
                 </div>
-                <p className="text-sm text-gray-600 mt-2">
-                  Selezionato: {selectedColor.name}
-                </p>
-              </div>
-
+              )}
               {/* Quantity and Actions */}
               <div className="bg-gray-50 rounded-2xl p-6 space-y-6">
                 {/* Quantity Selector */}
