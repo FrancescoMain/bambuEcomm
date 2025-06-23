@@ -235,7 +235,7 @@ const ProductDetailPage: React.FC = () => {
             </h1>
             {product.categoria && product.categoria.length > 0 && (
               <div className="inline-flex items-center bg-white/20 rounded-full px-4 py-2 backdrop-blur-sm">
-                <span className="mr-2">📚</span>
+                <span className="mr-2">🏷️</span>
                 <span className="font-medium">{product.categoria[0].name}</span>
               </div>
             )}

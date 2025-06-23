@@ -88,18 +88,32 @@ function SearchPageContent() {
 
   // Quick categories (matching home page)
   const quickCategories = [
-    { id: 1, name: "Libri", icon: "📚", color: "from-blue-500 to-blue-600" },
-    {
+    { id: 1, name: "Quaderni", icon: (
+        <svg className="w-8 h-8" fill="currentColor" viewBox="0 0 24 24">
+          <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/>
+        </svg>
+      ), color: "from-blue-500 to-blue-600" },    {
       id: 2,
       name: "Cancelleria",
-      icon: "✏️",
+      icon: (
+        <svg className="w-8 h-8" fill="currentColor" viewBox="0 0 24 24">
+          <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
+        </svg>
+      ),
       color: "from-green-500 to-green-600",
     },
-    { id: 3, name: "Arte", icon: "🎨", color: "from-purple-500 to-purple-600" },
-    {
+    { id: 3, name: "Giochi", icon: (
+        <svg className="w-8 h-8" fill="currentColor" viewBox="0 0 24 24">
+          <path d="M21 6H3c-1.1 0-2 .9-2 2v8c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm-10 7H8v3H6v-3H3v-2h3V8h2v3h3v2zm4.5 2c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm4-3c-.83 0-1.5-.67-1.5-1.5S18.67 9 19.5 9s1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/>
+        </svg>
+      ), color: "from-purple-500 to-purple-600" },    {
       id: 4,
       name: "Zaini",
-      icon: "🎒",
+      icon: (
+        <svg className="w-8 h-8" fill="currentColor" viewBox="0 0 24 24">
+          <path d="M20 8v12c0 1.1-.9 2-2 2H6c-1.1 0-2-.9-2-2V8c0-1.1.9-2 2-2h2V4c0-1.1.9-2 2-2h4c1.1 0 2 .9 2 2v2h2c1.1 0 2 .9 2 2zM10 4v2h4V4h-4zm8 16V8H6v12h12zm-3-9v2h-6v-2h6z"/>
+        </svg>
+      ),
       color: "from-orange-500 to-orange-600",
     },
   ];
@@ -262,13 +276,12 @@ function SearchPageContent() {
 
             {/* Quick Category Filters */}
             <div className="flex flex-wrap justify-center gap-4">
-              {quickCategories.map((category) => (
-                <button
+              {quickCategories.map((category) => (                <button
                   key={category.id}
                   onClick={() => handleQuickCategory(category.name)}
-                  className={`relative px-6 py-3 rounded-full bg-gradient-to-r ${category.color} text-white font-semibold hover:scale-105 transition-all duration-300 shadow-lg hover:shadow-xl`}
+                  className={`relative px-6 py-3 rounded-full bg-gradient-to-r ${category.color} text-white font-semibold hover:scale-105 transition-all duration-300 shadow-lg hover:shadow-xl flex items-center justify-center`}
                 >
-                  <span className="mr-2">{category.icon}</span>
+                  <span className="mr-2 flex items-center">{category.icon}</span>
                   {category.name}
                 </button>
               ))}

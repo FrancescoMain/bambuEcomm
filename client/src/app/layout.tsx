@@ -27,7 +27,7 @@ const notoSans = Noto_Sans({
 export const metadata = {
   title: "Cartolibreria Bambù",
   description:
-    "Cartolibreria Bambù - Libri, cancelleria, regali e molto altro!",
+    "Cartolibreria Bambù - Quaderni, cancelleria, giochi e molto altro!",
 };
 
 export default function RootLayout({
@@ -42,11 +42,7 @@ export default function RootLayout({
     >
       <head>
         <link rel="icon" href="/bambu-logo.jpg" type="image/jpeg" />
-        <link
-          rel="shortcut icon"
-          href="/bambu-logo.jpg"
-          type="image/jpeg"
-        />
+        <link rel="shortcut icon" href="/bambu-logo.jpg" type="image/jpeg" />
         {/* Redundant font link (next/font is used) - commented out */}
         {/* <link
           rel="stylesheet"
@@ -54,7 +50,9 @@ export default function RootLayout({
         /> */}
         {/* Redundant Tailwind CDN (PostCSS setup is expected) - commented out */}
       </head>
-      <body className={`font-sans antialiased`}>        <ClientProvider>
+      <body className={`font-sans antialiased`}>
+        {" "}
+        <ClientProvider>
           <NotificationProvider>
             <CartProvider>
               <LoadingProvider>
