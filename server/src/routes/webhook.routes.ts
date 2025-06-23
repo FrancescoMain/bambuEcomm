@@ -1,6 +1,7 @@
 import express from "express";
 import Stripe from "stripe";
 import { PrismaClient } from "@prisma/client";
+import emailService from "../services/emailService";
 
 const router = express.Router();
 const prisma = new PrismaClient();
@@ -65,9 +66,9 @@ router.post(
             }
           } catch (e) {
             console.error("Errore parsing cart da metadata:", e);
-          }
-        }
-        await prisma.order.create({
+          }        }
+        
+        const createdOrder = await prisma.order.create({
           data: {
             paymentIntentId: session.payment_intent as string,
             userId: userId || undefined,
@@ -89,7 +90,77 @@ router.post(
               ? { create: orderItemsData }
               : undefined,
           },
+          include: {
+            orderItems: {
+              include: {
+                product: true,
+              },
+            },
+            user: {
+              select: { id: true, name: true, email: true },
+            },
+          },
         });
+
+        // 🔥 INVIO EMAIL ORDINE CONFERMATO
+        console.log("🔧 DEBUG: Webhook - Iniziando processo invio email per ordine:", createdOrder.id);
+        try {
+          // Determina email e nome cliente (utente registrato o guest)
+          const customerEmailFinal = createdOrder.user?.email || createdOrder.guestEmail || customerEmail;
+          const customerNameFinal = createdOrder.user?.name || `${nome || ''} ${cognome || ''}`.trim() || "Cliente";
+
+          if (customerEmailFinal) {
+            // Prepara i dati per l'email
+            const orderData = {
+              orderId: createdOrder.id.toString(),
+              customerName: customerNameFinal,
+              customerEmail: customerEmailFinal,
+              items: createdOrder.orderItems.map((item) => ({
+                name: item.product.titolo,
+                quantity: item.quantity,
+                price: Number(item.priceAtPurchase),
+              })),
+              total: Number(createdOrder.totalAmount),
+              orderDate: createdOrder.createdAt.toLocaleDateString("it-IT"),
+              shippingAddress: {
+                nome,
+                cognome,
+                via,
+                numero,
+                citta,
+                cap,
+                stato,
+              },
+            };
+
+            console.log("🔧 DEBUG: Webhook - Dati ordine preparati:", orderData);
+
+            // Email al cliente
+            console.log(`📧 Webhook - Tentativo invio email conferma ordine a: ${orderData.customerEmail}`);
+            const customerEmailSent = await emailService.sendOrderConfirmationEmail(orderData);
+
+            if (customerEmailSent) {
+              console.log(`✅ Webhook - Email conferma ordine inviata al cliente: ${orderData.customerEmail}`);
+            } else {
+              console.log(`⚠️ Webhook - Fallimento invio email conferma ordine al cliente: ${orderData.customerEmail}`);
+            }
+
+            // Email all'admin
+            console.log(`📧 Webhook - Tentativo invio notifica ordine all'admin`);
+            const adminEmailSent = await emailService.sendOrderNotificationToAdmin(orderData);
+
+            if (adminEmailSent) {
+              console.log(`✅ Webhook - Email notifica ordine inviata all'admin`);
+            } else {
+              console.log(`⚠️ Webhook - Fallimento invio email notifica ordine all'admin`);
+            }
+          } else {
+            console.error("❌ Webhook - Nessuna email trovata per l'ordine:", createdOrder.id);
+          }
+        } catch (emailError) {
+          console.error("❌ Webhook - Errore durante invio email ordine:", emailError);
+          // Non blocchiamo il webhook se le email falliscono
+        }
       }
       res.json({ received: true });
     })();
