@@ -128,14 +128,22 @@ export const createOrder = async (
         where: { cartId: cart.id },
       });
       return order;
-    });
-
-    // Invio email di conferma ordine (al cliente e all'admin)
+    }); // Invio email di conferma ordine (al cliente e all'admin)
+    console.log(
+      "🔧 DEBUG: Iniziando processo invio email per ordine:",
+      createdOrder.id
+    );
     try {
       // Verifica che l'utente esista
       if (!createdOrder.user) {
         console.error("❌ Utente non trovato per l'ordine:", createdOrder.id);
       } else {
+        console.log("🔧 DEBUG: Utente trovato:", {
+          id: createdOrder.user.id,
+          name: createdOrder.user.name,
+          email: createdOrder.user.email,
+        });
+
         // Prepara i dati per l'email
         const orderData = {
           orderId: createdOrder.id.toString(),
@@ -150,6 +158,8 @@ export const createOrder = async (
           orderDate: createdOrder.createdAt.toLocaleDateString("it-IT"),
           shippingAddress: createdOrder.shippingAddress,
         };
+
+        console.log("🔧 DEBUG: Dati ordine preparati:", orderData);
 
         // Email al cliente
         console.log(

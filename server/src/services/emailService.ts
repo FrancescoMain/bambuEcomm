@@ -48,6 +48,17 @@ class EmailService {
     this.fromEmail = process.env.FROM_EMAIL || "noreply@bambu-ecomm.com";
     this.fromName = "Cartoleria Bambu";
     this.adminEmail = process.env.ADMIN_EMAIL || "cartoleriabambu@icloud.com";
+
+    // Debug configurazione
+    console.log("📧 EmailService inizializzato con:", {
+      fromEmail: this.fromEmail,
+      adminEmail: this.adminEmail,
+      nodeEnv: process.env.NODE_ENV,
+      testEmail: process.env.TEST_EMAIL,
+      hasResendKey:
+        !!process.env.RESEND_API_KEY &&
+        process.env.RESEND_API_KEY !== "your_resend_api_key_here",
+    });
   }
 
   /**
