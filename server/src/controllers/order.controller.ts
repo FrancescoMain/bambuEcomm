@@ -123,68 +123,61 @@ export const createOrder = async (
         },
       });
 
-      // Rimosso aggiornamento stock prodotti
-
-      // Svuotamento carrello
+      // Rimosso aggiornamento stock prodotti      // Svuotamento carrello
       await tx.cartItem.deleteMany({
         where: { cartId: cart.id },
       });
       return order;
-    }); // Invio email di conferma ordine (al cliente e all'admin)
+    });
+
+    // Invio email di conferma ordine (al cliente e all'admin)
     try {
       // Verifica che l'utente esista
       if (!createdOrder.user) {
         console.error("❌ Utente non trovato per l'ordine:", createdOrder.id);
-        res
-          .status(201)
-          .json({
-            message: "Ordine creato con successo.",
-            order: createdOrder,
-          });
-        return;
-      }
-
-      // Prepara i dati per l'email
-      const orderData = {
-        orderId: createdOrder.id.toString(),
-        customerName: createdOrder.user.name || "Cliente",
-        customerEmail: createdOrder.user.email,
-        items: createdOrder.orderItems.map((item) => ({
-          name: item.product.titolo,
-          quantity: item.quantity,
-          price: Number(item.priceAtPurchase),
-        })),
-        total: Number(createdOrder.totalAmount),
-        orderDate: createdOrder.createdAt.toLocaleDateString("it-IT"),
-        shippingAddress: createdOrder.shippingAddress,
-      };
-
-      // Email al cliente
-      console.log(
-        `📧 Tentativo invio email conferma ordine a: ${orderData.customerEmail}`
-      );
-      const customerEmailSent =
-        await emailService.sendOrderConfirmationEmail(orderData);
-
-      if (customerEmailSent) {
-        console.log(
-          `✅ Email conferma ordine inviata al cliente: ${orderData.customerEmail}`
-        );
       } else {
+        // Prepara i dati per l'email
+        const orderData = {
+          orderId: createdOrder.id.toString(),
+          customerName: createdOrder.user.name || "Cliente",
+          customerEmail: createdOrder.user.email,
+          items: createdOrder.orderItems.map((item) => ({
+            name: item.product.titolo,
+            quantity: item.quantity,
+            price: Number(item.priceAtPurchase),
+          })),
+          total: Number(createdOrder.totalAmount),
+          orderDate: createdOrder.createdAt.toLocaleDateString("it-IT"),
+          shippingAddress: createdOrder.shippingAddress,
+        };
+
+        // Email al cliente
         console.log(
-          `⚠️ Fallimento invio email conferma ordine al cliente: ${orderData.customerEmail}`
+          `📧 Tentativo invio email conferma ordine a: ${orderData.customerEmail}`
         );
-      }
+        const customerEmailSent =
+          await emailService.sendOrderConfirmationEmail(orderData);
 
-      // Email all'admin
-      console.log(`📧 Tentativo invio notifica ordine all'admin`);
-      const adminEmailSent =
-        await emailService.sendOrderNotificationToAdmin(orderData);
+        if (customerEmailSent) {
+          console.log(
+            `✅ Email conferma ordine inviata al cliente: ${orderData.customerEmail}`
+          );
+        } else {
+          console.log(
+            `⚠️ Fallimento invio email conferma ordine al cliente: ${orderData.customerEmail}`
+          );
+        }
 
-      if (adminEmailSent) {
-        console.log(`✅ Email notifica ordine inviata all'admin`);
-      } else {
-        console.log(`⚠️ Fallimento invio email notifica ordine all'admin`);
+        // Email all'admin
+        console.log(`📧 Tentativo invio notifica ordine all'admin`);
+        const adminEmailSent =
+          await emailService.sendOrderNotificationToAdmin(orderData);
+
+        if (adminEmailSent) {
+          console.log(`✅ Email notifica ordine inviata all'admin`);
+        } else {
+          console.log(`⚠️ Fallimento invio email notifica ordine all'admin`);
+        }
       }
     } catch (emailError) {
       console.error("❌ Errore durante invio email ordine:", emailError);
