@@ -105,14 +105,13 @@ export default function OrderList() {
       fetchOrders();
     }
   }, [token]);
-
   const handleUpdateStatus = async (orderId: string, newStatus: string) => {
     try {
       const apiUrl =
         process.env.NEXT_PUBLIC_API_URL ||
         "https://bambu-ecomm-in2g.vercel.app/api";
       const res = await fetch(`${apiUrl}/orders/${orderId}/status`, {
-        method: "PUT",
+        method: "PATCH",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
@@ -120,14 +119,18 @@ export default function OrderList() {
         body: JSON.stringify({ status: newStatus }),
       });
       if (!res.ok) throw new Error("Failed to update status");
+
+      // Aggiorna lo stato locale
       setOrders((prevOrders) =>
         prevOrders.map((o) =>
           o.id === orderId ? { ...o, status: newStatus } : o
         )
       );
+
+      console.log(`✅ Status ordine ${orderId} aggiornato a: ${newStatus}`);
     } catch (error) {
       console.error("Error updating status:", error);
-      // Optionally show an error message to the user
+      setError("Errore nell'aggiornamento dello status dell'ordine");
     }
   };
 

@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import { PrismaClient, Prisma, OrderStatus, Role } from "@prisma/client";
 import { validationResult } from "express-validator";
+import emailService from "../services/emailService";
 
 const prisma = new PrismaClient();
 
@@ -129,7 +130,66 @@ export const createOrder = async (
         where: { cartId: cart.id },
       });
       return order;
-    });
+    }); // Invio email di conferma ordine (al cliente e all'admin)
+    try {
+      // Verifica che l'utente esista
+      if (!createdOrder.user) {
+        console.error("❌ Utente non trovato per l'ordine:", createdOrder.id);
+        res
+          .status(201)
+          .json({
+            message: "Ordine creato con successo.",
+            order: createdOrder,
+          });
+        return;
+      }
+
+      // Prepara i dati per l'email
+      const orderData = {
+        orderId: createdOrder.id.toString(),
+        customerName: createdOrder.user.name || "Cliente",
+        customerEmail: createdOrder.user.email,
+        items: createdOrder.orderItems.map((item) => ({
+          name: item.product.titolo,
+          quantity: item.quantity,
+          price: Number(item.priceAtPurchase),
+        })),
+        total: Number(createdOrder.totalAmount),
+        orderDate: createdOrder.createdAt.toLocaleDateString("it-IT"),
+        shippingAddress: createdOrder.shippingAddress,
+      };
+
+      // Email al cliente
+      console.log(
+        `📧 Tentativo invio email conferma ordine a: ${orderData.customerEmail}`
+      );
+      const customerEmailSent =
+        await emailService.sendOrderConfirmationEmail(orderData);
+
+      if (customerEmailSent) {
+        console.log(
+          `✅ Email conferma ordine inviata al cliente: ${orderData.customerEmail}`
+        );
+      } else {
+        console.log(
+          `⚠️ Fallimento invio email conferma ordine al cliente: ${orderData.customerEmail}`
+        );
+      }
+
+      // Email all'admin
+      console.log(`📧 Tentativo invio notifica ordine all'admin`);
+      const adminEmailSent =
+        await emailService.sendOrderNotificationToAdmin(orderData);
+
+      if (adminEmailSent) {
+        console.log(`✅ Email notifica ordine inviata all'admin`);
+      } else {
+        console.log(`⚠️ Fallimento invio email notifica ordine all'admin`);
+      }
+    } catch (emailError) {
+      console.error("❌ Errore durante invio email ordine:", emailError);
+      // Non blocchiamo la creazione dell'ordine se le email falliscono
+    }
 
     res
       .status(201)
@@ -363,21 +423,76 @@ export const updateOrderStatus = async (
     if (!order) {
       res.status(404).json({ message: "Ordine non trovato." });
       return;
-    }
-
-    // RIMOSSO: Logica aggiuntiva per la gestione dello stato (ripristino/decremento stock)
-    // Il modello Product non ha più il campo stock, quindi questa logica non è più necessaria.
-    // Aggiorna solo lo stato dell'ordine.
+    } // Aggiorna solo lo stato dell'ordine.
     const updatedOrder = await prisma.order.update({
       where: { id: orderId },
       data: { status: status as OrderStatus },
       include: {
         user: { select: { id: true, name: true, email: true } },
-        orderItems: { include: { product: { select: { titolo: true } } } },
+        orderItems: {
+          include: {
+            product: { select: { titolo: true } },
+          },
+        },
       },
     });
 
-    // TODO: Inviare notifica all'utente riguardo l'aggiornamento dello stato dell'ordine
+    // Invio email di notifica in base al nuovo stato
+    try {
+      if (updatedOrder.user) {
+        const orderData = {
+          orderId: updatedOrder.id.toString(),
+          customerName: updatedOrder.user.name || "Cliente",
+          customerEmail: updatedOrder.user.email,
+          items: updatedOrder.orderItems.map((item) => ({
+            name: item.product.titolo,
+            quantity: item.quantity,
+            price: Number(item.priceAtPurchase),
+          })),
+          total: Number(updatedOrder.totalAmount),
+          orderDate: updatedOrder.createdAt.toLocaleDateString("it-IT"),
+        };
+
+        if (status === OrderStatus.SHIPPED) {
+          console.log(
+            `📧 Tentativo invio email ordine spedito a: ${orderData.customerEmail}`
+          );
+          const emailSent = await emailService.sendOrderShippedEmail(orderData);
+
+          if (emailSent) {
+            console.log(
+              `✅ Email ordine spedito inviata al cliente: ${orderData.customerEmail}`
+            );
+          } else {
+            console.log(
+              `⚠️ Fallimento invio email ordine spedito al cliente: ${orderData.customerEmail}`
+            );
+          }
+        } else if (status === OrderStatus.CANCELLED) {
+          console.log(
+            `📧 Tentativo invio email ordine cancellato a: ${orderData.customerEmail}`
+          );
+          const emailSent =
+            await emailService.sendOrderCancelledEmail(orderData);
+
+          if (emailSent) {
+            console.log(
+              `✅ Email ordine cancellato inviata al cliente: ${orderData.customerEmail}`
+            );
+          } else {
+            console.log(
+              `⚠️ Fallimento invio email ordine cancellato al cliente: ${orderData.customerEmail}`
+            );
+          }
+        }
+      }
+    } catch (emailError) {
+      console.error(
+        "❌ Errore durante invio email aggiornamento ordine:",
+        emailError
+      );
+      // Non blocchiamo l'aggiornamento dell'ordine se le email falliscono
+    }
 
     res.json({
       message: "Stato dell'ordine aggiornato con successo.",
