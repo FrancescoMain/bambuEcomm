@@ -42,11 +42,30 @@ export interface PasswordResetData {
 
 class EmailService {
   private fromEmail: string;
+  private fromName: string;
   private adminEmail: string;
-
   constructor() {
     this.fromEmail = process.env.FROM_EMAIL || "noreply@bambu-ecomm.com";
+    this.fromName = "Cartoleria Bambu";
     this.adminEmail = process.env.ADMIN_EMAIL || "cartoleriabambu@icloud.com";
+  }
+
+  /**
+   * Determina il destinatario finale dell'email
+   * In development/testing, reindirizziamo tutto all'admin
+   */
+  private getRecipient(originalTo: string): string {
+    const nodeEnv = process.env.NODE_ENV || "development";
+    const testEmail = process.env.TEST_EMAIL;
+
+    if (nodeEnv !== "production" && testEmail) {
+      console.log(
+        `📧 [DEV MODE] Reindirizzando email da ${originalTo} a ${testEmail}`
+      );
+      return testEmail;
+    }
+
+    return originalTo;
   }
 
   /**
@@ -54,9 +73,11 @@ class EmailService {
    */
   private async sendEmail(emailData: EmailTemplate): Promise<boolean> {
     try {
+      const finalRecipient = this.getRecipient(emailData.to);
+
       const result = await resend.emails.send({
-        from: this.fromEmail,
-        to: emailData.to,
+        from: `${this.fromName} <${this.fromEmail}>`,
+        to: finalRecipient,
         subject: emailData.subject,
         html: emailData.html,
         text: emailData.text,
@@ -76,9 +97,9 @@ class EmailService {
   async sendWelcomeEmail(userData: UserData): Promise<boolean> {
     const emailData: EmailTemplate = {
       to: userData.email,
-      subject: "🌿 Benvenuto in Bambu Ecomm!",
+      subject: "🌿 Benvenuto in Cartoleria Bambù!",
       html: this.generateWelcomeTemplate(userData),
-      text: `Ciao ${userData.name}! Benvenuto in Bambu Ecomm. Grazie per esserti registrato!`,
+      text: `Ciao ${userData.name}! Benvenuto in Cartoleria Bambù. Grazie per esserti registrato!`,
     };
 
     return await this.sendEmail(emailData);
@@ -86,11 +107,12 @@ class EmailService {
 
   /**
    * Email di reset password
-   */
-  async sendPasswordResetEmail(resetData: PasswordResetData): Promise<boolean> {
+   */ async sendPasswordResetEmail(
+    resetData: PasswordResetData
+  ): Promise<boolean> {
     const emailData: EmailTemplate = {
       to: resetData.email,
-      subject: "🔐 Reset Password - Bambu Ecomm",
+      subject: "🔐 Reset Password - Cartoleria Bambù",
       html: this.generatePasswordResetTemplate(resetData),
       text: `Ciao ${resetData.name}! Clicca su questo link per resettare la password: ${resetData.resetUrl}`,
     };
@@ -100,13 +122,12 @@ class EmailService {
 
   /**
    * Email conferma iscrizione newsletter
-   */
-  async sendNewsletterConfirmationEmail(
+   */ async sendNewsletterConfirmationEmail(
     newsletterData: NewsletterData
   ): Promise<boolean> {
     const emailData: EmailTemplate = {
       to: newsletterData.email,
-      subject: "📧 Iscrizione Newsletter Confermata - Bambu Ecomm",
+      subject: "📧 Iscrizione Newsletter Confermata - Cartoleria Bambù",
       html: this.generateNewsletterConfirmationTemplate(newsletterData),
       text: "Grazie per esserti iscritto alla nostra newsletter!",
     };
@@ -116,11 +137,10 @@ class EmailService {
 
   /**
    * Email ordine effettuato (al cliente)
-   */
-  async sendOrderConfirmationEmail(orderData: OrderData): Promise<boolean> {
+   */ async sendOrderConfirmationEmail(orderData: OrderData): Promise<boolean> {
     const emailData: EmailTemplate = {
       to: orderData.customerEmail,
-      subject: `🛍️ Ordine Confermato #${orderData.orderId} - Bambu Ecomm`,
+      subject: `🛍️ Ordine Confermato #${orderData.orderId} - Cartoleria Bambù`,
       html: this.generateOrderConfirmationTemplate(orderData),
       text: `Grazie ${orderData.customerName}! Il tuo ordine #${orderData.orderId} è stato confermato.`,
     };
@@ -130,11 +150,12 @@ class EmailService {
 
   /**
    * Email ordine effettuato (al master admin)
-   */
-  async sendOrderNotificationToAdmin(orderData: OrderData): Promise<boolean> {
+   */ async sendOrderNotificationToAdmin(
+    orderData: OrderData
+  ): Promise<boolean> {
     const emailData: EmailTemplate = {
       to: this.adminEmail,
-      subject: `🔔 Nuovo Ordine #${orderData.orderId} - Bambu Ecomm`,
+      subject: `🔔 Nuovo Ordine #${orderData.orderId} - Cartoleria Bambù`,
       html: this.generateOrderAdminTemplate(orderData),
       text: `Nuovo ordine ricevuto da ${orderData.customerName} - Ordine #${orderData.orderId}`,
     };
@@ -144,13 +165,12 @@ class EmailService {
 
   /**
    * Email ordine spedito (al cliente)
-   */
-  async sendOrderShippedEmail(
+   */ async sendOrderShippedEmail(
     orderData: OrderData & { trackingNumber?: string }
   ): Promise<boolean> {
     const emailData: EmailTemplate = {
       to: orderData.customerEmail,
-      subject: `📦 Ordine Spedito #${orderData.orderId} - Bambu Ecomm`,
+      subject: `📦 Ordine Spedito #${orderData.orderId} - Cartoleria Bambù`,
       html: this.generateOrderShippedTemplate(orderData),
       text: `Ciao ${orderData.customerName}! Il tuo ordine #${orderData.orderId} è stato spedito.`,
     };
@@ -160,13 +180,12 @@ class EmailService {
 
   /**
    * Email ordine cancellato (al cliente)
-   */
-  async sendOrderCancelledEmail(
+   */ async sendOrderCancelledEmail(
     orderData: OrderData & { cancelReason?: string }
   ): Promise<boolean> {
     const emailData: EmailTemplate = {
       to: orderData.customerEmail,
-      subject: `❌ Ordine Cancellato #${orderData.orderId} - Bambu Ecomm`,
+      subject: `❌ Ordine Cancellato #${orderData.orderId} - Cartoleria Bambù`,
       html: this.generateOrderCancelledTemplate(orderData),
       text: `Ciao ${orderData.customerName}! Il tuo ordine #${orderData.orderId} è stato cancellato.`,
     };
@@ -181,20 +200,19 @@ class EmailService {
   private generateWelcomeTemplate(userData: UserData): string {
     return `
       <!DOCTYPE html>
-      <html>
-        <head>
+      <html>        <head>
           <meta charset="utf-8">
           <meta name="viewport" content="width=device-width, initial-scale=1">
-          <title>Benvenuto in Bambu Ecomm</title>
+          <title>Benvenuto in Cartoleria Bambù</title>
         </head>
         <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
           <div style="background: linear-gradient(135deg, #51946b, #6db587); padding: 30px; border-radius: 10px; text-align: center; margin-bottom: 30px;">
-            <h1 style="color: white; margin: 0; font-size: 28px;">🌿 Benvenuto in Bambu Ecomm!</h1>
+            <h1 style="color: white; margin: 0; font-size: 28px;">🌿 Benvenuto in Cartoleria Bambù!</h1>
           </div>
           
           <div style="background: #f8fbfa; padding: 25px; border-radius: 8px; margin-bottom: 20px;">
             <h2 style="color: #51946b; margin-top: 0;">Ciao ${userData.name}! 👋</h2>
-            <p>Grazie per esserti registrato in <strong>Bambu Ecomm</strong>!</p>
+            <p>Grazie per esserti registrato in <strong>Cartoleria Bambù</strong>!</p>
             <p>Ora puoi accedere a tutti i nostri prodotti per l'ufficio, la scuola e la creatività.</p>
             
             <div style="margin: 25px 0;">
@@ -203,9 +221,8 @@ class EmailService {
               </a>
             </div>
           </div>
-          
-          <div style="text-align: center; color: #666; font-size: 14px;">
-            <p>Ti ringraziamo per aver scelto Bambu Ecomm!</p>
+            <div style="text-align: center; color: #666; font-size: 14px;">
+            <p>Ti ringraziamo per aver scelto Cartoleria Bambù!</p>
             <p style="margin: 5px 0;">📧 ${this.fromEmail}</p>
           </div>
         </body>
@@ -216,11 +233,10 @@ class EmailService {
   private generatePasswordResetTemplate(resetData: PasswordResetData): string {
     return `
       <!DOCTYPE html>
-      <html>
-        <head>
+      <html>        <head>
           <meta charset="utf-8">
           <meta name="viewport" content="width=device-width, initial-scale=1">
-          <title>Reset Password - Bambu Ecomm</title>
+          <title>Reset Password - Cartoleria Bambù</title>
         </head>
         <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
           <div style="background: linear-gradient(135deg, #51946b, #6db587); padding: 30px; border-radius: 10px; text-align: center; margin-bottom: 30px;">
@@ -229,7 +245,7 @@ class EmailService {
           
           <div style="background: #f8fbfa; padding: 25px; border-radius: 8px; margin-bottom: 20px;">
             <h2 style="color: #51946b; margin-top: 0;">Ciao ${resetData.name}!</h2>
-            <p>Hai richiesto di resettare la password per il tuo account Bambu Ecomm.</p>
+            <p>Hai richiesto di resettare la password per il tuo account Cartoleria Bambù.</p>
             <p>Clicca sul pulsante qui sotto per creare una nuova password:</p>
             
             <div style="margin: 25px 0; text-align: center;">
@@ -257,11 +273,10 @@ class EmailService {
   ): string {
     return `
       <!DOCTYPE html>
-      <html>
-        <head>
+      <html>        <head>
           <meta charset="utf-8">
           <meta name="viewport" content="width=device-width, initial-scale=1">
-          <title>Newsletter Confermata - Bambu Ecomm</title>
+          <title>Newsletter Confermata - Cartoleria Bambù</title>
         </head>
         <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
           <div style="background: linear-gradient(135deg, #51946b, #6db587); padding: 30px; border-radius: 10px; text-align: center; margin-bottom: 30px;">
@@ -270,7 +285,7 @@ class EmailService {
           
           <div style="background: #f8fbfa; padding: 25px; border-radius: 8px; margin-bottom: 20px;">
             <h2 style="color: #51946b; margin-top: 0;">Grazie! 🎉</h2>
-            <p>La tua iscrizione alla newsletter di <strong>Bambu Ecomm</strong> è stata confermata.</p>
+            <p>La tua iscrizione alla newsletter di <strong>Cartoleria Bambù</strong> è stata confermata.</p>
             <p>Riceverai aggiornamenti su:</p>
             <ul style="color: #51946b;">
               <li>✨ Nuovi prodotti e novità</li>
@@ -303,11 +318,10 @@ class EmailService {
 
     return `
       <!DOCTYPE html>
-      <html>
-        <head>
+      <html>        <head>
           <meta charset="utf-8">
           <meta name="viewport" content="width=device-width, initial-scale=1">
-          <title>Ordine Confermato - Bambu Ecomm</title>
+          <title>Ordine Confermato - Cartoleria Bambù</title>
         </head>
         <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
           <div style="background: linear-gradient(135deg, #51946b, #6db587); padding: 30px; border-radius: 10px; text-align: center; margin-bottom: 30px;">
@@ -369,11 +383,10 @@ class EmailService {
 
     return `
       <!DOCTYPE html>
-      <html>
-        <head>
+      <html>        <head>
           <meta charset="utf-8">
           <meta name="viewport" content="width=device-width, initial-scale=1">
-          <title>Nuovo Ordine - Bambu Ecomm Admin</title>
+          <title>Nuovo Ordine - Cartoleria Bambù Admin</title>
         </head>
         <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
           <div style="background: #dc3545; padding: 20px; border-radius: 10px; text-align: center; margin-bottom: 30px;">
@@ -421,11 +434,10 @@ class EmailService {
   ): string {
     return `
       <!DOCTYPE html>
-      <html>
-        <head>
+      <html>        <head>
           <meta charset="utf-8">
           <meta name="viewport" content="width=device-width, initial-scale=1">
-          <title>Ordine Spedito - Bambu Ecomm</title>
+          <title>Ordine Spedito - Cartoleria Bambù</title>
         </head>
         <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
           <div style="background: linear-gradient(135deg, #28a745, #20c997); padding: 30px; border-radius: 10px; text-align: center; margin-bottom: 30px;">
@@ -467,11 +479,10 @@ class EmailService {
   ): string {
     return `
       <!DOCTYPE html>
-      <html>
-        <head>
+      <html>        <head>
           <meta charset="utf-8">
           <meta name="viewport" content="width=device-width, initial-scale=1">
-          <title>Ordine Cancellato - Bambu Ecomm</title>
+          <title>Ordine Cancellato - Cartoleria Bambù</title>
         </head>
         <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
           <div style="background: #dc3545; padding: 30px; border-radius: 10px; text-align: center; margin-bottom: 30px;">
