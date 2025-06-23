@@ -425,8 +425,7 @@ export const updateOrderStatus = async (
 
     if (!order) {
       res.status(404).json({ message: "Ordine non trovato." });
-      return;
-    } // Aggiorna solo lo stato dell'ordine.
+      return;    // Aggiorna solo lo stato dell'ordine.
     const updatedOrder = await prisma.order.update({
       where: { id: orderId },
       data: { status: status as OrderStatus },
@@ -440,13 +439,30 @@ export const updateOrderStatus = async (
       },
     });
 
+    console.log("🔧 DEBUG: Order status update - Ordine aggiornato:", {
+      orderId: updatedOrder.id,
+      newStatus: status,
+      hasUser: !!updatedOrder.user,
+      guestEmail: updatedOrder.guestEmail,
+      userEmail: updatedOrder.user?.email,
+    });
+
     // Invio email di notifica in base al nuovo stato
-    try {
-      if (updatedOrder.user) {
-        const orderData = {
+    try {      // Determina email e nome cliente (utente registrato o guest)
+      const customerEmail = updatedOrder.user?.email || updatedOrder.guestEmail;
+      const customerName = updatedOrder.user?.name || 
+        `${updatedOrder.nome || ''} ${updatedOrder.cognome || ''}`.trim() || "Cliente";
+
+      if (customerEmail) {
+        console.log("🔧 DEBUG: Preparazione email per aggiornamento ordine:", {
+          customerEmail,
+          customerName,
+          orderId: updatedOrder.id,
+          isGuest: !updatedOrder.user
+        });        const orderData = {
           orderId: updatedOrder.id.toString(),
-          customerName: updatedOrder.user.name || "Cliente",
-          customerEmail: updatedOrder.user.email,
+          customerName,
+          customerEmail: customerEmail as string, // Safe cast perché abbiamo il check sopra
           items: updatedOrder.orderItems.map((item) => ({
             name: item.product.titolo,
             quantity: item.quantity,
@@ -457,37 +473,48 @@ export const updateOrderStatus = async (
         };
 
         if (status === OrderStatus.SHIPPED) {
+          const logPrefix = updatedOrder.user ? "" : "[GUEST] ";
           console.log(
-            `📧 Tentativo invio email ordine spedito a: ${orderData.customerEmail}`
+            `📧 ${logPrefix}Tentativo invio email ordine spedito a: ${orderData.customerEmail}`
           );
           const emailSent = await emailService.sendOrderShippedEmail(orderData);
 
           if (emailSent) {
             console.log(
-              `✅ Email ordine spedito inviata al cliente: ${orderData.customerEmail}`
+              `✅ ${logPrefix}Email ordine spedito inviata al cliente: ${orderData.customerEmail}`
             );
           } else {
             console.log(
-              `⚠️ Fallimento invio email ordine spedito al cliente: ${orderData.customerEmail}`
+              `⚠️ ${logPrefix}Fallimento invio email ordine spedito al cliente: ${orderData.customerEmail}`
             );
           }
         } else if (status === OrderStatus.CANCELLED) {
+          const logPrefix = updatedOrder.user ? "" : "[GUEST] ";
           console.log(
-            `📧 Tentativo invio email ordine cancellato a: ${orderData.customerEmail}`
+            `📧 ${logPrefix}Tentativo invio email ordine cancellato a: ${orderData.customerEmail}`
           );
           const emailSent =
             await emailService.sendOrderCancelledEmail(orderData);
 
           if (emailSent) {
             console.log(
-              `✅ Email ordine cancellato inviata al cliente: ${orderData.customerEmail}`
+              `✅ ${logPrefix}Email ordine cancellato inviata al cliente: ${orderData.customerEmail}`
             );
           } else {
             console.log(
-              `⚠️ Fallimento invio email ordine cancellato al cliente: ${orderData.customerEmail}`
+              `⚠️ ${logPrefix}Fallimento invio email ordine cancellato al cliente: ${orderData.customerEmail}`
             );
           }
         }
+      } else {
+        console.error(
+          "❌ Nessuna email trovata per l'ordine:",
+          updatedOrder.id,
+          "- User email:",
+          updatedOrder.user?.email,
+          "- Guest email:",
+          updatedOrder.guestEmail
+        );
       }
     } catch (emailError) {
       console.error(
