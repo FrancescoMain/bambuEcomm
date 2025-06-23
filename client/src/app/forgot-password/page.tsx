@@ -3,30 +3,42 @@
 import { useState, FormEvent } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { toast } from "react-toastify";
 import { useLoading } from "@/components/layout/LoadingContext";
 import authService from "@/api/authService";
+import { useNotifications } from "@/components/ui/NotificationProvider";
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [emailSent, setEmailSent] = useState(false);
   const { setLoading } = useLoading();
-
+  const { showToast } = useNotifications();
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
+    
+    // Validazione custom per evitare tooltip nativi
+    if (!email.trim()) {
+      showToast("Per favore inserisci la tua email", "warning");
+      return;
+    }
+    if (!email.includes("@")) {
+      showToast("Per favore inserisci un indirizzo email valido", "warning");
+      return;
+    }
+    
     setIsLoading(true);
 
     try {
       const response = await authService.forgotPassword(email);
 
       setEmailSent(true);
-      toast.success(response.message || "Email di reset inviata con successo!");
+      showToast(response.message || "Email di reset inviata con successo!", "success");
     } catch (error: any) {
       console.error("Errore forgot password:", error);
-      toast.error(
+      showToast(
         error.response?.data?.message ||
-          "Errore nell'invio dell'email. Riprova più tardi."
+          "Errore nell'invio dell'email. Riprova più tardi.",
+        "error"
       );
     } finally {
       setIsLoading(false);

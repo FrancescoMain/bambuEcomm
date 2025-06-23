@@ -7,8 +7,8 @@ import Link from "next/link";
 import Image from "next/image";
 import { registerRequest, clearAuthError } from "@/redux/authSlice";
 import { RootState, AppDispatch } from "@/redux/store";
-import { toast } from "react-toastify";
 import { useLoading } from "@/components/layout/LoadingContext";
+import { useNotifications } from "@/components/ui/NotificationProvider";
 
 export default function RegisterPage() {
   const [name, setName] = useState("");
@@ -23,36 +23,67 @@ export default function RegisterPage() {
   const { isLoading, error } = useSelector((state: RootState) => state.auth);
   const router = useRouter();
   const { setLoading } = useLoading();
+  const { showToast } = useNotifications();
 
   useEffect(() => {
     dispatch(clearAuthError());
-  }, [dispatch]);
-  useEffect(() => {
+  }, [dispatch]);  useEffect(() => {
     if (submitted && !isLoading && !error) {
-      toast.success(
-        "Registrazione avvenuta con successo! Verrai reindirizzato alla pagina di login."
+      showToast(
+        "Registrazione avvenuta con successo! Verrai reindirizzato alla pagina di login.",
+        "success"
       );
       setLoading(true);
       router.push("/login");
     }
     if (submitted && !isLoading && error) {
-      toast.error(error);
+      showToast(error, "error");
       setSubmitted(false);
     }
-  }, [isLoading, error, submitted, router, setLoading]);
+  }, [isLoading, error, submitted, router, setLoading, showToast]);
 
   useEffect(() => {
     if (confirmPassword) {
       setPasswordMatch(password === confirmPassword);
     }
   }, [password, confirmPassword]);
-
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
-    if (password !== confirmPassword) {
-      toast.error("Le password non coincidono");
+    
+    // Validazione custom per evitare tooltip nativi
+    if (!name.trim()) {
+      showToast("Per favore inserisci il tuo nome", "warning");
       return;
     }
+    if (name.trim().length < 2) {
+      showToast("Il nome deve essere di almeno 2 caratteri", "warning");
+      return;
+    }
+    if (!email.trim()) {
+      showToast("Per favore inserisci la tua email", "warning");
+      return;
+    }
+    if (!email.includes("@")) {
+      showToast("Per favore inserisci un indirizzo email valido", "warning");
+      return;
+    }
+    if (!password.trim()) {
+      showToast("Per favore inserisci una password", "warning");
+      return;
+    }
+    if (password.length < 6) {
+      showToast("La password deve essere di almeno 6 caratteri", "warning");
+      return;
+    }
+    if (!confirmPassword.trim()) {
+      showToast("Per favore conferma la tua password", "warning");
+      return;
+    }
+    if (password !== confirmPassword) {
+      showToast("Le password non coincidono", "error");
+      return;
+    }
+    
     dispatch(clearAuthError());
     setSubmitted(true);
     dispatch(registerRequest({ name, email, password }));
@@ -98,13 +129,11 @@ export default function RegisterPage() {
               >
                 Nome completo
               </label>
-              <div className="relative">
-                <input
+              <div className="relative">                <input
                   id="name"
                   name="name"
                   type="text"
                   autoComplete="name"
-                  required
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   className="w-full px-4 py-3 pl-12 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#51946b] focus:border-transparent transition-colors"
@@ -134,13 +163,11 @@ export default function RegisterPage() {
               >
                 Email
               </label>
-              <div className="relative">
-                <input
+              <div className="relative">                <input
                   id="email"
                   name="email"
                   type="email"
                   autoComplete="email"
-                  required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   className="w-full px-4 py-3 pl-12 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#51946b] focus:border-transparent transition-colors"
@@ -170,13 +197,11 @@ export default function RegisterPage() {
               >
                 Password
               </label>
-              <div className="relative">
-                <input
+              <div className="relative">                <input
                   id="password"
                   name="password"
                   type={showPassword ? "text" : "password"}
                   autoComplete="new-password"
-                  required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   className="w-full px-4 py-3 pl-12 pr-12 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#51946b] focus:border-transparent transition-colors"
@@ -251,9 +276,7 @@ export default function RegisterPage() {
                 <input
                   id="confirmPassword"
                   name="confirmPassword"
-                  type={showConfirmPassword ? "text" : "password"}
-                  autoComplete="new-password"
-                  required
+                  type={showConfirmPassword ? "text" : "password"}                  autoComplete="new-password"
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   className={`w-full px-4 py-3 pl-12 pr-12 border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent transition-colors ${

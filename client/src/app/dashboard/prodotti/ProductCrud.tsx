@@ -11,11 +11,13 @@ import ProductForm from "./ProductForm";
 import ProductFilters from "./ProductFilters";
 import ProductCard from "./ProductCard";
 import Pagination from "./Pagination";
+import { useNotifications } from "@/components/ui/NotificationProvider";
 
 export default function ProductCrud() {
   const token = useSelector((state: RootState) => state.auth.token);
   const dispatch = useDispatch();
   const parentCategories = useSelector(selectParentCategories);
+  const { showToast, showConfirm } = useNotifications();
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -117,25 +119,30 @@ export default function ProductCrud() {
       });
 
       console.log("Form data with variants:", processedProduct.varianti);
-      setShowForm(true);
-    } catch (error) {
+      setShowForm(true);    } catch (error) {
       console.error("Error fetching product details:", error);
-      alert("Errore nel recuperare i dettagli del prodotto");
+      showToast("Errore nel recuperare i dettagli del prodotto", "error");
     } finally {
       setLoading(false);
     }
   };
-
   const handleDelete = async (id: number) => {
-    if (!window.confirm("Sei sicuro di voler eliminare questo prodotto?"))
-      return;
-
-    const result = await productService.deleteProduct(id);
-    if (result.success) {
-      setProducts((prev) => prev.filter((p) => p.id !== id));
-    } else {
-      alert(result.error);
-    }
+    showConfirm({
+      title: "Conferma eliminazione",
+      message: "Sei sicuro di voler eliminare questo prodotto? Questa azione non può essere annullata.",
+      confirmText: "Elimina",
+      cancelText: "Annulla",
+      confirmVariant: "danger",
+      onConfirm: async () => {
+        const result = await productService.deleteProduct(id);
+        if (result.success) {
+          setProducts((prev) => prev.filter((p) => p.id !== id));
+          showToast("Prodotto eliminato con successo", "success");
+        } else {
+          showToast(result.error || "Errore durante l'eliminazione del prodotto", "error");
+        }
+      }
+    });
   };
 
   const handleFormChange = (data: ProductFormData) => {
@@ -149,15 +156,17 @@ export default function ProductCrud() {
     const result = await productService.saveProduct(
       form,
       editProduct ? editProduct.id : undefined
-    );
-
-    if (result.success) {
+    );    if (result.success) {
       setShowForm(false);
       setEditProduct(null);
       setForm({ stock: 0, varianti: [] });
       fetchProducts();
+      showToast(
+        editProduct ? "Prodotto aggiornato con successo" : "Prodotto creato con successo",
+        "success"
+      );
     } else {
-      alert(result.error);
+      showToast(result.error || "Errore durante il salvataggio del prodotto", "error");
     }
 
     setFormLoading(false);

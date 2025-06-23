@@ -3,6 +3,7 @@ import React, { useEffect } from "react";
 import { Product, ProductFormData } from "./types";
 import VariantsForm from "./VariantsForm";
 import { FiX } from "react-icons/fi";
+import { useNotifications } from "@/components/ui/NotificationProvider";
 
 interface ProductFormProps {
   product: Product | null;
@@ -23,6 +24,8 @@ export default function ProductForm({
   formLoading,
   categories,
 }: ProductFormProps) {
+  const { showToast } = useNotifications();
+  
   useEffect(() => {
     console.log("ProductForm initialized with variants:", formData.varianti);
   }, [formData.varianti]);
@@ -73,13 +76,13 @@ export default function ProductForm({
       formData.descrizione?.trim()
     );
   };
-
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!isFormValid()) {
-      alert(
-        "Per favore compila tutti i campi obbligatori (Titolo, Prezzo > 0, Categoria, Descrizione)"
+      showToast(
+        "Per favore compila tutti i campi obbligatori (Titolo, Prezzo > 0, Categoria, Descrizione)",
+        "warning"
       );
       return;
     }
@@ -134,10 +137,8 @@ export default function ProductForm({
                 !formData.titolo?.trim()
                   ? "border-red-300 bg-red-50"
                   : "border-gray-300"
-              }`}
-              value={formData.titolo || ""}
+              }`}              value={formData.titolo || ""}
               onChange={handleInputChange}
-              required
               placeholder="Inserisci il titolo del prodotto"
             />
           </div>
@@ -159,11 +160,8 @@ export default function ProductForm({
                 !formData.prezzo || parseFloat(String(formData.prezzo)) <= 0
                   ? "border-red-300 bg-red-50"
                   : "border-gray-300"
-              }`}
-              value={formData.prezzo || ""}
+              }`}              value={formData.prezzo || ""}
               onChange={handleInputChange}
-              required
-              title="Il prezzo deve essere un numero positivo maggiore di zero"
               placeholder="0.00"
             />
           </div>
@@ -178,11 +176,9 @@ export default function ProductForm({
               id="stock"
               name="stock"
               type="number"
-              min="0"
-              className="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-[#51946b] focus:outline-none"
+              min="0"              className="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-[#51946b] focus:outline-none"
               value={formData.stock ?? 0}
               onChange={handleInputChange}
-              required
             />
           </div>{" "}
           {/* Categoria */}
@@ -200,10 +196,8 @@ export default function ProductForm({
                 !formData.categoriaId
                   ? "border-red-300 bg-red-50"
                   : "border-gray-300"
-              }`}
-              value={formData.categoriaId || ""}
+              }`}              value={formData.categoriaId || ""}
               onChange={handleInputChange}
-              required
             >
               <option value="">Seleziona una categoria</option>
               {categories.map((cat) => (
@@ -229,10 +223,8 @@ export default function ProductForm({
                 !formData.descrizione?.trim()
                   ? "border-red-300 bg-red-50"
                   : "border-gray-300"
-              }`}
-              value={formData.descrizione || ""}
+              }`}              value={formData.descrizione || ""}
               onChange={handleInputChange}
-              required
               placeholder="Inserisci una descrizione del prodotto"
             />
           </div>

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useSelector } from "react-redux";
 import { RootState } from "@/redux/store";
 import type { User } from "@/redux/authSlice";
+import { useNotifications } from "@/components/ui/NotificationProvider";
 
 // Dati utente e spedizione
 interface CheckoutForm {
@@ -42,6 +43,7 @@ export default function CheckoutPage() {
   const currentUser = useSelector(
     (state: RootState) => state.auth.user
   ) as User | null;
+  const { showToast } = useNotifications();
   const [form, setForm] = useState<CheckoutForm>(
     currentUser
       ? {
@@ -75,9 +77,55 @@ export default function CheckoutPage() {
   ) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Validazione custom per evitare tooltip nativi
+    if (!form.email?.trim()) {
+      showToast("Per favore inserisci la tua email", "warning");
+      return;
+    }
+    if (!form.email.includes("@")) {
+      showToast("Per favore inserisci un indirizzo email valido", "warning");
+      return;
+    }
+    if (!form.nome?.trim()) {
+      showToast("Per favore inserisci il nome", "warning");
+      return;
+    }
+    if (!form.cognome?.trim()) {
+      showToast("Per favore inserisci il cognome", "warning");
+      return;
+    }
+    if (!form.telefono?.trim()) {
+      showToast("Per favore inserisci il numero di telefono", "warning");
+      return;
+    }
+    if (!form.via?.trim()) {
+      showToast("Per favore inserisci l'indirizzo", "warning");
+      return;
+    }
+    if (!form.numero?.trim()) {
+      showToast("Per favore inserisci il numero civico", "warning");
+      return;
+    }
+    if (!form.citta?.trim()) {
+      showToast("Per favore inserisci la città", "warning");
+      return;
+    }
+    if (!form.cap?.trim()) {
+      showToast("Per favore inserisci il CAP", "warning");
+      return;
+    }
+    if (!/^\d{5}$/.test(form.cap)) {
+      showToast("Il CAP deve essere di 5 cifre", "warning");
+      return;
+    }
+    if (!form.stato?.trim()) {
+      showToast("Per favore seleziona lo stato", "warning");
+      return;
+    }
+    
     setSubmitting(true);
     setError("");
     try {
@@ -90,9 +138,11 @@ export default function CheckoutPage() {
       if (data.url) {
         window.location.href = data.url; // Redirect a Stripe
       } else {
+        showToast("Errore durante la creazione della sessione di pagamento.", "error");
         setError("Errore durante la creazione della sessione di pagamento.");
       }
     } catch (err) {
+      showToast("Errore di rete.", "error");
       setError("Errore di rete.");
     }
     setSubmitting(false);

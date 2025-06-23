@@ -7,8 +7,8 @@ import Link from "next/link";
 import Image from "next/image";
 import { loginRequest, clearAuthError } from "@/redux/authSlice";
 import { RootState, AppDispatch } from "@/redux/store";
-import { toast } from "react-toastify";
 import { useLoading } from "@/components/layout/LoadingContext";
+import { useNotifications } from "@/components/ui/NotificationProvider";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -21,24 +21,42 @@ export default function LoginPage() {
   );
   const router = useRouter();
   const { setLoading } = useLoading();
+  const { showToast } = useNotifications();
 
   useEffect(() => {
     dispatch(clearAuthError());
-  }, [dispatch]);
-  useEffect(() => {
+  }, [dispatch]);  useEffect(() => {
     if (submitted && !isLoading && !error && user) {
-      toast.success("Login effettuato con successo!");
+      showToast("Login effettuato con successo!", "success");
       setLoading(true);
       router.push("/");
     }
     if (submitted && !isLoading && error) {
-      toast.error(error);
+      showToast(error, "error");
       setSubmitted(false);
     }
-  }, [isLoading, error, submitted, user, router, setLoading]);
-
+  }, [isLoading, error, submitted, user, router, setLoading, showToast]);
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
+    
+    // Validazione custom per evitare tooltip nativi
+    if (!email.trim()) {
+      showToast("Per favore inserisci la tua email", "warning");
+      return;
+    }
+    if (!email.includes("@")) {
+      showToast("Per favore inserisci un indirizzo email valido", "warning");
+      return;
+    }
+    if (!password.trim()) {
+      showToast("Per favore inserisci la tua password", "warning");
+      return;
+    }
+    if (password.length < 6) {
+      showToast("La password deve essere di almeno 6 caratteri", "warning");
+      return;
+    }
+    
     dispatch(clearAuthError());
     setSubmitted(true);
     dispatch(loginRequest({ email, password }));
@@ -80,13 +98,11 @@ export default function LoginPage() {
               >
                 Email
               </label>
-              <div className="relative">
-                <input
+              <div className="relative">                <input
                   id="email"
                   name="email"
                   type="email"
                   autoComplete="email"
-                  required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   className="w-full px-4 py-3 pl-12 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#51946b] focus:border-transparent transition-colors"
@@ -115,13 +131,11 @@ export default function LoginPage() {
               >
                 Password
               </label>
-              <div className="relative">
-                <input
+              <div className="relative">                <input
                   id="password"
                   name="password"
                   type={showPassword ? "text" : "password"}
                   autoComplete="current-password"
-                  required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   className="w-full px-4 py-3 pl-12 pr-12 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#51946b] focus:border-transparent transition-colors"

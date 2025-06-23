@@ -452,10 +452,29 @@ export const deleteProduct = async (
     if (!existingProduct) {
       res.status(404).json({ message: "Prodotto non trovato" });
       return;
+    } // Eliminazione in cascata: prima i record collegati, poi le varianti, poi il prodotto
+    // 1. Elimina tutti i CartItem che fanno riferimento a questo prodotto
+    await prisma.cartItem.deleteMany({
+      where: { productId: productId },
+    });
+
+    // 2. IMPORTANTE: NON eliminare OrderItem - mantieni integrità storica ordini
+    // Gli OrderItem devono rimanere per mantenere lo storico degli ordini
+    // Verifica se ci sono OrderItem collegati
+    const orderItemsCount = await prisma.orderItem.count({
+      where: { productId: productId },
+    });
+
+    if (orderItemsCount > 0) {
+      res.status(409).json({
+        message:
+          "Impossibile eliminare il prodotto. È presente in ordini esistenti. Per motivi di conformità fiscale e storico vendite, i prodotti ordinati non possono essere eliminati.",
+        orderItemsCount,
+      });
+      return;
     }
 
-    // Eliminazione in cascata: prima le varianti, poi il prodotto
-    // 1. Elimina tutti i valori delle varianti associate al prodotto
+    // 3. Elimina tutti i valori delle varianti associate al prodotto
     await prisma.productVariantValue.deleteMany({
       where: {
         type: {
@@ -464,12 +483,12 @@ export const deleteProduct = async (
       },
     });
 
-    // 2. Elimina tutti i tipi di varianti del prodotto
+    // 4. Elimina tutti i tipi di varianti del prodotto
     await prisma.productVariantType.deleteMany({
       where: { productId: productId },
     });
 
-    // 3. Ora possiamo eliminare il prodotto in sicurezza
+    // 5. Ora possiamo eliminare il prodotto in sicurezza
     await prisma.product.delete({ where: { id: productId } });
 
     res.json({ message: "Prodotto eliminato con successo" });

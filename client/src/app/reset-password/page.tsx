@@ -4,9 +4,9 @@ import { useState, FormEvent, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
-import { toast } from "react-toastify";
 import { useLoading } from "@/components/layout/LoadingContext";
 import authService from "@/api/authService";
+import { useNotifications } from "@/components/ui/NotificationProvider";
 
 function ResetPasswordForm() {
   const [password, setPassword] = useState("");
@@ -17,29 +17,27 @@ function ResetPasswordForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const token = searchParams?.get("token") || null;
-
+  const { showToast } = useNotifications();
   useEffect(() => {
     if (!token) {
-      toast.error("Token di reset non valido");
+      showToast("Token di reset non valido", "error");
       router.push("/forgot-password");
     }
-  }, [token, router]);
+  }, [token, router, showToast]);
 
   const handleSubmit = async (e: FormEvent) => {
-    e.preventDefault();
-
-    if (!token) {
-      toast.error("Token di reset non valido");
+    e.preventDefault();    if (!token) {
+      showToast("Token di reset non valido", "error");
       return;
     }
 
     if (password !== confirmPassword) {
-      toast.error("Le password non coincidono");
+      showToast("Le password non coincidono", "error");
       return;
     }
 
     if (password.length < 6) {
-      toast.error("La password deve essere di almeno 6 caratteri");
+      showToast("La password deve essere di almeno 6 caratteri", "warning");
       return;
     }
 
@@ -49,7 +47,7 @@ function ResetPasswordForm() {
       const response = await authService.resetPassword(token, password);
 
       setResetSuccess(true);
-      toast.success(response.message || "Password aggiornata con successo!");
+      showToast(response.message || "Password aggiornata con successo!", "success");
 
       // Reindirizza al login dopo 3 secondi
       setTimeout(() => {
@@ -57,9 +55,10 @@ function ResetPasswordForm() {
       }, 3000);
     } catch (error: any) {
       console.error("Errore reset password:", error);
-      toast.error(
+      showToast(
         error.response?.data?.message ||
-          "Errore nel reset della password. Il token potrebbe essere scaduto."
+          "Errore nel reset della password. Il token potrebbe essere scaduto.",
+        "error"
       );
     } finally {
       setIsLoading(false);
