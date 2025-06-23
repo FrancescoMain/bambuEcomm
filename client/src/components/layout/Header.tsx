@@ -331,9 +331,6 @@ const Header: React.FC<HeaderProps> = ({
         router.push("/checkout");
         setCartSidebarOpen(false);
       }}
-      searchQuery={searchQuery}
-      onSearchChange={handleSearchChange}
-      onSearchSubmit={handleSearchSubmit}
       pathname={pathname || "/"} // Fornisce un valore di fallback sicuro
       // If you want to pass handleAddToCart to HeaderView, add it here
       // handleAddToCart={handleAddToCart}
