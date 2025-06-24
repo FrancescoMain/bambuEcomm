@@ -91,10 +91,14 @@ const Header: React.FC<HeaderProps> = ({
     () => searchParams?.toString() || "",
     [searchParams]
   );
-
-  // Chiudi loader dopo ogni navigazione
+  // Chiudi loader dopo ogni navigazione solo se non c'è un loading in corso dal CartProvider
   useEffect(() => {
-    setLoading(false);
+    // Aspetta un momento per permettere ad altri componenti di gestire il loading
+    const timer = setTimeout(() => {
+      setLoading(false);
+    }, 200);
+
+    return () => clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pathname, searchParamsString]);
   useEffect(() => {

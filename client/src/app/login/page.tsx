@@ -22,23 +22,27 @@ export default function LoginPage() {
   const router = useRouter();
   const { setLoading } = useLoading();
   const { showToast } = useNotifications();
-
   useEffect(() => {
     dispatch(clearAuthError());
-  }, [dispatch]);  useEffect(() => {
+  }, [dispatch]); // Effect separato per gestire il successo del login
+  useEffect(() => {
     if (submitted && !isLoading && !error && user) {
       showToast("Login effettuato con successo!", "success");
       setLoading(true);
       router.push("/");
     }
+  }, [isLoading, error, submitted, user]);
+
+  // Effect separato per gestire gli errori
+  useEffect(() => {
     if (submitted && !isLoading && error) {
       showToast(error, "error");
       setSubmitted(false);
     }
-  }, [isLoading, error, submitted, user, router, setLoading, showToast]);
+  }, [isLoading, error, submitted]);
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
-    
+
     // Validazione custom per evitare tooltip nativi
     if (!email.trim()) {
       showToast("Per favore inserisci la tua email", "warning");
@@ -56,7 +60,7 @@ export default function LoginPage() {
       showToast("La password deve essere di almeno 6 caratteri", "warning");
       return;
     }
-    
+
     dispatch(clearAuthError());
     setSubmitted(true);
     dispatch(loginRequest({ email, password }));
@@ -98,7 +102,9 @@ export default function LoginPage() {
               >
                 Email
               </label>
-              <div className="relative">                <input
+              <div className="relative">
+                {" "}
+                <input
                   id="email"
                   name="email"
                   type="email"
@@ -131,7 +137,9 @@ export default function LoginPage() {
               >
                 Password
               </label>
-              <div className="relative">                <input
+              <div className="relative">
+                {" "}
+                <input
                   id="password"
                   name="password"
                   type={showPassword ? "text" : "password"}

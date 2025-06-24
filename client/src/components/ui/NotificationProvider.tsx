@@ -1,11 +1,20 @@
 "use client";
 
-import React, { createContext, useContext, useState, ReactNode } from "react";
+import React, {
+  createContext,
+  useContext,
+  useState,
+  ReactNode,
+  useCallback,
+} from "react";
 import { Toast } from "./Toast";
 import { ConfirmModal } from "./ConfirmModal";
 
 interface NotificationContextType {
-  showToast: (message: string, type: "success" | "error" | "warning" | "info") => void;
+  showToast: (
+    message: string,
+    type: "success" | "error" | "warning" | "info"
+  ) => void;
   showConfirm: (options: {
     title: string;
     message: string;
@@ -16,12 +25,16 @@ interface NotificationContextType {
   }) => void;
 }
 
-const NotificationContext = createContext<NotificationContextType | undefined>(undefined);
+const NotificationContext = createContext<NotificationContextType | undefined>(
+  undefined
+);
 
 export const useNotifications = () => {
   const context = useContext(NotificationContext);
   if (!context) {
-    throw new Error("useNotifications must be used within NotificationProvider");
+    throw new Error(
+      "useNotifications must be used within NotificationProvider"
+    );
   }
   return context;
 };
@@ -42,7 +55,9 @@ interface ConfirmState {
   onConfirm: () => void;
 }
 
-export const NotificationProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+export const NotificationProvider: React.FC<{ children: ReactNode }> = ({
+  children,
+}) => {
   const [toasts, setToasts] = useState<ToastState[]>([]);
   const [confirm, setConfirm] = useState<ConfirmState>({
     isOpen: false,
@@ -53,48 +68,53 @@ export const NotificationProvider: React.FC<{ children: ReactNode }> = ({ childr
     confirmVariant: "primary",
     onConfirm: () => {},
   });
+  const showToast = useCallback(
+    (message: string, type: "success" | "error" | "warning" | "info") => {
+      const id = Date.now();
+      setToasts((prev) => [...prev, { id, message, type }]);
+    },
+    []
+  );
 
-  const showToast = (message: string, type: "success" | "error" | "warning" | "info") => {
-    const id = Date.now();
-    setToasts((prev) => [...prev, { id, message, type }]);
-  };
-
-  const removeToast = (id: number) => {
+  const removeToast = useCallback((id: number) => {
     setToasts((prev) => prev.filter((toast) => toast.id !== id));
-  };
+  }, []);
 
-  const showConfirm = (options: {
-    title: string;
-    message: string;
-    confirmText?: string;
-    cancelText?: string;
-    confirmVariant?: "danger" | "primary" | "warning";
-    onConfirm: () => void;
-  }) => {
-    setConfirm({
-      isOpen: true,
-      title: options.title,
-      message: options.message,
-      confirmText: options.confirmText || "Conferma",
-      cancelText: options.cancelText || "Annulla",
-      confirmVariant: options.confirmVariant || "primary",
-      onConfirm: options.onConfirm,
-    });
-  };
+  const showConfirm = useCallback(
+    (options: {
+      title: string;
+      message: string;
+      confirmText?: string;
+      cancelText?: string;
+      confirmVariant?: "danger" | "primary" | "warning";
+      onConfirm: () => void;
+    }) => {
+      setConfirm({
+        isOpen: true,
+        title: options.title,
+        message: options.message,
+        confirmText: options.confirmText || "Conferma",
+        cancelText: options.cancelText || "Annulla",
+        confirmVariant: options.confirmVariant || "primary",
+        onConfirm: options.onConfirm,
+      });
+    },
+    []
+  );
 
-  const handleConfirm = () => {
+  const handleConfirm = useCallback(() => {
     confirm.onConfirm();
     setConfirm((prev) => ({ ...prev, isOpen: false }));
-  };
+  }, [confirm.onConfirm]);
 
-  const handleCancel = () => {
+  const handleCancel = useCallback(() => {
     setConfirm((prev) => ({ ...prev, isOpen: false }));
-  };
+  }, []);
 
   return (
     <NotificationContext.Provider value={{ showToast, showConfirm }}>
       {children}
-      
+
       {/* Render Toasts */}
       <div className="fixed top-4 right-4 z-50 space-y-2">
         {toasts.map((toast) => (

@@ -72,6 +72,7 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
   );
   const { setLoading } = useLoading();
   const [cartLoaded, setCartLoaded] = useState(false);
+  const [lastUserState, setLastUserState] = useState<string | null>(null);
 
   // Helper: get token
   const getToken = () =>
@@ -83,77 +84,97 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
     return item?.cartItemId;
   }; // --- CART PERSISTENCE LOGIC ---
   useEffect(() => {
+    const currentUserState = currentUser ? currentUser.id : "guest";
+
+    // Evita di ricaricare il carrello se lo stato dell'utente non è cambiato
+    if (lastUserState === currentUserState) {
+      console.log("🔄 CartProvider: User state unchanged, skipping cart load");
+      return;
+    }
+
+    console.log(
+      `🔄 CartProvider: User state changed from ${lastUserState} to ${currentUserState}`
+    );
+    setLastUserState(currentUserState);
+
     const loadCart = async () => {
-      if (currentUser) {
-        try {
-          console.log("🛒 Loading cart for logged user...");
-          const response = await apiService.get<any>("/cart");
-          dispatch(clearCart());
-          if (response && Array.isArray(response.items)) {
-            const newCart: CartItem[] = response.items.map(
-              (item: BackendCartItem) => ({
-                productId: item.productId,
-                titolo: item.product.titolo,
-                prezzo: item.product.prezzo,
-                immagine: item.product.immagine,
-                quantity: item.quantity,
-                cartItemId: item.id,
-              })
-            );
-            dispatch(setCart(newCart));
-            console.log(
-              "✅ Cart loaded successfully:",
-              newCart.length,
-              "items"
-            );
-          } else {
-            console.log("📭 Empty cart from backend");
+      setLoading(true);
+      try {
+        if (currentUser) {
+          try {
+            console.log("🛒 Loading cart for logged user...");
+            const response = await apiService.get<any>("/cart");
+            dispatch(clearCart());
+            if (response && Array.isArray(response.items)) {
+              const newCart: CartItem[] = response.items.map(
+                (item: BackendCartItem) => ({
+                  productId: item.productId,
+                  titolo: item.product.titolo,
+                  prezzo: item.product.prezzo,
+                  immagine: item.product.immagine,
+                  quantity: item.quantity,
+                  cartItemId: item.id,
+                })
+              );
+              dispatch(setCart(newCart));
+              console.log(
+                "✅ Cart loaded successfully:",
+                newCart.length,
+                "items"
+              );
+            } else {
+              console.log("📭 Empty cart from backend");
+            }
+          } catch (e) {
+            console.error("❌ Error loading cart from backend:", e);
+            dispatch(clearCart());
+            // Fallback: tenta di caricare da localStorage se c'è un errore API
+            const cached =
+              typeof window !== "undefined"
+                ? localStorage.getItem("cart")
+                : null;
+            if (cached) {
+              try {
+                const items = JSON.parse(cached);
+                if (Array.isArray(items)) {
+                  console.log("🔄 Fallback: Loading cart from localStorage");
+                  items.forEach((item: CartItem) => {
+                    dispatch(addToCart(item));
+                  });
+                }
+              } catch (localError) {
+                console.error(
+                  "❌ Error loading cart from localStorage:",
+                  localError
+                );
+              }
+            }
           }
-        } catch (e) {
-          console.error("❌ Error loading cart from backend:", e);
+        } else {
+          console.log("👤 Loading cart for guest user from localStorage...");
           dispatch(clearCart());
-          // Fallback: tenta di caricare da localStorage se c'è un errore API
           const cached =
             typeof window !== "undefined" ? localStorage.getItem("cart") : null;
           if (cached) {
             try {
               const items = JSON.parse(cached);
               if (Array.isArray(items)) {
-                console.log("🔄 Fallback: Loading cart from localStorage");
                 items.forEach((item: CartItem) => {
                   dispatch(addToCart(item));
                 });
+                console.log("✅ Guest cart loaded:", items.length, "items");
               }
-            } catch (localError) {
-              console.error(
-                "❌ Error loading cart from localStorage:",
-                localError
-              );
+            } catch (e) {
+              console.error("❌ Error loading guest cart:", e);
             }
+          } else {
+            console.log("📭 No guest cart found");
           }
         }
-      } else {
-        console.log("👤 Loading cart for guest user from localStorage...");
-        dispatch(clearCart());
-        const cached =
-          typeof window !== "undefined" ? localStorage.getItem("cart") : null;
-        if (cached) {
-          try {
-            const items = JSON.parse(cached);
-            if (Array.isArray(items)) {
-              items.forEach((item: CartItem) => {
-                dispatch(addToCart(item));
-              });
-              console.log("✅ Guest cart loaded:", items.length, "items");
-            }
-          } catch (e) {
-            console.error("❌ Error loading guest cart:", e);
-          }
-        } else {
-          console.log("📭 No guest cart found");
-        }
+      } finally {
+        setCartLoaded(true);
+        setLoading(false);
       }
-      setCartLoaded(true);
     };
 
     // Aspetta che currentUser sia definitivamente impostato prima di caricare
@@ -162,7 +183,7 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
     }, 100);
 
     return () => clearTimeout(timer);
-  }, [currentUser, dispatch]);
+  }, [currentUser]); // Rimuove dispatch dalle dipendenze
 
   // Salva il carrello in localStorage se l'utente NON è loggato
   useEffect(() => {
@@ -170,10 +191,9 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
       localStorage.setItem("cart", JSON.stringify(cartItems));
     }
   }, [cartItems, currentUser]);
-
   // --- CART ACTIONS WRAPPED FOR BACKEND SYNC ---
   const handleAddToCart = async (item: CartItem) => {
-    setLoading(true);
+    // Non mostrare loader per operazioni rapide del carrello
     try {
       if (currentUser) {
         try {
@@ -198,13 +218,12 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
       } else {
         dispatch(addToCart(item));
       }
-    } finally {
-      setLoading(false);
+    } catch (error) {
+      console.error("❌ Error in handleAddToCart:", error);
     }
   };
 
   const handleRemoveFromCart = async (productId: number) => {
-    setLoading(true);
     try {
       if (currentUser) {
         const cartItemId = getCartItemId(productId);
@@ -232,13 +251,12 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
       } else {
         dispatch(removeFromCart(productId));
       }
-    } finally {
-      setLoading(false);
+    } catch (error) {
+      console.error("❌ Error in handleRemoveFromCart:", error);
     }
   };
 
   const handleUpdateQuantity = async (productId: number, quantity: number) => {
-    setLoading(true);
     try {
       if (currentUser) {
         const cartItemId = getCartItemId(productId);
@@ -266,8 +284,8 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
       } else {
         dispatch(updateQuantity({ productId, quantity }));
       }
-    } finally {
-      setLoading(false);
+    } catch (error) {
+      console.error("❌ Error in handleUpdateQuantity:", error);
     }
   };
 

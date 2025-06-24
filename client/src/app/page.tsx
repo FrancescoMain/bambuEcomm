@@ -47,7 +47,6 @@ export default function Home() {
   const cartItems = useSelector(
     (state: { cart: { items: CartItem[] } }) => state.cart.items
   );
-
   // Adapter for ProductCard
   const handleAddToCartAdapter = async (product: {
     id: string;
@@ -56,7 +55,7 @@ export default function Home() {
     immagine: string;
     categoria?: string;
   }) => {
-    setLoading(true);
+    // Non usare più il loader per operazioni del carrello, ora gestito dal CartProvider
     await handleAddToCart({
       productId: Number(product.id),
       titolo: product.titolo,
@@ -64,7 +63,6 @@ export default function Home() {
       immagine: product.immagine,
       quantity: 1,
     });
-    setLoading(false);
   };
 
   // State for search bar
@@ -101,41 +99,49 @@ export default function Home() {
       })
       .finally(() => setLoading(false));
   }, []); // ✅ Empty dependency array - run only once on mount
-
-  // Navigazione al dettaglio prodotto con loader
+  // Navigazione al dettaglio prodotto
   const handleProductClick = (productId: number | string) => {
-    setLoading(true);
     router.push(`/product/${productId}`);
   };
 
   // Categorie mock per la demo
   const categories = [
-    { id: 1, name: "Quaderni", icon: (
+    {
+      id: 1,
+      name: "Quaderni",
+      icon: (
         <svg className="w-8 h-8" fill="currentColor" viewBox="0 0 24 24">
-          <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/>
+          <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z" />
         </svg>
-      ), color: "from-blue-500 to-blue-600" },
+      ),
+      color: "from-blue-500 to-blue-600",
+    },
     {
       id: 2,
       name: "Cancelleria",
       icon: (
         <svg className="w-8 h-8" fill="currentColor" viewBox="0 0 24 24">
-          <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
+          <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z" />
         </svg>
       ),
       color: "from-green-500 to-green-600",
     },
-    { id: 3, name: "Giochi", icon: (
+    {
+      id: 3,
+      name: "Giochi",
+      icon: (
         <svg className="w-8 h-8" fill="currentColor" viewBox="0 0 24 24">
-          <path d="M21 6H3c-1.1 0-2 .9-2 2v8c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm-10 7H8v3H6v-3H3v-2h3V8h2v3h3v2zm4.5 2c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm4-3c-.83 0-1.5-.67-1.5-1.5S18.67 9 19.5 9s1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/>
+          <path d="M21 6H3c-1.1 0-2 .9-2 2v8c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm-10 7H8v3H6v-3H3v-2h3V8h2v3h3v2zm4.5 2c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm4-3c-.83 0-1.5-.67-1.5-1.5S18.67 9 19.5 9s1.5.67 1.5 1.5-.67 1.5-1.5 1.5z" />
         </svg>
-      ), color: "from-purple-500 to-purple-600" },
+      ),
+      color: "from-purple-500 to-purple-600",
+    },
     {
       id: 4,
       name: "Zaini",
       icon: (
         <svg className="w-8 h-8" fill="currentColor" viewBox="0 0 24 24">
-          <path d="M20 8v12c0 1.1-.9 2-2 2H6c-1.1 0-2-.9-2-2V8c0-1.1.9-2 2-2h2V4c0-1.1.9-2 2-2h4c1.1 0 2 .9 2 2v2h2c1.1 0 2 .9 2 2zM10 4v2h4V4h-4zm8 16V8H6v12h12zm-3-9v2h-6v-2h6z"/>
+          <path d="M20 8v12c0 1.1-.9 2-2 2H6c-1.1 0-2-.9-2-2V8c0-1.1.9-2 2-2h2V4c0-1.1.9-2 2-2h4c1.1 0 2 .9 2 2v2h2c1.1 0 2 .9 2 2zM10 4v2h4V4h-4zm8 16V8H6v12h12zm-3-9v2h-6v-2h6z" />
         </svg>
       ),
       color: "from-orange-500 to-orange-600",
@@ -153,7 +159,8 @@ export default function Home() {
               <h1 className="text-4xl lg:text-6xl font-bold leading-tight">
                 La tua <span className="text-yellow-300">Cartolibreria</span> di
                 fiducia
-              </h1>{" "}              <p className="text-xl lg:text-2xl text-gray-100">
+              </h1>{" "}
+              <p className="text-xl lg:text-2xl text-gray-100">
                 Scopri quaderni, cancelleria e giochi. Tutto quello che ti serve
                 per studiare e creare.
               </p>
@@ -247,7 +254,9 @@ export default function Home() {
                   )
                 }
                 className={`relative p-8 rounded-2xl bg-gradient-to-br ${category.color} text-white cursor-pointer transform hover:scale-105 transition-all duration-300 shadow-lg hover:shadow-xl group`}
-              >                <div className="text-center">
+              >
+                {" "}
+                <div className="text-center">
                   <div className="flex justify-center items-center mb-4 group-hover:scale-110 transition-transform">
                     {category.icon}
                   </div>
@@ -335,9 +344,15 @@ export default function Home() {
         <div className="max-w-7xl mx-auto px-4">
           <div className="bg-gradient-to-r from-[#51946b] to-[#3d7a57] rounded-3xl p-8 lg:p-16 text-white text-center relative overflow-hidden">
             <div className="absolute inset-0 bg-black/10"></div>
-            <div className="relative z-10">              <h2 className="text-3xl lg:text-5xl font-bold mb-6 flex items-center justify-center">
-                <svg className="w-10 h-10 mr-3 text-yellow-400" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M12 2l3.09 6.26L22 7.27l-5 4.87 1.18 6.88L12 15.77l-6.18 3.25L7 12.14 2 7.27l6.91-1.01L12 2z"/>
+            <div className="relative z-10">
+              {" "}
+              <h2 className="text-3xl lg:text-5xl font-bold mb-6 flex items-center justify-center">
+                <svg
+                  className="w-10 h-10 mr-3 text-yellow-400"
+                  fill="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path d="M12 2l3.09 6.26L22 7.27l-5 4.87 1.18 6.88L12 15.77l-6.18 3.25L7 12.14 2 7.27l6.91-1.01L12 2z" />
                 </svg>
                 Offerte Speciali
               </h2>
@@ -350,20 +365,25 @@ export default function Home() {
               >
                 Scopri le Offerte
               </button>
-            </div>            {/* Decorative elements */}
+            </div>{" "}
+            {/* Decorative elements */}
             <div className="absolute top-4 right-4 text-6xl opacity-20">
-              <svg className="w-12 h-12" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/>
+              <svg
+                className="w-12 h-12"
+                fill="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z" />
               </svg>
             </div>
             <div className="absolute bottom-4 left-4 text-4xl opacity-20">
               <svg className="w-8 h-8" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
+                <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z" />
               </svg>
             </div>
             <div className="absolute top-1/2 left-8 text-3xl opacity-10">
               <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M21 6H3c-1.1 0-2 .9-2 2v8c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm-10 7H8v3H6v-3H3v-2h3V8h2v3h3v2zm4.5 2c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm4-3c-.83 0-1.5-.67-1.5-1.5S18.67 9 19.5 9s1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/>
+                <path d="M21 6H3c-1.1 0-2 .9-2 2v8c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm-10 7H8v3H6v-3H3v-2h3V8h2v3h3v2zm4.5 2c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm4-3c-.83 0-1.5-.67-1.5-1.5S18.67 9 19.5 9s1.5.67 1.5 1.5-.67 1.5-1.5 1.5z" />
               </svg>
             </div>
           </div>
@@ -371,7 +391,9 @@ export default function Home() {
       </section>
       {/* Latest Products */}
       <section className="py-16 lg:py-24 bg-gray-50">
-        <div className="max-w-7xl mx-auto px-4">          <div className="text-center mb-12">
+        <div className="max-w-7xl mx-auto px-4">
+          {" "}
+          <div className="text-center mb-12">
             <h2 className="text-3xl lg:text-4xl font-bold text-gray-900 mb-4 flex items-center justify-center">
               <svg
                 className="w-8 h-8 mr-3 text-yellow-500"
@@ -386,7 +408,6 @@ export default function Home() {
               Gli ultimi prodotti aggiunti al nostro catalogo
             </p>
           </div>
-
           {error ? (
             <div className="text-center text-red-500 py-12">
               <p>{error}</p>
@@ -438,7 +459,9 @@ export default function Home() {
       </section>{" "}
       {/* Social Wall Section */}
       <section className="py-16 lg:py-24 bg-gradient-to-br from-[#e8f2ec] to-white">
-        <div className="max-w-6xl mx-auto px-4">          <div className="text-center mb-12">
+        <div className="max-w-6xl mx-auto px-4">
+          {" "}
+          <div className="text-center mb-12">
             <h2 className="text-3xl lg:text-4xl font-bold text-gray-900 mb-6 flex items-center justify-center">
               <svg
                 className="w-8 h-8 mr-3 text-blue-500"
@@ -454,7 +477,6 @@ export default function Home() {
               contenuti esclusivi
             </p>
           </div>
-
           {/* Social Links Grid */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
             {/* Instagram */}
@@ -529,7 +551,6 @@ export default function Home() {
               </div>
             </a>
           </div>
-
           {/* WhatsApp Contact Button */}
           <div className="text-center">
             <a
@@ -537,7 +558,9 @@ export default function Home() {
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center bg-green-500 hover:bg-green-600 text-white font-bold py-4 px-8 rounded-full transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl"
-            >              <svg
+            >
+              {" "}
+              <svg
                 className="w-6 h-6 mr-3"
                 fill="currentColor"
                 viewBox="0 0 24 24"

@@ -24,10 +24,10 @@ export default function RegisterPage() {
   const router = useRouter();
   const { setLoading } = useLoading();
   const { showToast } = useNotifications();
-
   useEffect(() => {
     dispatch(clearAuthError());
-  }, [dispatch]);  useEffect(() => {
+  }, [dispatch]); // Effect separato per gestire il successo della registrazione
+  useEffect(() => {
     if (submitted && !isLoading && !error) {
       showToast(
         "Registrazione avvenuta con successo! Verrai reindirizzato alla pagina di login.",
@@ -36,11 +36,15 @@ export default function RegisterPage() {
       setLoading(true);
       router.push("/login");
     }
+  }, [isLoading, error, submitted]);
+
+  // Effect separato per gestire gli errori
+  useEffect(() => {
     if (submitted && !isLoading && error) {
       showToast(error, "error");
       setSubmitted(false);
     }
-  }, [isLoading, error, submitted, router, setLoading, showToast]);
+  }, [isLoading, error, submitted]);
 
   useEffect(() => {
     if (confirmPassword) {
@@ -49,7 +53,7 @@ export default function RegisterPage() {
   }, [password, confirmPassword]);
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
-    
+
     // Validazione custom per evitare tooltip nativi
     if (!name.trim()) {
       showToast("Per favore inserisci il tuo nome", "warning");
@@ -83,7 +87,7 @@ export default function RegisterPage() {
       showToast("Le password non coincidono", "error");
       return;
     }
-    
+
     dispatch(clearAuthError());
     setSubmitted(true);
     dispatch(registerRequest({ name, email, password }));
@@ -129,7 +133,9 @@ export default function RegisterPage() {
               >
                 Nome completo
               </label>
-              <div className="relative">                <input
+              <div className="relative">
+                {" "}
+                <input
                   id="name"
                   name="name"
                   type="text"
@@ -163,7 +169,9 @@ export default function RegisterPage() {
               >
                 Email
               </label>
-              <div className="relative">                <input
+              <div className="relative">
+                {" "}
+                <input
                   id="email"
                   name="email"
                   type="email"
@@ -197,7 +205,9 @@ export default function RegisterPage() {
               >
                 Password
               </label>
-              <div className="relative">                <input
+              <div className="relative">
+                {" "}
+                <input
                   id="password"
                   name="password"
                   type={showPassword ? "text" : "password"}
@@ -276,7 +286,8 @@ export default function RegisterPage() {
                 <input
                   id="confirmPassword"
                   name="confirmPassword"
-                  type={showConfirmPassword ? "text" : "password"}                  autoComplete="new-password"
+                  type={showConfirmPassword ? "text" : "password"}
+                  autoComplete="new-password"
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   className={`w-full px-4 py-3 pl-12 pr-12 border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent transition-colors ${
