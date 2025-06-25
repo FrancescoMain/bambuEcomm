@@ -370,7 +370,7 @@ export default function Home() {
                 Scopri le nostre promozioni esclusive su quaderni e cancelleria
               </p>
               <button
-                onClick={() => router.push("/offers")}
+                onClick={() => router.push("/offerte")}
                 className="bg-white text-[#51946b] px-8 py-4 rounded-full font-bold text-lg hover:bg-gray-100 transition-colors shadow-lg"
               >
                 Scopri le Offerte

@@ -55,6 +55,7 @@ export default function DashboardLayout({
     { label: "Dashboard", href: "/dashboard" },
     { label: "Ordini", href: "/dashboard/ordini" },
     { label: "Prodotti", href: "/dashboard/prodotti" },
+    { label: "Categorie", href: "/dashboard/categorie" },
     { label: "Import Prodotti", href: "/dashboard/import-prodotti" },
   ];
 

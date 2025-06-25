@@ -4,8 +4,8 @@ import { useSelector } from "react-redux";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { RootState } from "@/redux/store";
-import Link from 'next/link';
-import { FiBox, FiClipboard, FiMessageSquare } from 'react-icons/fi';
+import Link from "next/link";
+import { FiBox, FiClipboard, FiMessageSquare, FiTag } from "react-icons/fi";
 
 export default function DashboardPage() {
   const user = useSelector((state: RootState) => state.auth.user);
@@ -34,13 +34,18 @@ export default function DashboardPage() {
   const summaryData = {
     ordersToFulfill: 5,
     lowStockProducts: 3,
+    totalCategories: 8,
     unreadMessages: 2,
   };
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <h1 className="text-3xl font-bold text-gray-800 mb-2">Benvenuto, {user.name || 'Admin'}!</h1>
-      <p className="text-gray-600 mb-8">Ecco un riepilogo della tua attività.</p>
+      <h1 className="text-3xl font-bold text-gray-800 mb-2">
+        Benvenuto, {user.name || "Admin"}!
+      </h1>
+      <p className="text-gray-600 mb-8">
+        Ecco un riepilogo della tua attività.
+      </p>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {/* Card Ordini */}
@@ -49,8 +54,12 @@ export default function DashboardPage() {
             <div className="flex items-center">
               <FiClipboard className="text-3xl text-[#51946b]" />
               <div className="ml-4">
-                <p className="text-lg font-semibold text-gray-700">Ordini da Evadere</p>
-                <p className="text-2xl font-bold text-gray-900">{summaryData.ordersToFulfill}</p>
+                <p className="text-lg font-semibold text-gray-700">
+                  Ordini da Evadere
+                </p>
+                <p className="text-2xl font-bold text-gray-900">
+                  {summaryData.ordersToFulfill}
+                </p>
               </div>
             </div>
           </div>
@@ -62,25 +71,35 @@ export default function DashboardPage() {
             <div className="flex items-center">
               <FiBox className="text-3xl text-[#51946b]" />
               <div className="ml-4">
-                <p className="text-lg font-semibold text-gray-700">Prodotti in Esaurimento</p>
-                <p className="text-2xl font-bold text-gray-900">{summaryData.lowStockProducts}</p>
+                <p className="text-lg font-semibold text-gray-700">
+                  Prodotti in Esaurimento
+                </p>
+                <p className="text-2xl font-bold text-gray-900">
+                  {summaryData.lowStockProducts}
+                </p>
+              </div>
+            </div>
+          </div>
+        </Link>
+
+        {/* Card Categorie */}
+        <Link href="/dashboard/categorie">
+          <div className="bg-white p-6 rounded-lg shadow-md hover:shadow-xl transition-shadow duration-300 cursor-pointer">
+            <div className="flex items-center">
+              <FiTag className="text-3xl text-[#51946b]" />
+              <div className="ml-4">
+                <p className="text-lg font-semibold text-gray-700">
+                  Categorie Totali
+                </p>
+                <p className="text-2xl font-bold text-gray-900">
+                  {summaryData.totalCategories}
+                </p>
               </div>
             </div>
           </div>
         </Link>
 
         {/* Card Messaggi (esempio) */}
-        <Link href="/dashboard/messaggi">
-          <div className="bg-white p-6 rounded-lg shadow-md hover:shadow-xl transition-shadow duration-300 cursor-pointer">
-            <div className="flex items-center">
-              <FiMessageSquare className="text-3xl text-[#51946b]" />
-              <div className="ml-4">
-                <p className="text-lg font-semibold text-gray-700">Messaggi non Letti</p>
-                <p className="text-2xl font-bold text-gray-900">{summaryData.unreadMessages}</p>
-              </div>
-            </div>
-          </div>
-        </Link>
       </div>
 
       {/* Qui potrebbe esserci un'altra sezione, ad es. un grafico delle vendite */}
