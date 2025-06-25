@@ -1,15 +1,15 @@
-'use client';
+"use client";
 
-import React, { useState, useEffect, useCallback } from 'react';
-import { 
-  PlusIcon, 
-  MagnifyingGlassIcon, 
-  PencilIcon, 
-  TrashIcon, 
-  ChevronDownIcon, 
-  ChevronRightIcon, 
-  FolderIcon 
-} from '@heroicons/react/24/outline';
+import React, { useState, useEffect, useCallback } from "react";
+import {
+  PlusIcon,
+  MagnifyingGlassIcon,
+  PencilIcon,
+  TrashIcon,
+  ChevronDownIcon,
+  ChevronRightIcon,
+  FolderIcon,
+} from "@heroicons/react/24/outline";
 
 interface Category {
   id: number;
@@ -38,30 +38,32 @@ const CategoriesPage = () => {
   const [categories, setCategories] = useState<Category[]>([]);
   const [filteredCategories, setFilteredCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchTerm, setSearchTerm] = useState("");
   const [showForm, setShowForm] = useState(false);
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
-  const [expandedCategories, setExpandedCategories] = useState<Set<number>>(new Set());
+  const [expandedCategories, setExpandedCategories] = useState<Set<number>>(
+    new Set()
+  );
   const [formData, setFormData] = useState<CategoryFormData>({
-    name: '',
-    description: '',
-    parentId: '',
-    isActive: true
+    name: "",
+    description: "",
+    parentId: "",
+    isActive: true,
   });
 
   // Fetch categories
   const fetchCategories = useCallback(async () => {
     try {
       setLoading(true);
-      const response = await fetch('/api/categories?includeProducts=false');
+      const response = await fetch("/api/categories?includeProducts=false");
       const data = await response.json();
-      
+
       if (data.success) {
         setCategories(data.categories || []);
         setFilteredCategories(data.categories || []);
       }
     } catch (error) {
-      console.error('Error fetching categories:', error);
+      console.error("Error fetching categories:", error);
     } finally {
       setLoading(false);
     }
@@ -76,9 +78,10 @@ const CategoriesPage = () => {
     if (!searchTerm.trim()) {
       setFilteredCategories(categories);
     } else {
-      const filtered = categories.filter(category =>
-        category.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        category.description?.toLowerCase().includes(searchTerm.toLowerCase())
+      const filtered = categories.filter(
+        (category) =>
+          category.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          category.description?.toLowerCase().includes(searchTerm.toLowerCase())
       );
       setFilteredCategories(filtered);
     }
@@ -87,22 +90,24 @@ const CategoriesPage = () => {
   // Handle form submission
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     try {
-      const url = editingCategory ? `/api/categories/${editingCategory.id}` : '/api/categories';
-      const method = editingCategory ? 'PUT' : 'POST';
-      
+      const url = editingCategory
+        ? `/api/categories/${editingCategory.id}`
+        : "/api/categories";
+      const method = editingCategory ? "PUT" : "POST";
+
       const payload = {
         name: formData.name,
         description: formData.description || undefined,
         parentId: formData.parentId ? parseInt(formData.parentId) : undefined,
-        isActive: formData.isActive
+        isActive: formData.isActive,
       };
 
       const response = await fetch(url, {
         method,
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify(payload),
       });
@@ -113,21 +118,21 @@ const CategoriesPage = () => {
         await fetchCategories();
         resetForm();
       } else {
-        alert(data.message || 'Error saving category');
+        alert(data.message || "Error saving category");
       }
     } catch (error) {
-      console.error('Error saving category:', error);
-      alert('Error saving category');
+      console.error("Error saving category:", error);
+      alert("Error saving category");
     }
   };
 
   // Handle delete
   const handleDelete = async (categoryId: number) => {
-    if (!confirm('Are you sure you want to delete this category?')) return;
+    if (!confirm("Are you sure you want to delete this category?")) return;
 
     try {
       const response = await fetch(`/api/categories/${categoryId}`, {
-        method: 'DELETE',
+        method: "DELETE",
       });
 
       const data = await response.json();
@@ -135,21 +140,21 @@ const CategoriesPage = () => {
       if (data.success) {
         await fetchCategories();
       } else {
-        alert(data.message || 'Error deleting category');
+        alert(data.message || "Error deleting category");
       }
     } catch (error) {
-      console.error('Error deleting category:', error);
-      alert('Error deleting category');
+      console.error("Error deleting category:", error);
+      alert("Error deleting category");
     }
   };
 
   // Reset form
   const resetForm = () => {
     setFormData({
-      name: '',
-      description: '',
-      parentId: '',
-      isActive: true
+      name: "",
+      description: "",
+      parentId: "",
+      isActive: true,
     });
     setEditingCategory(null);
     setShowForm(false);
@@ -159,9 +164,9 @@ const CategoriesPage = () => {
   const handleEdit = (category: Category) => {
     setFormData({
       name: category.name,
-      description: category.description || '',
-      parentId: category.parentId?.toString() || '',
-      isActive: category.isActive
+      description: category.description || "",
+      parentId: category.parentId?.toString() || "",
+      isActive: category.isActive,
     });
     setEditingCategory(category);
     setShowForm(true);
@@ -184,12 +189,12 @@ const CategoriesPage = () => {
     const roots: Category[] = [];
 
     // Create map and initialize children arrays
-    cats.forEach(cat => {
+    cats.forEach((cat) => {
       categoryMap.set(cat.id, { ...cat, children: [] });
     });
 
     // Build hierarchy
-    cats.forEach(cat => {
+    cats.forEach((cat) => {
       const category = categoryMap.get(cat.id)!;
       if (cat.parentId && categoryMap.has(cat.parentId)) {
         const parent = categoryMap.get(cat.parentId)!;
@@ -204,11 +209,14 @@ const CategoriesPage = () => {
 
   // Render category tree
   const renderCategoryTree = (cats: Category[], level = 0) => {
-    return cats.map(category => (
-      <div key={category.id} className="border-b border-gray-100 last:border-b-0">
-        <div 
+    return cats.map((category) => (
+      <div
+        key={category.id}
+        className="border-b border-gray-100 last:border-b-0"
+      >
+        <div
           className={`flex items-center justify-between p-4 hover:bg-gray-50 transition-colors ${
-            level > 0 ? `ml-${level * 6}` : ''
+            level > 0 ? `ml-${level * 6}` : ""
           }`}
           style={{ marginLeft: level * 24 }}
         >
@@ -228,27 +236,33 @@ const CategoriesPage = () => {
             {(!category.children || category.children.length === 0) && (
               <div className="w-6"></div>
             )}
-            
+
             <FolderIcon className="h-5 w-5 text-amber-600" />
-            
+
             <div className="flex-1">
               <div className="flex items-center gap-2">
                 <h3 className="font-medium text-gray-900">{category.name}</h3>
-                <span className={`px-2 py-1 text-xs rounded-full ${
-                  category.isActive 
-                    ? 'bg-green-100 text-green-800' 
-                    : 'bg-red-100 text-red-800'
-                }`}>
-                  {category.isActive ? 'Active' : 'Inactive'}
+                <span
+                  className={`px-2 py-1 text-xs rounded-full ${
+                    category.isActive
+                      ? "bg-green-100 text-green-800"
+                      : "bg-red-100 text-red-800"
+                  }`}
+                >
+                  {category.isActive ? "Active" : "Inactive"}
                 </span>
               </div>
               {category.description && (
-                <p className="text-sm text-gray-600 mt-1">{category.description}</p>
+                <p className="text-sm text-gray-600 mt-1">
+                  {category.description}
+                </p>
               )}
               <div className="flex items-center gap-4 text-xs text-gray-500 mt-1">
                 <span>Products: {category._count?.products || 0}</span>
                 <span>Subcategories: {category._count?.children || 0}</span>
-                <span>Created: {new Date(category.createdAt).toLocaleDateString()}</span>
+                <span>
+                  Created: {new Date(category.createdAt).toLocaleDateString()}
+                </span>
               </div>
             </div>
           </div>
@@ -271,11 +285,13 @@ const CategoriesPage = () => {
           </div>
         </div>
 
-        {category.children && category.children.length > 0 && expandedCategories.has(category.id) && (
-          <div className="bg-gray-25">
-            {renderCategoryTree(category.children, level + 1)}
-          </div>
-        )}
+        {category.children &&
+          category.children.length > 0 &&
+          expandedCategories.has(category.id) && (
+            <div className="bg-gray-25">
+              {renderCategoryTree(category.children, level + 1)}
+            </div>
+          )}
       </div>
     ));
   };
@@ -297,8 +313,12 @@ const CategoriesPage = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Category Management</h1>
-          <p className="text-gray-600 mt-1">Manage your product categories and hierarchy</p>
+          <h1 className="text-2xl font-bold text-gray-900">
+            Category Management
+          </h1>
+          <p className="text-gray-600 mt-1">
+            Manage your product categories and hierarchy
+          </p>
         </div>
         <button
           onClick={() => setShowForm(!showForm)}
@@ -325,9 +345,9 @@ const CategoriesPage = () => {
       {showForm && (
         <div className="bg-white border border-gray-200 rounded-lg p-6">
           <h2 className="text-lg font-semibold text-gray-900 mb-4">
-            {editingCategory ? 'Edit Category' : 'Add New Category'}
+            {editingCategory ? "Edit Category" : "Add New Category"}
           </h2>
-          
+
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
@@ -338,7 +358,9 @@ const CategoriesPage = () => {
                   type="text"
                   required
                   value={formData.name}
-                  onChange={(e) => setFormData({...formData, name: e.target.value})}
+                  onChange={(e) =>
+                    setFormData({ ...formData, name: e.target.value })
+                  }
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
                 />
               </div>
@@ -349,13 +371,15 @@ const CategoriesPage = () => {
                 </label>
                 <select
                   value={formData.parentId}
-                  onChange={(e) => setFormData({...formData, parentId: e.target.value})}
+                  onChange={(e) =>
+                    setFormData({ ...formData, parentId: e.target.value })
+                  }
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
                 >
                   <option value="">No parent (Root category)</option>
                   {categories
-                    .filter(cat => cat.id !== editingCategory?.id)
-                    .map(cat => (
+                    .filter((cat) => cat.id !== editingCategory?.id)
+                    .map((cat) => (
                       <option key={cat.id} value={cat.id}>
                         {cat.name}
                       </option>
@@ -370,7 +394,9 @@ const CategoriesPage = () => {
               </label>
               <textarea
                 value={formData.description}
-                onChange={(e) => setFormData({...formData, description: e.target.value})}
+                onChange={(e) =>
+                  setFormData({ ...formData, description: e.target.value })
+                }
                 rows={3}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
               />
@@ -381,7 +407,9 @@ const CategoriesPage = () => {
                 type="checkbox"
                 id="isActive"
                 checked={formData.isActive}
-                onChange={(e) => setFormData({...formData, isActive: e.target.checked})}
+                onChange={(e) =>
+                  setFormData({ ...formData, isActive: e.target.checked })
+                }
                 className="h-4 w-4 text-amber-600 focus:ring-amber-500 border-gray-300 rounded"
               />
               <label htmlFor="isActive" className="ml-2 text-sm text-gray-700">
@@ -394,7 +422,7 @@ const CategoriesPage = () => {
                 type="submit"
                 className="bg-amber-600 text-white px-6 py-2 rounded-lg hover:bg-amber-700 transition-colors"
               >
-                {editingCategory ? 'Update Category' : 'Create Category'}
+                {editingCategory ? "Update Category" : "Create Category"}
               </button>
               <button
                 type="button"
@@ -419,9 +447,13 @@ const CategoriesPage = () => {
         {hierarchicalCategories.length === 0 ? (
           <div className="p-8 text-center">
             <FolderIcon className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No categories found</h3>
+            <h3 className="text-lg font-medium text-gray-900 mb-2">
+              No categories found
+            </h3>
             <p className="text-gray-600 mb-4">
-              {searchTerm ? 'No categories match your search.' : 'Get started by creating your first category.'}
+              {searchTerm
+                ? "No categories match your search."
+                : "Get started by creating your first category."}
             </p>
             {!searchTerm && (
               <button
