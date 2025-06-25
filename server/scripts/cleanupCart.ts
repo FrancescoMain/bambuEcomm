@@ -4,9 +4,9 @@ const prisma = new PrismaClient();
 
 async function cleanupOldCarts() {
   // Per il test: 5 minuti (commenta/sccommenta per passare tra test e produzione)
-  const testMode = process.env.NODE_ENV !== "production";
+  const testMode = true; // Imposta a false per la produzione
   const cutoffTime = testMode
-    ? 5 * 60 * 1000 // 5 minuti per il test
+    ? 5 * 60 * 1000 // 5 minuti per il tes
     : 48 * 60 * 60 * 1000; // 48 ore per la produzione
 
   const cutoff = new Date(Date.now() - cutoffTime);
