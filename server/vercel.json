@@ -2,17 +2,19 @@
   "version": 2,
   "builds": [
     { "src": "api/index.ts", "use": "@vercel/node" },
-    { "src": "api/cleanup-carts.ts", "use": "@vercel/node" }
+    { "src": "api/cleanup-carts.ts", "use": "@vercel/node" },
+    { "src": "api/test-cleanup.ts", "use": "@vercel/node" }
   ],
   "routes": [
     { "src": "/api/cleanup-carts", "dest": "api/cleanup-carts.ts" },
+    { "src": "/api/test-cleanup", "dest": "api/test-cleanup.ts" },
     { "src": "/api/(.*)", "dest": "api/index.ts" }
   ],
   "buildCommand": "npm run vercel-build",
   "crons": [
     {
       "path": "/api/cleanup-carts",
-      "schedule": "*/5 * * * *"
+      "schedule": "0 3 * * *"
     }
   ]
 }
