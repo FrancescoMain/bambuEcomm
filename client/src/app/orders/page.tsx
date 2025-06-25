@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useSelector } from "react-redux";
 import { RootState } from "@/redux/store";
 import Link from "next/link";
@@ -95,12 +95,7 @@ export default function OrdersPage() {
     { value: "total-asc", label: "Importo minore" },
   ];
 
-  useEffect(() => {
-    if (!user || !token) return;
-    fetchOrders();
-  }, [user, token]);
-
-  const fetchOrders = async () => {
+  const fetchOrders = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
@@ -124,7 +119,12 @@ export default function OrdersPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [token]);
+
+  useEffect(() => {
+    if (!user || !token) return;
+    fetchOrders();
+  }, [user, token, fetchOrders]);
 
   // Filtraggio e ordinamento ordini
   useEffect(() => {
@@ -261,7 +261,7 @@ export default function OrdersPage() {
             Accesso richiesto
           </h1>
           <p className="text-gray-600 mb-6">
-            Devi effettuare l'accesso per visualizzare i tuoi ordini.
+            Devi effettuare l&apos;accesso per visualizzare i tuoi ordini.
           </p>
           <Link
             href="/login"
@@ -478,7 +478,9 @@ export default function OrdersPage() {
 
                       {order.trackingNumber && (
                         <button
-                          onClick={() => handleTrackOrder(order.trackingNumber)}
+                          onClick={() =>
+                            handleTrackOrder(order.trackingNumber!)
+                          }
                           className="px-4 py-2 text-sm bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
                         >
                           Traccia
