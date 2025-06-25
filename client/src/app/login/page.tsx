@@ -31,7 +31,7 @@ export default function LoginPage() {
       setLoading(true);
       router.push("/");
     }
-  }, [isLoading, error, submitted, user]);
+  }, [isLoading, error, submitted, user, showToast, router, setLoading]);
 
   // Effect separato per gestire gli errori
   useEffect(() => {
@@ -39,7 +39,7 @@ export default function LoginPage() {
       showToast(error, "error");
       setSubmitted(false);
     }
-  }, [isLoading, error, submitted]);
+  }, [isLoading, error, submitted, showToast]);
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
 

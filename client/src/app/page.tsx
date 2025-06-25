@@ -99,9 +99,14 @@ export default function Home() {
       })
       .finally(() => setLoading(false));
   }, []); // ✅ Empty dependency array - run only once on mount
-  // Navigazione al dettaglio prodotto
+  // Navigazione al dettaglio prodotto con feedback visivo leggero
   const handleProductClick = (productId: number | string) => {
+    // Usa un loading molto breve solo per feedback UX
+    setLoading(true);
+    // Naviga immediatamente
     router.push(`/product/${productId}`);
+    // Spegni il loading dopo un breve momento per feedback
+    setTimeout(() => setLoading(false), 300);
   };
 
   // Categorie mock per la demo
@@ -292,41 +297,46 @@ export default function Home() {
               <p>{error}</p>
             </div>
           ) : featuredProducts.length === 0 ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-              {[...Array(8)].map((_, i) => (
-                <div
-                  key={i}
-                  className="bg-white rounded-2xl p-6 shadow-sm animate-pulse"
-                >
-                  <div className="bg-gray-200 h-48 rounded-xl mb-4"></div>
-                  <div className="bg-gray-200 h-4 rounded mb-2"></div>
-                  <div className="bg-gray-200 h-6 rounded"></div>
-                </div>
-              ))}
+            <div className="overflow-x-auto">
+              <div className="flex gap-6 w-max pb-4">
+                {[...Array(8)].map((_, i) => (
+                  <div
+                    key={i}
+                    className="bg-white rounded-2xl p-6 shadow-sm animate-pulse w-80"
+                  >
+                    <div className="bg-gray-200 h-48 rounded-xl mb-4"></div>
+                    <div className="bg-gray-200 h-4 rounded mb-2"></div>
+                    <div className="bg-gray-200 h-6 rounded"></div>
+                  </div>
+                ))}
+              </div>
             </div>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-              {featuredProducts.map((product) => (
-                <ProductCard
-                  key={product.id}
-                  product={{
-                    id: String(product.id),
-                    titolo: product.titolo,
-                    prezzo:
-                      typeof product.prezzo === "number"
-                        ? product.prezzo
-                        : parseFloat(product.prezzo as string) || 0,
-                    immagine: product.immagine || "/file.svg",
-                    categoria: product.categoria?.[0]?.name || "",
-                  }}
-                  isInCart={cartItems.some(
-                    (item: CartItem) =>
-                      String(item.productId) === String(product.id)
-                  )}
-                  onAddToCart={handleAddToCartAdapter}
-                  onClick={() => handleProductClick(product.id)}
-                />
-              ))}
+            <div className="overflow-x-auto">
+              <div className="flex gap-6 w-max pb-4">
+                {featuredProducts.map((product) => (
+                  <div key={product.id} className="w-80">
+                    <ProductCard
+                      product={{
+                        id: String(product.id),
+                        titolo: product.titolo,
+                        prezzo:
+                          typeof product.prezzo === "number"
+                            ? product.prezzo
+                            : parseFloat(product.prezzo as string) || 0,
+                        immagine: product.immagine || "/file.svg",
+                        categoria: product.categoria?.[0]?.name || "",
+                      }}
+                      isInCart={cartItems.some(
+                        (item: CartItem) =>
+                          String(item.productId) === String(product.id)
+                      )}
+                      onAddToCart={handleAddToCartAdapter}
+                      onClick={() => handleProductClick(product.id)}
+                    />
+                  </div>
+                ))}
+              </div>
             </div>
           )}{" "}
           <div className="text-center mt-12 lg:hidden">

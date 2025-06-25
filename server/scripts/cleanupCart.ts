@@ -3,21 +3,49 @@ import { PrismaClient } from "@prisma/client";
 const prisma = new PrismaClient();
 
 async function cleanupOldCarts() {
-  const cutoff = new Date(Date.now() - 48 * 60 * 60 * 1000); // 48 ore fa
+  // Per il test: 5 minuti (commenta/sccommenta per passare tra test e produzione)
+  const testMode = process.env.NODE_ENV !== "production";
+  const cutoffTime = testMode
+    ? 5 * 60 * 1000 // 5 minuti per il test
+    : 48 * 60 * 60 * 1000; // 48 ore per la produzione
 
-  // Elimina i CartItem più vecchi di 48 ore (basato su updatedAt)
-  await prisma.cartItem.deleteMany({
+  const cutoff = new Date(Date.now() - cutoffTime);
+
+  console.log(`🧹 Starting cart cleanup...`);
+  console.log(
+    `🕒 Cutoff time: ${cutoff.toISOString()} (${testMode ? "5 minutes" : "48 hours"} ago)`
+  );
+
+  // Conta prima della pulizia
+  const totalCartItems = await prisma.cartItem.count();
+  const totalCarts = await prisma.cart.count();
+  console.log(
+    `📊 Before cleanup: ${totalCartItems} cart items, ${totalCarts} carts`
+  );
+
+  // Elimina i CartItem più vecchi del cutoff (basato su updatedAt)
+  const deletedCartItems = await prisma.cartItem.deleteMany({
     where: {
       updatedAt: { lt: cutoff },
     },
   });
 
+  console.log(`🗑️ Deleted ${deletedCartItems.count} old cart items`);
+
   // Elimina i carrelli vuoti (senza CartItem)
-  await prisma.cart.deleteMany({
+  const deletedCarts = await prisma.cart.deleteMany({
     where: {
       items: { none: {} },
     },
   });
+
+  console.log(`🗑️ Deleted ${deletedCarts.count} empty carts`);
+
+  const remainingCartItems = await prisma.cartItem.count();
+  const remainingCarts = await prisma.cart.count();
+  console.log(
+    `📊 After cleanup: ${remainingCartItems} cart items, ${remainingCarts} carts`
+  );
 }
 
 cleanupOldCarts()

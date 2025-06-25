@@ -36,7 +36,7 @@ export default function RegisterPage() {
       setLoading(true);
       router.push("/login");
     }
-  }, [isLoading, error, submitted]);
+  }, [isLoading, error, submitted, showToast, setLoading, router]);
 
   // Effect separato per gestire gli errori
   useEffect(() => {
@@ -44,7 +44,7 @@ export default function RegisterPage() {
       showToast(error, "error");
       setSubmitted(false);
     }
-  }, [isLoading, error, submitted]);
+  }, [isLoading, error, submitted, showToast]);
 
   useEffect(() => {
     if (confirmPassword) {

@@ -37,6 +37,7 @@ const ProductDetailPage: React.FC = () => {
   const productId = params?.id;
   const [product, setProduct] = useState<Product | null>(null);
   const [error, setError] = useState("");
+  const [isLoading, setIsLoading] = useState(true); // Stato di loading specifico
   const [selectedVariants, setSelectedVariants] = useState<{
     [variantTypeId: number]: any;
   }>({});
@@ -67,11 +68,16 @@ const ProductDetailPage: React.FC = () => {
   // Load product data
   useEffect(() => {
     if (!productId) return;
-    setLoading(true);
+
+    setIsLoading(true);
+    setError("");
+    setProduct(null);
+
     productDetailService
       .getProductById(productId.toString())
       .then((product) => {
         setProduct(product);
+        setError(""); // Clear any previous errors
 
         // Inizializza varianti selezionate con la prima variante di ogni tipo
         if (product.varianti && product.varianti.length > 0) {
@@ -95,9 +101,15 @@ const ProductDetailPage: React.FC = () => {
           setCurrentImage(product.immagine || "");
         }
       })
-      .catch(() => setError("Prodotto non trovato"))
-      .finally(() => setLoading(false));
-  }, [productId, setLoading]);
+      .catch((err) => {
+        console.error("❌ Error loading product:", err);
+        setError("Prodotto non trovato");
+        setProduct(null);
+      })
+      .finally(() => {
+        setIsLoading(false);
+      });
+  }, [productId]);
 
   // Handle variant selection
   const handleVariantChange = (variantTypeId: number, selectedValue: any) => {
@@ -127,7 +139,7 @@ const ProductDetailPage: React.FC = () => {
   // Handle add to cart
   const handleAddToCartClick = async () => {
     if (!product) return;
-    setLoading(true);
+
     await handleAddToCart({
       productId: product.id,
       titolo: product.titolo,
@@ -138,7 +150,6 @@ const ProductDetailPage: React.FC = () => {
       immagine: product.immagine || "",
       quantity,
     });
-    setLoading(false);
   };
 
   // Handle share
@@ -151,7 +162,42 @@ const ProductDetailPage: React.FC = () => {
     }
   };
 
-  if (error || !product) {
+  // Loading state
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white">
+        <div className="max-w-7xl mx-auto px-4 py-16">
+          <div className="animate-pulse">
+            <div className="grid lg:grid-cols-2 gap-12">
+              {/* Image skeleton */}
+              <div className="space-y-4">
+                <div className="bg-gray-200 h-96 rounded-2xl"></div>
+                <div className="flex gap-4">
+                  {[...Array(3)].map((_, i) => (
+                    <div
+                      key={i}
+                      className="bg-gray-200 h-20 w-20 rounded-lg"
+                    ></div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Content skeleton */}
+              <div className="space-y-6">
+                <div className="bg-gray-200 h-8 w-3/4 rounded"></div>
+                <div className="bg-gray-200 h-6 w-1/2 rounded"></div>
+                <div className="bg-gray-200 h-20 w-full rounded"></div>
+                <div className="bg-gray-200 h-12 w-1/3 rounded"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Error state - only show if there's actually an error AND loading is complete
+  if (error && !isLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white">
         <div className="max-w-7xl mx-auto px-4 py-16 text-center">
@@ -185,6 +231,48 @@ const ProductDetailPage: React.FC = () => {
         </div>
       </div>
     );
+  }
+
+  // If no product but no error and not loading, show not found
+  if (!product && !isLoading && !error) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white">
+        <div className="max-w-7xl mx-auto px-4 py-16 text-center">
+          <div className="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-6">
+            <svg
+              className="w-12 h-12 text-gray-400"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z"
+              />
+            </svg>
+          </div>
+          <h2 className="text-2xl font-bold text-gray-900 mb-4">
+            Prodotto non trovato
+          </h2>
+          <p className="text-gray-600 mb-8">
+            Il prodotto che stai cercando non esiste o è stato rimosso.
+          </p>
+          <button
+            onClick={() => router.push("/")}
+            className="bg-[#51946b] text-white px-8 py-3 rounded-full font-semibold hover:bg-[#3d7a57] transition-colors"
+          >
+            Torna alla Homepage
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // Only render the product if it exists
+  if (!product) {
+    return null;
   }
 
   return (

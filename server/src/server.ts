@@ -15,6 +15,7 @@ import checkoutRoutes from "./routes/checkout.routes"; // Import checkout routes
 import webhookRoutes from "./routes/webhook.routes"; // Import webhook routes
 import variantRoutes from "./routes/variant.routes"; // Import variant routes
 import emailRoutes from "./routes/email.routes"; // Import email routes
+import { testCleanupCarts } from "./controllers/test.controller"; // Import test controller
 
 dotenv.config();
 
@@ -53,6 +54,10 @@ app.use("/api/products", productImportRoutes); // Mount product import routes
 app.use("/api", checkoutRoutes); // Mount checkout routes
 app.use("/api/variants", variantRoutes); // Mount variant routes
 app.use("/api/email", emailRoutes); // Mount email routes
+
+// Test routes (solo per sviluppo/debug)
+app.post("/api/test/cleanup-carts", testCleanupCarts);
+
 // TODO: Aggiungere le altre rotte (notifications)
 
 // Gestione errori globale (semplice)
