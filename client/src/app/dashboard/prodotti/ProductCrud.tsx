@@ -119,7 +119,8 @@ export default function ProductCrud() {
       });
 
       console.log("Form data with variants:", processedProduct.varianti);
-      setShowForm(true);    } catch (error) {
+      setShowForm(true);
+    } catch (error) {
       console.error("Error fetching product details:", error);
       showToast("Errore nel recuperare i dettagli del prodotto", "error");
     } finally {
@@ -129,7 +130,8 @@ export default function ProductCrud() {
   const handleDelete = async (id: number) => {
     showConfirm({
       title: "Conferma eliminazione",
-      message: "Sei sicuro di voler eliminare questo prodotto? Questa azione non può essere annullata.",
+      message:
+        "Sei sicuro di voler eliminare questo prodotto? Questa azione non può essere annullata.",
       confirmText: "Elimina",
       cancelText: "Annulla",
       confirmVariant: "danger",
@@ -139,9 +141,12 @@ export default function ProductCrud() {
           setProducts((prev) => prev.filter((p) => p.id !== id));
           showToast("Prodotto eliminato con successo", "success");
         } else {
-          showToast(result.error || "Errore durante l'eliminazione del prodotto", "error");
+          showToast(
+            result.error || "Errore durante l'eliminazione del prodotto",
+            "error"
+          );
         }
-      }
+      },
     });
   };
 
@@ -156,17 +161,23 @@ export default function ProductCrud() {
     const result = await productService.saveProduct(
       form,
       editProduct ? editProduct.id : undefined
-    );    if (result.success) {
+    );
+    if (result.success) {
       setShowForm(false);
       setEditProduct(null);
       setForm({ stock: 0, varianti: [] });
       fetchProducts();
       showToast(
-        editProduct ? "Prodotto aggiornato con successo" : "Prodotto creato con successo",
+        editProduct
+          ? "Prodotto aggiornato con successo"
+          : "Prodotto creato con successo",
         "success"
       );
     } else {
-      showToast(result.error || "Errore durante il salvataggio del prodotto", "error");
+      showToast(
+        result.error || "Errore durante il salvataggio del prodotto",
+        "error"
+      );
     }
 
     setFormLoading(false);
@@ -198,7 +209,7 @@ export default function ProductCrud() {
   if (showForm) {
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
-        <div className="w-full max-w-4xl max-h-[95vh] bg-white rounded-lg shadow-xl flex flex-col overflow-hidden">
+        <div className="w-full max-w-5xl max-h-[95vh] bg-white rounded-lg shadow-xl flex flex-col overflow-hidden">
           <ProductForm
             product={editProduct}
             formData={form}
@@ -214,7 +225,7 @@ export default function ProductCrud() {
   }
 
   return (
-    <div className="p-4">
+    <div className="p-4 max-w-full overflow-hidden">
       <div className="flex flex-col md:flex-row md:justify-between md:items-center mb-4 gap-4">
         <h2 className="text-2xl font-bold">Prodotti</h2>
         <button
@@ -251,7 +262,7 @@ export default function ProductCrud() {
       </div>
 
       {/* Vista a Tabella per Desktop */}
-      <div className="hidden lg:block">
+      <div className="hidden lg:block overflow-hidden">
         <ProductTable
           products={products}
           loading={loading}

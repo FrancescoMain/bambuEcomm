@@ -49,7 +49,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
       </div>
       <div className="p-4 flex-grow">
         <h3
-          className="font-bold text-lg text-gray-800 truncate"
+          className="font-bold text-lg text-gray-800 line-clamp-2 h-14"
           title={product.titolo}
         >
           {product.titolo}

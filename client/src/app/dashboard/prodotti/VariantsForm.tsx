@@ -171,6 +171,7 @@ export default function VariantsForm({
                       handleVariantTypeChange(typeIndex, e.target.value);
                     }}
                     onClick={(e) => e.stopPropagation()}
+                    maxLength={50}
                     required
                   />
                 </div>
@@ -222,6 +223,7 @@ export default function VariantsForm({
                                   e.target.value
                                 )
                               }
+                              maxLength={30}
                               required
                             />
 

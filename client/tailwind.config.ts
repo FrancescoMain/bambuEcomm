@@ -22,6 +22,7 @@ const config: Config = {
   plugins: [
     require("@tailwindcss/forms"),
     require("@tailwindcss/container-queries"),
+    require("@tailwindcss/line-clamp"),
   ],
 };
 export default config;

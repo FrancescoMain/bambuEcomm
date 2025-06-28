@@ -25,7 +25,7 @@ export default function ProductForm({
   categories,
 }: ProductFormProps) {
   const { showToast } = useNotifications();
-  
+
   useEffect(() => {
     console.log("ProductForm initialized with variants:", formData.varianti);
   }, [formData.varianti]);
@@ -137,10 +137,15 @@ export default function ProductForm({
                 !formData.titolo?.trim()
                   ? "border-red-300 bg-red-50"
                   : "border-gray-300"
-              }`}              value={formData.titolo || ""}
+              }`}
+              value={formData.titolo || ""}
               onChange={handleInputChange}
               placeholder="Inserisci il titolo del prodotto"
+              maxLength={200}
             />
+            <p className="text-xs text-gray-500 mt-1">
+              Massimo 200 caratteri ({formData.titolo?.length || 0}/200)
+            </p>
           </div>
           {/* Prezzo e Stock */}{" "}
           <div>
@@ -160,7 +165,8 @@ export default function ProductForm({
                 !formData.prezzo || parseFloat(String(formData.prezzo)) <= 0
                   ? "border-red-300 bg-red-50"
                   : "border-gray-300"
-              }`}              value={formData.prezzo || ""}
+              }`}
+              value={formData.prezzo || ""}
               onChange={handleInputChange}
               placeholder="0.00"
             />
@@ -176,7 +182,8 @@ export default function ProductForm({
               id="stock"
               name="stock"
               type="number"
-              min="0"              className="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-[#51946b] focus:outline-none"
+              min="0"
+              className="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-[#51946b] focus:outline-none"
               value={formData.stock ?? 0}
               onChange={handleInputChange}
             />
@@ -196,7 +203,8 @@ export default function ProductForm({
                 !formData.categoriaId
                   ? "border-red-300 bg-red-50"
                   : "border-gray-300"
-              }`}              value={formData.categoriaId || ""}
+              }`}
+              value={formData.categoriaId || ""}
               onChange={handleInputChange}
             >
               <option value="">Seleziona una categoria</option>
@@ -219,14 +227,19 @@ export default function ProductForm({
               id="descrizione"
               name="descrizione"
               rows={5}
-              className={`w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-[#51946b] focus:outline-none ${
+              className={`w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-[#51946b] focus:outline-none resize-vertical ${
                 !formData.descrizione?.trim()
                   ? "border-red-300 bg-red-50"
                   : "border-gray-300"
-              }`}              value={formData.descrizione || ""}
+              }`}
+              value={formData.descrizione || ""}
               onChange={handleInputChange}
               placeholder="Inserisci una descrizione del prodotto"
+              maxLength={1000}
             />
+            <p className="text-xs text-gray-500 mt-1">
+              Massimo 1000 caratteri ({formData.descrizione?.length || 0}/1000)
+            </p>
           </div>
           {/* Immagine */}
           <div className="md:col-span-2">
