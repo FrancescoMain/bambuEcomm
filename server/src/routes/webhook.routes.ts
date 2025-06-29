@@ -69,6 +69,14 @@ router.post(
           }
         }
 
+        console.log(`🔧 DEBUG: Dati ordine per creazione:`, {
+          userId: userId || "GUEST",
+          customerEmail,
+          guestEmail: !userId ? customerEmail : undefined,
+          sessionId: session.id,
+          paymentIntent: session.payment_intent,
+        });
+
         const createdOrder = await prisma.order.create({
           data: {
             paymentIntentId: session.payment_intent as string,
@@ -101,7 +109,18 @@ router.post(
               select: { id: true, name: true, email: true },
             },
           },
-        }); // 🛒 SVUOTA IL CARRELLO DOPO ORDINE COMPLETATO
+        });
+
+        console.log(`✅ Ordine creato via webhook:`, {
+          orderId: createdOrder.id,
+          userId: createdOrder.userId || "GUEST",
+          guestEmail: createdOrder.guestEmail,
+          customerEmail: createdOrder.user?.email,
+          total: createdOrder.totalAmount,
+          status: createdOrder.status,
+        });
+
+        // 🛒 SVUOTA IL CARRELLO DOPO ORDINE COMPLETATO
         console.log(
           "🛒 Webhook - Svuotamento carrello per ordine:",
           createdOrder.id

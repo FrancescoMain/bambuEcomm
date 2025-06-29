@@ -7,6 +7,7 @@ import {
   getAllOrders,
   updateOrderStatus,
   cancelOrder,
+  claimGuestOrders,
 } from "../controllers/order.controller";
 import {
   authenticateToken,
@@ -35,6 +36,10 @@ router.post(
 
 // Ottenere gli ordini dell'utente autenticato
 router.get("/my-orders", getUserOrders);
+router.get("/user", getUserOrders); // Endpoint alternativo per compatibilità
+
+// Reclamare ordini guest con la propria email
+router.post("/claim-guest-orders", claimGuestOrders);
 
 // Ottenere un ordine specifico per ID (utente proprietario o Admin)
 router.get("/:id", getOrderById);

@@ -51,6 +51,7 @@ export const CartActionsContext = createContext<
         quantity: number
       ) => Promise<void>;
       handleClearCart: () => Promise<void>;
+      cartSidebarLoading: boolean;
     }
   | undefined
 >(undefined);
@@ -72,6 +73,7 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
   );
   const { setLoading } = useLoading();
   const [cartLoaded, setCartLoaded] = useState(false);
+  const [cartSidebarLoading, setCartSidebarLoading] = useState(false);
   const [lastUserState, setLastUserState] = useState<string | null>(null);
 
   // Helper: get token
@@ -193,7 +195,7 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
   }, [cartItems, currentUser]);
   // --- CART ACTIONS WRAPPED FOR BACKEND SYNC ---
   const handleAddToCart = async (item: CartItem) => {
-    // Non mostrare loader per operazioni rapide del carrello
+    setCartSidebarLoading(true);
     try {
       if (currentUser) {
         try {
@@ -220,10 +222,13 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
       }
     } catch (error) {
       console.error("❌ Error in handleAddToCart:", error);
+    } finally {
+      setCartSidebarLoading(false);
     }
   };
 
   const handleRemoveFromCart = async (productId: number) => {
+    setCartSidebarLoading(true);
     try {
       if (currentUser) {
         const cartItemId = getCartItemId(productId);
@@ -253,10 +258,13 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
       }
     } catch (error) {
       console.error("❌ Error in handleRemoveFromCart:", error);
+    } finally {
+      setCartSidebarLoading(false);
     }
   };
 
   const handleUpdateQuantity = async (productId: number, quantity: number) => {
+    setCartSidebarLoading(true);
     try {
       if (currentUser) {
         const cartItemId = getCartItemId(productId);
@@ -286,6 +294,8 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
       }
     } catch (error) {
       console.error("❌ Error in handleUpdateQuantity:", error);
+    } finally {
+      setCartSidebarLoading(false);
     }
   };
 
@@ -330,6 +340,7 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
         handleRemoveFromCart,
         handleUpdateQuantity,
         handleClearCart,
+        cartSidebarLoading,
       }}
     >
       {children}

@@ -18,6 +18,7 @@ export interface HeaderViewProps {
   categoriesLoading: boolean;
   cartItems: CartItem[];
   cartTotal: number;
+  searchQuery: string;
   onMenuOpen: () => void;
   onMenuClose: () => void;
   onProfileMenuToggle: () => void;
@@ -31,6 +32,8 @@ export interface HeaderViewProps {
   onCartItemQuantityChange: (productId: number, quantity: number) => void;
   onGoToCart: () => void;
   onGoToCheckout: () => void;
+  onSearchChange: (query: string) => void;
+  onSearchSubmit: () => void;
   pathname: string;
 }
 
@@ -48,6 +51,7 @@ function HeaderView({
   categoriesLoading,
   cartItems,
   cartTotal,
+  searchQuery,
   onMenuOpen,
   onMenuClose,
   onProfileMenuToggle,
@@ -61,6 +65,8 @@ function HeaderView({
   onCartItemQuantityChange,
   onGoToCart,
   onGoToCheckout,
+  onSearchChange,
+  onSearchSubmit,
   pathname,
 }: HeaderViewProps) {
   return (
@@ -151,21 +157,29 @@ function HeaderView({
                   <input
                     type="text"
                     placeholder="Cerca prodotti..."
+                    value={searchQuery}
+                    onChange={(e) => onSearchChange(e.target.value)}
+                    onKeyPress={(e) => e.key === "Enter" && onSearchSubmit()}
                     className="w-full px-4 py-2 pl-10 pr-4 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-[#51946b] focus:border-transparent"
                   />
-                  <svg
-                    className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
+                  <button
+                    onClick={onSearchSubmit}
+                    className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400 hover:text-[#51946b] transition-colors"
                   >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                    />
-                  </svg>
+                    <svg
+                      className="h-5 w-5"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                      />
+                    </svg>
+                  </button>
                 </div>
               </div>
               {/* Actions Desktop */}
@@ -381,6 +395,38 @@ function HeaderView({
                 />
               </svg>
             </button>
+
+            {/* Search Bar Mobile */}
+            <div className="mb-4">
+              <div className="relative">
+                <input
+                  type="text"
+                  placeholder="Cerca prodotti..."
+                  value={searchQuery}
+                  onChange={(e) => onSearchChange(e.target.value)}
+                  onKeyPress={(e) => e.key === "Enter" && onSearchSubmit()}
+                  className="w-full px-4 py-2 pl-10 pr-4 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-[#51946b] focus:border-transparent"
+                />
+                <button
+                  onClick={onSearchSubmit}
+                  className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400 hover:text-[#51946b] transition-colors"
+                >
+                  <svg
+                    className="h-5 w-5"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                    />
+                  </svg>
+                </button>
+              </div>
+            </div>
 
             <div className="flex flex-col gap-4">
               <h2 className="text-lg font-bold">Categorie</h2>

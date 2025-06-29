@@ -2,8 +2,14 @@ import { Request, Response } from "express";
 import { PrismaClient, Prisma, OrderStatus, Role } from "@prisma/client";
 import { validationResult } from "express-validator";
 import emailService from "../services/emailService";
+import Stripe from "stripe";
 
 const prisma = new PrismaClient();
+
+// Inizializza Stripe
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
+  apiVersion: "2025-05-28.basil",
+});
 
 interface AuthenticatedRequest extends Request {
   user?: {
@@ -291,19 +297,58 @@ export const getUserOrders = async (
   }
 
   try {
+    // Prima recuperiamo l'email dell'utente corrente
+    const currentUser = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { email: true },
+    });
+
+    if (!currentUser) {
+      res.status(404).json({ message: "Utente non trovato." });
+      return;
+    }
+
+    // Cerchiamo ordini sia con userId che con guestEmail corrispondente
     const orders = await prisma.order.findMany({
-      where: { userId },
+      where: {
+        OR: [
+          { userId: userId }, // Ordini fatti da loggato
+          {
+            AND: [
+              { userId: null }, // Ordini guest
+              { guestEmail: currentUser.email }, // Con la stessa email
+            ],
+          },
+        ],
+      },
       orderBy: { createdAt: "desc" },
       include: {
         orderItems: {
           include: {
-            product: { select: { id: true, titolo: true, immagine: true } },
+            product: {
+              select: { id: true, titolo: true, immagine: true, prezzo: true },
+            },
           },
         },
         shippingAddress: true,
         billingAddress: true,
+        user: { select: { id: true, name: true, email: true } },
       },
     });
+
+    console.log(
+      `📦 Recuperati ${orders.length} ordini per utente ${userId} (email: ${currentUser.email})`
+    );
+    console.log(
+      "🔍 Ordini trovati:",
+      orders.map((o) => ({
+        id: o.id,
+        userId: o.userId,
+        guestEmail: o.guestEmail,
+        status: o.status,
+        total: o.totalAmount,
+      }))
+    );
 
     res.json(orders);
     return;
@@ -421,11 +466,12 @@ export const updateOrderStatus = async (
   }
 
   try {
-    const order = await prisma.order.findUnique({ where: { id: orderId } });    if (!order) {
+    const order = await prisma.order.findUnique({ where: { id: orderId } });
+    if (!order) {
       res.status(404).json({ message: "Ordine non trovato." });
       return;
     }
-    
+
     // Aggiorna solo lo stato dell'ordine.
     const updatedOrder = await prisma.order.update({
       where: { id: orderId },
@@ -449,18 +495,22 @@ export const updateOrderStatus = async (
     });
 
     // Invio email di notifica in base al nuovo stato
-    try {      // Determina email e nome cliente (utente registrato o guest)
+    try {
+      // Determina email e nome cliente (utente registrato o guest)
       const customerEmail = updatedOrder.user?.email || updatedOrder.guestEmail;
-      const customerName = updatedOrder.user?.name || 
-        `${updatedOrder.nome || ''} ${updatedOrder.cognome || ''}`.trim() || "Cliente";
+      const customerName =
+        updatedOrder.user?.name ||
+        `${updatedOrder.nome || ""} ${updatedOrder.cognome || ""}`.trim() ||
+        "Cliente";
 
       if (customerEmail) {
         console.log("🔧 DEBUG: Preparazione email per aggiornamento ordine:", {
           customerEmail,
           customerName,
           orderId: updatedOrder.id,
-          isGuest: !updatedOrder.user
-        });        const orderData = {
+          isGuest: !updatedOrder.user,
+        });
+        const orderData = {
           orderId: updatedOrder.id.toString(),
           customerName,
           customerEmail: customerEmail as string, // Safe cast perché abbiamo il check sopra
@@ -576,7 +626,7 @@ export const cancelOrder = async (
   try {
     const order = await prisma.order.findUnique({
       where: { id: orderId },
-      include: { orderItems: true },
+      include: { orderItems: true, user: true },
     });
 
     if (!order) {
@@ -599,17 +649,35 @@ export const cancelOrder = async (
       return;
     }
 
-    // Non permettere la cancellazione se l'ordine è già stato spedito o consegnato (a meno che non sia un admin con logica specifica)
-    if (
-      userRole !== Role.ADMIN &&
-      (order.status === OrderStatus.SHIPPED ||
-        order.status === OrderStatus.DELIVERED)
-    ) {
-      res.status(400).json({
-        message: `Non è possibile cancellare un ordine che è già ${order.status.toLowerCase()}.`,
-      });
-      return;
+    // Check time limit for cancellation (24 hours for non-admin users)
+    if (userRole !== Role.ADMIN) {
+      const orderDate = new Date(order.createdAt);
+      const cancelDeadline = new Date(
+        orderDate.getTime() + 24 * 60 * 60 * 1000
+      );
+      const now = new Date();
+
+      if (now > cancelDeadline) {
+        res.status(400).json({
+          message:
+            "Il periodo di cancellazione gratuita (24 ore) è scaduto. Contatta l'assistenza clienti per richiedere la cancellazione.",
+        });
+        return;
+      }
+
+      // Non permettere la cancellazione se l'ordine è già stato spedito o consegnato
+      if (
+        order.status === OrderStatus.SHIPPED ||
+        order.status === OrderStatus.DELIVERED
+      ) {
+        res.status(400).json({
+          message: `Non è possibile cancellare un ordine che è già ${order.status.toLowerCase()}.`,
+        });
+        return;
+      }
     }
+
+    let refundResult: Stripe.Refund | null = null;
 
     await prisma.$transaction(async (tx) => {
       // Aggiorna lo stato dell'ordine a CANCELLED
@@ -617,12 +685,113 @@ export const cancelOrder = async (
         where: { id: orderId },
         data: { status: OrderStatus.CANCELLED },
       });
-      // RIMOSSO: Ripristino stock prodotti
+
+      // Processare il rimborso Stripe se presente paymentIntentId
+      if (order.paymentIntentId) {
+        try {
+          console.log(
+            `💳 Processando rimborso Stripe per ordine ${orderId}, PaymentIntent: ${order.paymentIntentId}`
+          );
+
+          refundResult = await stripe.refunds.create({
+            payment_intent: order.paymentIntentId,
+            reason: "requested_by_customer",
+            metadata: {
+              orderId: orderId.toString(),
+              cancelledBy: userRole === Role.ADMIN ? "admin" : "customer",
+              userId: userId.toString(),
+            },
+          });
+
+          console.log(
+            `✅ Rimborso Stripe creato con successo: ${refundResult.id}`
+          );
+
+          // Aggiorna lo stato a REFUNDED se il rimborso è stato processato con successo
+          await tx.order.update({
+            where: { id: orderId },
+            data: { status: OrderStatus.REFUNDED },
+          });
+        } catch (stripeError: any) {
+          console.error(
+            `❌ Errore durante il rimborso Stripe per ordine ${orderId}:`,
+            stripeError
+          );
+
+          // Se il rimborso fallisce, lasciamo lo stato come CANCELLED
+          // e informiamo l'utente che il rimborso sarà processato manualmente
+          console.log(`⚠️ Rimborso manuale richiesto per ordine ${orderId}`);
+        }
+      }
     });
 
-    // TODO: Inviare notifica all'utente (e admin se cancellato dall'utente)
+    // Inviare notifica email all'utente
+    try {
+      const customerEmail = order.user?.email || order.guestEmail;
+      const customerName =
+        order.user?.name ||
+        `${order.nome || ""} ${order.cognome || ""}`.trim() ||
+        "Cliente";
 
-    res.json({ message: "Ordine cancellato con successo." });
+      if (customerEmail) {
+        const orderData = {
+          orderId: order.id.toString(),
+          customerName,
+          customerEmail,
+          items: order.orderItems.map((item: any) => ({
+            name: item.product?.titolo || "Prodotto",
+            quantity: item.quantity,
+            price: Number(item.priceAtPurchase),
+          })),
+          total: Number(order.totalAmount),
+          orderDate: new Date(order.createdAt).toLocaleDateString("it-IT"),
+          cancelReason:
+            userRole === Role.ADMIN
+              ? "Cancellato dall'amministratore"
+              : "Richiesto dal cliente",
+        };
+
+        const logPrefix = order.user ? "" : "[GUEST] ";
+        console.log(
+          `📧 ${logPrefix}Tentativo invio email ordine cancellato a: ${customerEmail}`
+        );
+
+        const emailSent = await emailService.sendOrderCancelledEmail(orderData);
+
+        if (emailSent) {
+          console.log(
+            `✅ ${logPrefix}Email ordine cancellato inviata al cliente: ${customerEmail}`
+          );
+        } else {
+          console.log(
+            `⚠️ ${logPrefix}Fallimento invio email ordine cancellato al cliente: ${customerEmail}`
+          );
+        }
+      }
+    } catch (emailError) {
+      console.error(
+        "❌ Errore durante invio email cancellazione ordine:",
+        emailError
+      );
+    }
+
+    const message = refundResult
+      ? "Ordine cancellato con successo. Il rimborso è stato processato e sarà visibile sulla tua carta entro 5-10 giorni lavorativi."
+      : order.paymentIntentId
+        ? "Ordine cancellato con successo. Il rimborso sarà processato manualmente entro 5-10 giorni lavorativi."
+        : "Ordine cancellato con successo.";
+
+    const response: any = { message };
+
+    if (refundResult) {
+      response.refund = {
+        id: (refundResult as any).id,
+        amount: (refundResult as any).amount,
+        status: (refundResult as any).status,
+      };
+    }
+
+    res.json(response);
     return;
   } catch (error) {
     console.error(`Errore nella cancellazione dell'ordine ${orderId}:`, error);
@@ -634,9 +803,86 @@ export const cancelOrder = async (
         message: "Ordine o prodotto non trovato durante la cancellazione.",
       });
       return;
-    }    res.status(500).json({
+    }
+    res.status(500).json({
       message:
         "Errore interno del server durante la cancellazione dell'ordine.",
+      error: (error as Error).message,
+    });
+    return;
+  }
+};
+
+// Funzione per reclamare ordini guest con la propria email (quando un utente si registra)
+export const claimGuestOrders = async (
+  req: AuthenticatedRequest,
+  res: Response
+): Promise<void> => {
+  const userId = req.user?.userId;
+
+  if (!userId) {
+    res.status(401).json({ message: "Utente non autorizzato." });
+    return;
+  }
+
+  try {
+    // Recupera l'email dell'utente corrente
+    const currentUser = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { email: true },
+    });
+
+    if (!currentUser) {
+      res.status(404).json({ message: "Utente non trovato." });
+      return;
+    }
+
+    // Trova tutti gli ordini guest con la stessa email
+    const guestOrders = await prisma.order.findMany({
+      where: {
+        AND: [{ userId: null }, { guestEmail: currentUser.email }],
+      },
+    });
+
+    console.log(
+      `🔄 Trovati ${guestOrders.length} ordini guest per email ${currentUser.email}`
+    );
+
+    if (guestOrders.length === 0) {
+      res.json({
+        message: "Nessun ordine guest trovato da reclamare.",
+        claimedOrders: 0,
+      });
+      return;
+    }
+
+    // Aggiorna gli ordini guest per associarli all'utente
+    const updateResult = await prisma.order.updateMany({
+      where: {
+        AND: [{ userId: null }, { guestEmail: currentUser.email }],
+      },
+      data: {
+        userId: userId,
+        // Manteniamo guestEmail per riferimento storico
+      },
+    });
+
+    console.log(
+      `✅ Reclamati ${updateResult.count} ordini per utente ${userId}`
+    );
+
+    res.json({
+      message: `Successo! ${updateResult.count} ordini guest sono stati associati al tuo account.`,
+      claimedOrders: updateResult.count,
+    });
+    return;
+  } catch (error) {
+    console.error(
+      `Errore nel reclamare ordini guest per utente ${userId}:`,
+      error
+    );
+    res.status(500).json({
+      message: "Errore interno del server durante il reclamo degli ordini.",
       error: (error as Error).message,
     });
     return;

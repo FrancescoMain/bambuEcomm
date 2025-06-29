@@ -57,24 +57,26 @@ const ProductCard = ({
   return (
     <Link
       href={product.id ? `/product/${product.id}` : "#"}
-      className="flex flex-1 flex-col gap-2 rounded-lg min-w-[160px] max-w-[200px] bg-white shadow-sm border border-[#e8f2ec] hover:shadow-md transition-shadow"
+      className="flex w-full h-full flex-col rounded-lg bg-white shadow-sm border border-[#e8f2ec] hover:shadow-md transition-shadow overflow-hidden"
       prefetch={false}
       tabIndex={0}
       aria-label={product.titolo}
       onClick={onClick}
     >
       <div
-        className="w-full bg-center bg-no-repeat aspect-square bg-cover rounded-t-lg"
+        className="w-full bg-center bg-no-repeat bg-cover flex-shrink-0 rounded-t-lg aspect-card-image"
         style={{ backgroundImage: `url('${product.immagine}')` }}
       ></div>
-      <div className="px-3 pb-2 flex flex-col gap-1">
-        <p className="text-[#0e1a13] text-base font-medium leading-normal truncate">
-          {product.titolo}
-        </p>
-        <p className="text-[#51946b] text-xs font-normal leading-normal truncate">
-          {typeof product.categoria === "string" ? product.categoria : null}
-        </p>
-        <div className="flex items-center justify-between mt-2">
+      <div className="p-4 flex flex-col flex-1 min-h-0 justify-between">
+        <div className="flex flex-col gap-2">
+          <p className="text-[#0e1a13] text-sm font-medium leading-tight line-clamp-2">
+            {product.titolo}
+          </p>
+          <p className="text-[#51946b] text-xs font-normal leading-normal truncate">
+            {typeof product.categoria === "string" ? product.categoria : null}
+          </p>
+        </div>
+        <div className="flex items-center justify-between mt-3">
           <span className="text-[#0e1a13] text-sm font-bold">
             {typeof product.prezzo === "number"
               ? `€ ${product.prezzo.toFixed(2)}`
@@ -84,16 +86,16 @@ const ProductCard = ({
           </span>
           {isInCart ? (
             <button
-              className="ml-2 p-2 bg-[#e8f2ec] text-[#0e1a13] text-xs rounded-full flex items-center justify-center font-bold opacity-60 cursor-not-allowed"
+              className="ml-2 px-2 py-1 bg-[#e8f2ec] text-[#0e1a13] text-xs rounded-lg flex items-center justify-center font-medium opacity-60 cursor-not-allowed"
               type="button"
               aria-label="Già nel carrello"
               disabled
             >
-              Già nel carrello
+              Nel carrello
             </button>
           ) : (
             <button
-              className="ml-2 p-2 bg-[#51946b] hover:bg-[#417a57] text-white text-xs rounded-full transition-colors flex items-center justify-center"
+              className="ml-2 p-2 bg-[#51946b] hover:bg-[#417a57] text-white text-xs rounded-lg transition-colors flex items-center justify-center flex-shrink-0"
               onClick={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
@@ -116,8 +118,8 @@ const ProductCard = ({
               {/* Custom SVG icon from public/add-cart-ecommerce-svgrepo-com.svg */}
               <svg
                 fill="#fff"
-                width="18"
-                height="18"
+                width="14"
+                height="14"
                 viewBox="0 0 24 24"
                 xmlns="http://www.w3.org/2000/svg"
               >

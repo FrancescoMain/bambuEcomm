@@ -19,9 +19,6 @@ interface CheckoutForm {
   cap: string;
   stato: string;
   note: string;
-  saveInfo: boolean;
-  newsletter: boolean;
-  fattura: boolean;
 }
 
 const initialForm: CheckoutForm = {
@@ -35,9 +32,6 @@ const initialForm: CheckoutForm = {
   cap: "",
   stato: "Italia",
   note: "",
-  saveInfo: false,
-  newsletter: false,
-  fattura: false,
 };
 
 const API_URL =
@@ -474,51 +468,6 @@ export default function CheckoutPage() {
                 </div>
               </div>
 
-              {/* Additional Options */}
-              <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-6">
-                <h3 className="text-lg font-bold text-gray-900 mb-4">
-                  Opzioni Aggiuntive
-                </h3>
-                <div className="space-y-3">
-                  <label className="flex items-center gap-3 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      name="saveInfo"
-                      checked={form.saveInfo}
-                      onChange={handleChange}
-                      className="w-5 h-5 text-[#51946b] border-gray-300 rounded focus:ring-[#51946b]"
-                    />
-                    <span className="text-gray-700">
-                      Salva le mie informazioni per i prossimi acquisti
-                    </span>
-                  </label>
-                  <label className="flex items-center gap-3 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      name="newsletter"
-                      checked={form.newsletter}
-                      onChange={handleChange}
-                      className="w-5 h-5 text-[#51946b] border-gray-300 rounded focus:ring-[#51946b]"
-                    />
-                    <span className="text-gray-700">
-                      Ricevi la nostra newsletter con offerte esclusive
-                    </span>
-                  </label>
-                  <label className="flex items-center gap-3 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      name="fattura"
-                      checked={form.fattura}
-                      onChange={handleChange}
-                      className="w-5 h-5 text-[#51946b] border-gray-300 rounded focus:ring-[#51946b]"
-                    />
-                    <span className="text-gray-700">
-                      Richiedi fattura aziendale
-                    </span>
-                  </label>
-                </div>
-              </div>
-
               {/* Error Display */}
               {error && (
                 <div className="bg-red-50 border border-red-200 rounded-xl p-4">
@@ -708,12 +657,6 @@ export default function CheckoutPage() {
                       )}
                     </span>
                   </div>
-                  {form.fattura && (
-                    <div className="flex justify-between text-gray-700">
-                      <span>IVA (22%)</span>
-                      <span>€{(subtotal * 0.22).toFixed(2)}</span>
-                    </div>
-                  )}
                 </div>
 
                 {/* Total */}

@@ -61,7 +61,6 @@ const Header: React.FC<HeaderProps> = ({
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const [cartSidebarOpenInternal, setCartSidebarOpenInternal] = useState(false);
   const [cartSidebarVisible, setCartSidebarVisible] = useState(false);
-  const [cartSidebarLoading, setCartSidebarLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const cartSidebarOpen =
     typeof showCartSidebar === "boolean"
@@ -268,25 +267,12 @@ const Header: React.FC<HeaderProps> = ({
   }, [cartItems, currentUser]);
 
   // --- CART ACTIONS WRAPPED FOR BACKEND SYNC ---
-  const { handleAddToCart, handleRemoveFromCart, handleUpdateQuantity } =
-    useCartActions();
-
-  // Wrap cart actions to set cartSidebarLoading
-  const handleCartAdd = async (item: CartItem) => {
-    setCartSidebarLoading(true);
-    await handleAddToCart(item);
-    setCartSidebarLoading(false);
-  };
-  const handleCartRemove = async (productId: number) => {
-    setCartSidebarLoading(true);
-    await handleRemoveFromCart(productId);
-    setCartSidebarLoading(false);
-  };
-  const handleCartUpdate = async (productId: number, quantity: number) => {
-    setCartSidebarLoading(true);
-    await handleUpdateQuantity(productId, quantity);
-    setCartSidebarLoading(false);
-  };
+  const {
+    handleAddToCart,
+    handleRemoveFromCart,
+    handleUpdateQuantity,
+    cartSidebarLoading,
+  } = useCartActions();
 
   return (
     <HeaderView
@@ -303,9 +289,10 @@ const Header: React.FC<HeaderProps> = ({
       cartItems={cartItems}
       cartTotal={cartTotal}
       cartSidebarLoading={cartSidebarLoading}
+      searchQuery={searchQuery}
       onMenuOpen={openMenu}
       onMenuClose={closeMenu}
-      onProfileMenuToggle={() => setProfileMenuOpen((v) => !v)}
+      onProfileMenuToggle={() => setProfileMenuOpen((v: boolean) => !v)}
       onCartSidebarOpen={openCartSidebar}
       onCartSidebarClose={closeCartSidebar}
       onCategoryClick={(catName: string) => {
@@ -323,8 +310,8 @@ const Header: React.FC<HeaderProps> = ({
         router.push(`/product/${productId}`);
         setCartSidebarOpen(false);
       }}
-      onCartItemRemove={handleCartRemove}
-      onCartItemQuantityChange={handleCartUpdate}
+      onCartItemRemove={handleRemoveFromCart}
+      onCartItemQuantityChange={handleUpdateQuantity}
       onGoToCart={() => {
         setLoading(true);
         router.push("/cart");
@@ -334,6 +321,11 @@ const Header: React.FC<HeaderProps> = ({
         setLoading(true);
         router.push("/checkout");
         setCartSidebarOpen(false);
+      }}
+      onSearchChange={handleSearchChange}
+      onSearchSubmit={() => {
+        setLoading(true);
+        handleSearchSubmit();
       }}
       pathname={pathname || "/"} // Fornisce un valore di fallback sicuro
       // If you want to pass handleAddToCart to HeaderView, add it here

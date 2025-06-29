@@ -1,3 +1,21 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Custom utilities */
+.line-clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-height: 2.5rem; /* Garantisce altezza per 2 righe */
+}
+
+/* Utility per mantenere proporzioni immagine */
+.aspect-card-image {
+  aspect-ratio: 1;
+  min-height: 160px;
+  max-height: 200px;
+}

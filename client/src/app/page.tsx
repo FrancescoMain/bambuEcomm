@@ -78,7 +78,6 @@ export default function Home() {
   };
 
   // State for products
-  const [latestProducts, setLatestProducts] = useState<LocalProduct[]>([]);
   const [error, setError] = useState("");
   const [featuredProducts, setFeaturedProducts] = useState<LocalProduct[]>([]);
   useEffect(() => {
@@ -89,7 +88,6 @@ export default function Home() {
         const products = Array.isArray(productsArray)
           ? productsArray.map(convertApiProductToLocal)
           : [];
-        setLatestProducts(products);
         setFeaturedProducts(products.slice(0, 8)); // Prime 8 per featured
         setError("");
       })
@@ -200,13 +198,19 @@ export default function Home() {
               </div>{" "}
               <div className="flex flex-wrap gap-4">
                 <button
-                  onClick={() => router.push("/search")}
+                  onClick={() => {
+                    setLoading(true);
+                    router.push("/search");
+                  }}
                   className="bg-white text-[#51946b] px-8 py-3 rounded-full font-semibold hover:bg-gray-100 transition-colors shadow-lg"
                 >
                   Esplora Prodotti
                 </button>
                 <button
-                  onClick={() => router.push("/about")}
+                  onClick={() => {
+                    setLoading(true);
+                    router.push("/chi-siamo");
+                  }}
                   className="border-2 border-white text-white px-8 py-3 rounded-full font-semibold hover:bg-white hover:text-[#51946b] transition-colors"
                 >
                   Chi Siamo
@@ -238,7 +242,7 @@ export default function Home() {
         </div>
       </section>
       {/* Categories Section */}
-      <section className="py-16 lg:py-24">
+      <section className="py-12 lg:py-16">
         <div className="max-w-7xl mx-auto px-4">
           <div className="text-center mb-12">
             <h2 className="text-3xl lg:text-4xl font-bold text-gray-900 mb-4">
@@ -253,11 +257,12 @@ export default function Home() {
             {categories.map((category) => (
               <div
                 key={category.id}
-                onClick={() =>
+                onClick={() => {
+                  setLoading(true);
                   router.push(
                     `/search?category=${encodeURIComponent(category.name)}`
-                  )
-                }
+                  );
+                }}
                 className={`relative p-8 rounded-2xl bg-gradient-to-br ${category.color} text-white cursor-pointer transform hover:scale-105 transition-all duration-300 shadow-lg hover:shadow-xl group`}
               >
                 {" "}
@@ -274,7 +279,7 @@ export default function Home() {
         </div>
       </section>
       {/* Featured Products */}
-      <section className="py-16 lg:py-24 bg-gray-50">
+      <section className="py-12 lg:py-16 bg-gray-50">
         <div className="max-w-7xl mx-auto px-4">
           <div className="flex justify-between items-center mb-12">
             <div>
@@ -286,7 +291,10 @@ export default function Home() {
               </p>
             </div>{" "}
             <button
-              onClick={() => router.push("/search")}
+              onClick={() => {
+                setLoading(true);
+                router.push("/search");
+              }}
               className="hidden lg:block bg-[#51946b] text-white px-6 py-3 rounded-full font-semibold hover:bg-[#3d7a57] transition-colors"
             >
               Vedi Tutti →
@@ -298,11 +306,11 @@ export default function Home() {
             </div>
           ) : featuredProducts.length === 0 ? (
             <div className="overflow-x-auto">
-              <div className="flex gap-6 w-max pb-4">
+              <div className="flex gap-4 w-max pb-4">
                 {[...Array(8)].map((_, i) => (
                   <div
                     key={i}
-                    className="bg-white rounded-2xl p-6 shadow-sm animate-pulse w-80"
+                    className="bg-white rounded-2xl p-6 shadow-sm animate-pulse w-72 h-[22rem]"
                   >
                     <div className="bg-gray-200 h-48 rounded-xl mb-4"></div>
                     <div className="bg-gray-200 h-4 rounded mb-2"></div>
@@ -313,9 +321,9 @@ export default function Home() {
             </div>
           ) : (
             <div className="overflow-x-auto">
-              <div className="flex gap-6 w-max pb-4">
+              <div className="flex gap-4 w-max pb-4">
                 {featuredProducts.map((product) => (
-                  <div key={product.id} className="w-80">
+                  <div key={product.id} className="w-72 h-[22rem]">
                     <ProductCard
                       product={{
                         id: String(product.id),
@@ -341,7 +349,10 @@ export default function Home() {
           )}{" "}
           <div className="text-center mt-12 lg:hidden">
             <button
-              onClick={() => router.push("/search")}
+              onClick={() => {
+                setLoading(true);
+                router.push("/search");
+              }}
               className="bg-[#51946b] text-white px-8 py-3 rounded-full font-semibold hover:bg-[#3d7a57] transition-colors"
             >
               Vedi Tutti i Prodotti →
@@ -349,126 +360,9 @@ export default function Home() {
           </div>
         </div>
       </section>
-      {/* Banner Promozionale */}
-      <section className="py-16 lg:py-24">
-        <div className="max-w-7xl mx-auto px-4">
-          <div className="bg-gradient-to-r from-[#51946b] to-[#3d7a57] rounded-3xl p-8 lg:p-16 text-white text-center relative overflow-hidden">
-            <div className="absolute inset-0 bg-black/10"></div>
-            <div className="relative z-10">
-              {" "}
-              <h2 className="text-3xl lg:text-5xl font-bold mb-6 flex items-center justify-center">
-                <svg
-                  className="w-10 h-10 mr-3 text-yellow-400"
-                  fill="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path d="M12 2l3.09 6.26L22 7.27l-5 4.87 1.18 6.88L12 15.77l-6.18 3.25L7 12.14 2 7.27l6.91-1.01L12 2z" />
-                </svg>
-                Offerte Speciali
-              </h2>
-              <p className="text-xl lg:text-2xl mb-8 text-gray-100">
-                Scopri le nostre promozioni esclusive su quaderni e cancelleria
-              </p>
-              <button
-                onClick={() => router.push("/offerte")}
-                className="bg-white text-[#51946b] px-8 py-4 rounded-full font-bold text-lg hover:bg-gray-100 transition-colors shadow-lg"
-              >
-                Scopri le Offerte
-              </button>
-            </div>{" "}
-            {/* Decorative elements */}
-            <div className="absolute top-4 right-4 text-6xl opacity-20">
-              <svg
-                className="w-12 h-12"
-                fill="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z" />
-              </svg>
-            </div>
-            <div className="absolute bottom-4 left-4 text-4xl opacity-20">
-              <svg className="w-8 h-8" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z" />
-              </svg>
-            </div>
-            <div className="absolute top-1/2 left-8 text-3xl opacity-10">
-              <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M21 6H3c-1.1 0-2 .9-2 2v8c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm-10 7H8v3H6v-3H3v-2h3V8h2v3h3v2zm4.5 2c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm4-3c-.83 0-1.5-.67-1.5-1.5S18.67 9 19.5 9s1.5.67 1.5 1.5-.67 1.5-1.5 1.5z" />
-              </svg>
-            </div>
-          </div>
-        </div>
-      </section>
-      {/* Latest Products */}
-      <section className="py-16 lg:py-24 bg-gray-50">
-        <div className="max-w-7xl mx-auto px-4">
-          {" "}
-          <div className="text-center mb-12">
-            <h2 className="text-3xl lg:text-4xl font-bold text-gray-900 mb-4 flex items-center justify-center">
-              <svg
-                className="w-8 h-8 mr-3 text-yellow-500"
-                fill="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path d="M12 0l3.09 6.26L22 7.27l-5 4.87 1.18 6.88L12 15.77l-6.18 3.25L7 12.14 2 7.27l6.91-1.01L12 0z" />
-              </svg>
-              Nuovi Arrivi
-            </h2>
-            <p className="text-xl text-gray-600">
-              Gli ultimi prodotti aggiunti al nostro catalogo
-            </p>
-          </div>
-          {error ? (
-            <div className="text-center text-red-500 py-12">
-              <p>{error}</p>
-            </div>
-          ) : latestProducts.length === 0 ? (
-            <div className="overflow-x-auto">
-              <div className="flex gap-6 w-max pb-4">
-                {[...Array(6)].map((_, i) => (
-                  <div
-                    key={i}
-                    className="bg-white rounded-2xl p-6 shadow-sm animate-pulse w-80"
-                  >
-                    <div className="bg-gray-200 h-48 rounded-xl mb-4"></div>
-                    <div className="bg-gray-200 h-4 rounded mb-2"></div>
-                    <div className="bg-gray-200 h-6 rounded"></div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <div className="flex gap-6 w-max pb-4">
-                {latestProducts.map((product) => (
-                  <div key={product.id} className="w-80">
-                    <ProductCard
-                      product={{
-                        id: String(product.id),
-                        titolo: product.titolo,
-                        prezzo:
-                          typeof product.prezzo === "number"
-                            ? product.prezzo
-                            : parseFloat(product.prezzo as string) || 0,
-                        immagine: product.immagine || "/file.svg",
-                        categoria: product.categoria?.[0]?.name || "",
-                      }}
-                      isInCart={cartItems.some(
-                        (item: CartItem) =>
-                          String(item.productId) === String(product.id)
-                      )}
-                      onAddToCart={handleAddToCartAdapter}
-                      onClick={() => handleProductClick(product.id)}
-                    />
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-      </section>{" "}
+
       {/* Social Wall Section */}
-      <section className="py-16 lg:py-24 bg-gradient-to-br from-[#e8f2ec] to-white">
+      <section className="py-12 lg:py-16 bg-gradient-to-br from-[#e8f2ec] to-white">
         <div className="max-w-6xl mx-auto px-4">
           {" "}
           <div className="text-center mb-12">

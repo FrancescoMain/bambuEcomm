@@ -39,8 +39,6 @@ const CartPage = () => {
     (state: { cart: { items: CartItem[] } }) => state.cart.items
   );
   const [cartItems, setCartItems] = React.useState<CartItem[]>(reduxCartItems);
-  const [couponCode, setCouponCode] = React.useState("");
-  const [discount, setDiscount] = React.useState(0);
   const [relatedProducts, setRelatedProducts] = React.useState<Product[]>([]);
 
   // Sincronizzazione carrello
@@ -98,7 +96,7 @@ const CartPage = () => {
   );
   const shippingThreshold = 50;
   const shippingCost = subtotal >= shippingThreshold ? 0 : 4.99;
-  const total = subtotal - discount + shippingCost;
+  const total = subtotal + shippingCost;
   const isCartEmpty = !cartItems || cartItems.length === 0;
   const remainingForFreeShipping = Math.max(0, shippingThreshold - subtotal);
 
@@ -138,17 +136,6 @@ const CartPage = () => {
       setCartItems(updatedItems);
     }
     setLoading(false);
-  };
-
-  // Applicazione coupon (mock)
-  const handleApplyCoupon = () => {
-    if (couponCode.toLowerCase() === "welcome10") {
-      setDiscount(subtotal * 0.1);
-    } else if (couponCode.toLowerCase() === "save5") {
-      setDiscount(5);
-    } else {
-      setDiscount(0);
-    }
   };
 
   return (
@@ -409,33 +396,6 @@ const CartPage = () => {
                     ))}
                   </div>
                 </div>
-
-                {/* Coupon Section */}
-                <div className="bg-white rounded-2xl shadow-lg p-4 md:p-6 mt-6">
-                  <h3 className="text-lg font-bold text-gray-900 mb-4">
-                    🎁 Hai un codice sconto?
-                  </h3>
-                  <div className="flex flex-col sm:flex-row gap-3">
-                    <input
-                      type="text"
-                      placeholder="Inserisci il codice"
-                      value={couponCode}
-                      onChange={(e) => setCouponCode(e.target.value)}
-                      className="flex-1 px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#51946b] text-base"
-                    />
-                    <button
-                      onClick={handleApplyCoupon}
-                      className="bg-[#51946b] text-white px-6 py-3 rounded-xl font-semibold hover:bg-[#3d7a57] transition-colors whitespace-nowrap"
-                    >
-                      Applica
-                    </button>
-                  </div>
-                  {discount > 0 && (
-                    <p className="text-green-600 text-sm mt-3 font-medium">
-                      ✅ Sconto applicato: -€{discount.toFixed(2)}
-                    </p>
-                  )}
-                </div>
               </div>
 
               {/* Order Summary */}
@@ -452,15 +412,6 @@ const CartPage = () => {
                         €{subtotal.toFixed(2)}
                       </span>
                     </div>
-
-                    {discount > 0 && (
-                      <div className="flex justify-between text-lg text-green-600">
-                        <span>Sconto:</span>
-                        <span className="font-semibold">
-                          -€{discount.toFixed(2)}
-                        </span>
-                      </div>
-                    )}
 
                     <div className="flex justify-between text-lg">
                       <span className="text-gray-600">Spedizione:</span>

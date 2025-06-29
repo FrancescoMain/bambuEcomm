@@ -20,15 +20,6 @@ export default function SearchPage() {
 }
 
 // Types
-interface Filters {
-  search: string;
-  category: number | null;
-  subcategory: number | null;
-  minPrice: string;
-  maxPrice: string;
-  sortBy: string;
-}
-
 interface Product {
   id: string;
   titolo: string;
@@ -60,7 +51,6 @@ function SearchPageContent() {
   const categoryQuery = searchParams?.get("category") || "";
 
   const [search, setSearch] = useState(query);
-  const [showFilters, setShowFilters] = useState(false);
   const [products, setProducts] = useState<Product[]>([]);
   const [loadCount, setLoadCount] = useState(1);
   const [hasMore, setHasMore] = useState(true);
@@ -77,41 +67,44 @@ function SearchPageContent() {
     (state: { cart: { items: CartItem[] } }) => state.cart.items
   );
 
-  const [filters, setFilters] = useState<Filters>({
-    search: query,
-    category: null,
-    subcategory: null,
-    minPrice: "",
-    maxPrice: "",
-    sortBy: "relevance",
-  });
-
   // Quick categories (matching home page)
   const quickCategories = [
-    { id: 1, name: "Quaderni", icon: (
+    {
+      id: 1,
+      name: "Quaderni",
+      icon: (
         <svg className="w-8 h-8" fill="currentColor" viewBox="0 0 24 24">
-          <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/>
+          <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z" />
         </svg>
-      ), color: "from-blue-500 to-blue-600" },    {
+      ),
+      color: "from-blue-500 to-blue-600",
+    },
+    {
       id: 2,
       name: "Cancelleria",
       icon: (
         <svg className="w-8 h-8" fill="currentColor" viewBox="0 0 24 24">
-          <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
+          <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z" />
         </svg>
       ),
       color: "from-green-500 to-green-600",
     },
-    { id: 3, name: "Giochi", icon: (
+    {
+      id: 3,
+      name: "Giochi",
+      icon: (
         <svg className="w-8 h-8" fill="currentColor" viewBox="0 0 24 24">
-          <path d="M21 6H3c-1.1 0-2 .9-2 2v8c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm-10 7H8v3H6v-3H3v-2h3V8h2v3h3v2zm4.5 2c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm4-3c-.83 0-1.5-.67-1.5-1.5S18.67 9 19.5 9s1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/>
+          <path d="M21 6H3c-1.1 0-2 .9-2 2v8c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm-10 7H8v3H6v-3H3v-2h3V8h2v3h3v2zm4.5 2c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm4-3c-.83 0-1.5-.67-1.5-1.5S18.67 9 19.5 9s1.5.67 1.5 1.5-.67 1.5-1.5 1.5z" />
         </svg>
-      ), color: "from-purple-500 to-purple-600" },    {
+      ),
+      color: "from-purple-500 to-purple-600",
+    },
+    {
       id: 4,
       name: "Zaini",
       icon: (
         <svg className="w-8 h-8" fill="currentColor" viewBox="0 0 24 24">
-          <path d="M20 8v12c0 1.1-.9 2-2 2H6c-1.1 0-2-.9-2-2V8c0-1.1.9-2 2-2h2V4c0-1.1.9-2 2-2h4c1.1 0 2 .9 2 2v2h2c1.1 0 2 .9 2 2zM10 4v2h4V4h-4zm8 16V8H6v12h12zm-3-9v2h-6v-2h6z"/>
+          <path d="M20 8v12c0 1.1-.9 2-2 2H6c-1.1 0-2-.9-2-2V8c0-1.1.9-2 2-2h2V4c0-1.1.9-2 2-2h4c1.1 0 2 .9 2 2v2h2c1.1 0 2 .9 2 2zM10 4v2h4V4h-4zm8 16V8H6v12h12zm-3-9v2h-6v-2h6z" />
         </svg>
       ),
       color: "from-orange-500 to-orange-600",
@@ -276,12 +269,15 @@ function SearchPageContent() {
 
             {/* Quick Category Filters */}
             <div className="flex flex-wrap justify-center gap-4">
-              {quickCategories.map((category) => (                <button
+              {quickCategories.map((category) => (
+                <button
                   key={category.id}
                   onClick={() => handleQuickCategory(category.name)}
                   className={`relative px-6 py-3 rounded-full bg-gradient-to-r ${category.color} text-white font-semibold hover:scale-105 transition-all duration-300 shadow-lg hover:shadow-xl flex items-center justify-center`}
                 >
-                  <span className="mr-2 flex items-center">{category.icon}</span>
+                  <span className="mr-2 flex items-center">
+                    {category.icon}
+                  </span>
                   {category.name}
                 </button>
               ))}
@@ -334,224 +330,100 @@ function SearchPageContent() {
       {/* Main Content */}
       <section className="py-8">
         <div className="max-w-7xl mx-auto px-4">
-          <div className="lg:grid lg:grid-cols-4 lg:gap-8">
-            {/* Filters Sidebar */}
-            <div className="lg:col-span-1">
-              <div className="bg-white rounded-2xl shadow-lg p-6 sticky top-4">
-                <div className="flex items-center justify-between mb-6">
-                  <h3 className="text-lg font-bold text-gray-900">Filtri</h3>
-                  <button
-                    onClick={() => setShowFilters(!showFilters)}
-                    className="lg:hidden p-2 text-gray-400 hover:text-gray-600"
+          {/* Results */}
+          <div className="w-full">
+            {products.length === 0 ? (
+              <div className="text-center py-16">
+                <div className="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                  <svg
+                    className="w-12 h-12 text-gray-400"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
                   >
-                    <svg
-                      className="w-5 h-5"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M4 6h16M4 12h16M4 18h16"
-                      />
-                    </svg>
-                  </button>
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                    />
+                  </svg>
                 </div>
+                <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                  Nessun risultato trovato
+                </h3>
+                <p className="text-gray-600 mb-8">
+                  Prova a modificare i filtri o i termini di ricerca
+                </p>
 
-                <div
-                  className={`space-y-6 ${
-                    showFilters ? "block" : "hidden lg:block"
-                  }`}
-                >
-                  {/* Sort Options */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-3">
-                      Ordina per
-                    </label>
-                    <select
-                      value={filters.sortBy}
-                      onChange={(e) =>
-                        setFilters({ ...filters, sortBy: e.target.value })
-                      }
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#51946b]"
-                    >
-                      <option value="relevance">Rilevanza</option>
-                      <option value="price_asc">Prezzo: crescente</option>
-                      <option value="price_desc">Prezzo: decrescente</option>
-                      <option value="newest">Più recenti</option>
-                      <option value="popular">Più popolari</option>
-                    </select>
-                  </div>
-
-                  {/* Price Range */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-3">
-                      Fascia di prezzo
-                    </label>
-                    <div className="grid grid-cols-2 gap-3">
-                      <input
-                        type="number"
-                        placeholder="Min €"
-                        value={filters.minPrice}
-                        onChange={(e) =>
-                          setFilters({ ...filters, minPrice: e.target.value })
-                        }
-                        className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#51946b]"
-                      />
-                      <input
-                        type="number"
-                        placeholder="Max €"
-                        value={filters.maxPrice}
-                        onChange={(e) =>
-                          setFilters({ ...filters, maxPrice: e.target.value })
-                        }
-                        className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#51946b]"
-                      />
-                    </div>
-                  </div>
-
-                  {/* Action Buttons */}
-                  <div className="space-y-3 pt-4 border-t border-gray-200">
-                    <button className="w-full bg-[#51946b] text-white py-3 rounded-lg font-semibold hover:bg-[#3d7a57] transition-colors">
-                      Applica Filtri
-                    </button>
-                    <button className="w-full border border-gray-300 text-gray-700 py-3 rounded-lg font-semibold hover:bg-gray-50 transition-colors">
-                      Cancella Tutto
-                    </button>
+                {/* Popular Searches */}
+                <div className="max-w-md mx-auto">
+                  <h4 className="text-sm font-medium text-gray-700 mb-4">
+                    🔥 Ricerche popolari:
+                  </h4>
+                  <div className="flex flex-wrap gap-2 justify-center">
+                    {["Quaderni", "Penne", "Romanzi", "Acquerelli"].map(
+                      (term) => (
+                        <button
+                          key={term}
+                          onClick={() => {
+                            setSearch(term);
+                            router.push(
+                              `/search?q=${encodeURIComponent(term)}`
+                            );
+                          }}
+                          className="px-4 py-2 bg-gray-100 text-gray-700 rounded-full text-sm hover:bg-[#51946b] hover:text-white transition-colors"
+                        >
+                          {term}
+                        </button>
+                      )
+                    )}
                   </div>
                 </div>
               </div>
-            </div>
-
-            {/* Results */}
-            <div className="lg:col-span-3 mt-8 lg:mt-0">
-              {products.length === 0 ? (
-                /* Empty State */
-                <div className="text-center py-16">
-                  <div className="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-6">
-                    <svg
-                      className="w-12 h-12 text-gray-400"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                      />
-                    </svg>
-                  </div>
-                  <h3 className="text-xl font-semibold text-gray-900 mb-2">
-                    Nessun risultato trovato
-                  </h3>
-                  <p className="text-gray-600 mb-8">
-                    Prova a modificare i filtri o i termini di ricerca
-                  </p>
-
-                  {/* Popular Searches */}
-                  <div className="max-w-md mx-auto">
-                    <h4 className="text-sm font-medium text-gray-700 mb-4">
-                      🔥 Ricerche popolari:
-                    </h4>
-                    <div className="flex flex-wrap gap-2 justify-center">
-                      {["Quaderni", "Penne", "Romanzi", "Acquerelli"].map(
-                        (term) => (
-                          <button
-                            key={term}
-                            onClick={() => {
-                              setSearch(term);
-                              router.push(
-                                `/search?q=${encodeURIComponent(term)}`
-                              );
-                            }}
-                            className="px-4 py-2 bg-gray-100 text-gray-700 rounded-full text-sm hover:bg-[#51946b] hover:text-white transition-colors"
-                          >
-                            {term}
-                          </button>
-                        )
+            ) : (
+              <>
+                {/* Products Grid */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-6">
+                  {products.map((product) => (
+                    <ProductCard
+                      key={product.id}
+                      product={{
+                        id: String(product.id),
+                        titolo: product.titolo,
+                        prezzo:
+                          typeof product.prezzo === "number"
+                            ? product.prezzo
+                            : parseFloat(product.prezzo as string) || 0,
+                        immagine: product.immagine || "/file.svg",
+                        categoria: product.categoria || "",
+                      }}
+                      isInCart={cartItems.some(
+                        (item: CartItem) =>
+                          String(item.productId) === String(product.id)
                       )}
-                    </div>
-                  </div>
+                      onAddToCart={handleAddToCartAdapter}
+                      onClick={() => handleProductClick(product.id)}
+                    />
+                  ))}
                 </div>
-              ) : (
-                <>
-                  {/* Products Grid */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {products.map((product) => (
-                      <ProductCard
-                        key={product.id}
-                        product={{
-                          id: String(product.id),
-                          titolo: product.titolo,
-                          prezzo:
-                            typeof product.prezzo === "number"
-                              ? product.prezzo
-                              : parseFloat(product.prezzo as string) || 0,
-                          immagine: product.immagine || "/file.svg",
-                          categoria: product.categoria || "",
-                        }}
-                        isInCart={cartItems.some(
-                          (item: CartItem) =>
-                            String(item.productId) === String(product.id)
-                        )}
-                        onAddToCart={handleAddToCartAdapter}
-                        onClick={() => handleProductClick(product.id)}
-                      />
-                    ))}
-                  </div>
 
-                  {/* Load More Button */}
-                  {hasMore && (
-                    <div className="text-center mt-12">
-                      <button
-                        onClick={handleLoadMore}
-                        className="bg-[#51946b] text-white px-8 py-4 rounded-full font-semibold hover:bg-[#3d7a57] transition-colors shadow-lg"
-                      >
-                        Carica Altri Prodotti
-                      </button>
-                    </div>
-                  )}
-                </>
-              )}
-            </div>
+                {/* Load More Button */}
+                {hasMore && (
+                  <div className="text-center mt-12">
+                    <button
+                      onClick={handleLoadMore}
+                      className="bg-[#51946b] text-white px-8 py-4 rounded-full font-semibold hover:bg-[#3d7a57] transition-colors shadow-lg"
+                    >
+                      Carica Altri Prodotti
+                    </button>
+                  </div>
+                )}
+              </>
+            )}
           </div>
         </div>
       </section>
-
-      {/* Suggestions Section */}
-      {products.length > 0 && (
-        <section className="py-16 bg-gray-50">
-          <div className="max-w-7xl mx-auto px-4">
-            <div className="text-center">
-              <h3 className="text-2xl font-bold text-gray-900 mb-8">
-                💡 Potrebbe interessarti anche
-              </h3>
-              <div className="flex flex-wrap justify-center gap-4">
-                {[
-                  "Nuovi Arrivi",
-                  "Offerte Speciali",
-                  "Bestseller",
-                  "Sconti",
-                ].map((suggestion) => (
-                  <button
-                    key={suggestion}
-                    onClick={() =>
-                      router.push(`/search?q=${encodeURIComponent(suggestion)}`)
-                    }
-                    className="px-6 py-3 bg-white text-[#51946b] rounded-full font-semibold hover:bg-[#51946b] hover:text-white transition-colors shadow-md"
-                  >
-                    {suggestion}
-                  </button>
-                ))}
-              </div>
-            </div>{" "}
-          </div>{" "}
-        </section>
-      )}
     </div>
   );
 }
