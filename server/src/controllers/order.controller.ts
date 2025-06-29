@@ -930,3 +930,127 @@ export const claimGuestOrders = async (
     return;
   }
 };
+
+// Aggiornare il tracking number di un ordine (Admin only)
+export const updateOrderTracking = async (
+  req: AuthenticatedRequest,
+  res: Response
+): Promise<void> => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    res.status(400).json({ errors: errors.array() });
+    return;
+  }
+
+  const orderId = parseInt(req.params.id, 10);
+  const { trackingNumber } = req.body;
+
+  if (isNaN(orderId)) {
+    res.status(400).json({ message: "ID ordine non valido." });
+    return;
+  }
+
+  if (
+    !trackingNumber ||
+    typeof trackingNumber !== "string" ||
+    trackingNumber.trim().length === 0
+  ) {
+    res
+      .status(400)
+      .json({ message: "Numero di tracking non valido o mancante." });
+    return;
+  }
+
+  try {
+    const order = await prisma.order.findUnique({ where: { id: orderId } });
+    if (!order) {
+      res.status(404).json({ message: "Ordine non trovato." });
+      return;
+    }
+
+    // Aggiorna il tracking number dell'ordine
+    const updatedOrder = await prisma.order.update({
+      where: { id: orderId },
+      data: { trackingNumber: trackingNumber.trim() },
+      include: {
+        user: { select: { id: true, name: true, email: true } },
+        orderItems: {
+          include: {
+            product: { select: { titolo: true } },
+          },
+        },
+      },
+    });
+
+    console.log("🚚 DEBUG: Tracking number update - Ordine aggiornato:", {
+      orderId: updatedOrder.id,
+      trackingNumber: updatedOrder.trackingNumber,
+      hasUser: !!updatedOrder.user,
+      guestEmail: updatedOrder.guestEmail,
+    });
+
+    // Se l'ordine è già stato spedito, invia email con tracking number
+    if (updatedOrder.status === OrderStatus.SHIPPED) {
+      const customerEmail = updatedOrder.user?.email || updatedOrder.guestEmail;
+
+      if (customerEmail) {
+        const orderData = {
+          orderId: updatedOrder.id.toString(),
+          customerName: updatedOrder.user?.name || "Cliente",
+          customerEmail: customerEmail,
+          items: updatedOrder.orderItems.map((item) => ({
+            name: item.product.titolo,
+            quantity: item.quantity,
+            price: item.priceAtPurchase.toNumber(),
+          })),
+          total: updatedOrder.totalAmount.toNumber(),
+          orderDate: updatedOrder.createdAt.toLocaleDateString("it-IT"),
+          trackingNumber: updatedOrder.trackingNumber || undefined,
+        };
+
+        const logPrefix = updatedOrder.user ? "" : "[GUEST] ";
+        console.log(
+          `📧 ${logPrefix}Tentativo invio email tracking number a: ${customerEmail}`
+        );
+
+        const emailSent = await emailService.sendOrderShippedEmail(orderData);
+
+        if (emailSent) {
+          console.log(
+            `✅ ${logPrefix}Email tracking number inviata al cliente: ${customerEmail}`
+          );
+        } else {
+          console.log(
+            `⚠️ ${logPrefix}Fallimento invio email tracking number al cliente: ${customerEmail}`
+          );
+        }
+      }
+    }
+
+    res.json({
+      message: "Tracking number aggiornato con successo.",
+      order: updatedOrder,
+    });
+    return;
+  } catch (error) {
+    console.error(
+      `Errore nell'aggiornamento del tracking number dell'ordine ${orderId}:`,
+      error
+    );
+    if (
+      error instanceof Prisma.PrismaClientKnownRequestError &&
+      error.code === "P2025"
+    ) {
+      res
+        .status(404)
+        .json({ message: "Ordine non trovato per l'aggiornamento." });
+      return;
+    }
+    res.status(500).json({
+      message:
+        "Errore interno del server durante l'aggiornamento del tracking number.",
+      error: (error as Error).message,
+    });
+    return;
+  }
+};

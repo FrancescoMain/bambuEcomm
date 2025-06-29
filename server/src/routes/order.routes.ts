@@ -6,6 +6,7 @@ import {
   getUserOrders,
   getAllOrders,
   updateOrderStatus,
+  updateOrderTracking,
   cancelOrder,
   claimGuestOrders,
 } from "../controllers/order.controller";
@@ -64,6 +65,19 @@ router.patch(
       .withMessage("Stato dell'ordine non valido."),
   ],
   updateOrderStatus
+);
+
+// Aggiornare il tracking number di un ordine (Admin only)
+router.patch(
+  "/:id/tracking",
+  authorizeRole([Role.ADMIN]),
+  [
+    body("trackingNumber")
+      .isString()
+      .isLength({ min: 1 })
+      .withMessage("Numero di tracking non valido."),
+  ],
+  updateOrderTracking
 );
 
 export default router;

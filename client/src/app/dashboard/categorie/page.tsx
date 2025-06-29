@@ -10,6 +10,7 @@ import {
   ChevronRightIcon,
   FolderIcon,
 } from "@heroicons/react/24/outline";
+import categoryService from "../../../api/categoryService";
 
 interface Category {
   id: number;
@@ -55,13 +56,9 @@ const CategoriesPage = () => {
   const fetchCategories = useCallback(async () => {
     try {
       setLoading(true);
-      const response = await fetch("/api/categories?includeProducts=false");
-      const data = await response.json();
-
-      if (data.success) {
-        setCategories(data.categories || []);
-        setFilteredCategories(data.categories || []);
-      }
+      const categories = await categoryService.getAllCategories();
+      setCategories(categories || []);
+      setFilteredCategories(categories || []);
     } catch (error) {
       console.error("Error fetching categories:", error);
     } finally {
@@ -92,11 +89,6 @@ const CategoriesPage = () => {
     e.preventDefault();
 
     try {
-      const url = editingCategory
-        ? `/api/categories/${editingCategory.id}`
-        : "/api/categories";
-      const method = editingCategory ? "PUT" : "POST";
-
       const payload = {
         name: formData.name,
         description: formData.description || undefined,
@@ -104,22 +96,14 @@ const CategoriesPage = () => {
         isActive: formData.isActive,
       };
 
-      const response = await fetch(url, {
-        method,
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(payload),
-      });
-
-      const data = await response.json();
-
-      if (data.success) {
-        await fetchCategories();
-        resetForm();
+      if (editingCategory) {
+        await categoryService.updateCategory(editingCategory.id, payload);
       } else {
-        alert(data.message || "Error saving category");
+        await categoryService.createCategory(payload);
       }
+
+      await fetchCategories();
+      resetForm();
     } catch (error) {
       console.error("Error saving category:", error);
       alert("Error saving category");
@@ -131,17 +115,8 @@ const CategoriesPage = () => {
     if (!confirm("Are you sure you want to delete this category?")) return;
 
     try {
-      const response = await fetch(`/api/categories/${categoryId}`, {
-        method: "DELETE",
-      });
-
-      const data = await response.json();
-
-      if (data.success) {
-        await fetchCategories();
-      } else {
-        alert(data.message || "Error deleting category");
-      }
+      await categoryService.deleteCategory(categoryId);
+      await fetchCategories();
     } catch (error) {
       console.error("Error deleting category:", error);
       alert("Error deleting category");

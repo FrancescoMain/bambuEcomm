@@ -243,13 +243,33 @@ const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
               )}
 
               <button
-                onClick={() => {
+                onClick={async () => {
                   const trackingNumber = prompt(
                     "Inserisci il numero di tracking:"
                   );
                   if (trackingNumber) {
-                    // Here you could add logic to update tracking number
-                    alert("Funzionalità in fase di sviluppo");
+                    try {
+                      // Usa l'API service centralizzato
+                      const apiService = (await import("@/api/apiService"))
+                        .default;
+
+                      await apiService.patch(`/orders/${order.id}/tracking`, {
+                        trackingNumber,
+                      });
+
+                      alert("Tracking number aggiornato con successo!");
+                      onClose(); // Chiudi il modal
+                      window.location.reload(); // Ricarica la pagina per aggiornare i dati
+                    } catch (error: any) {
+                      console.error(
+                        "Errore durante l'aggiornamento del tracking:",
+                        error
+                      );
+                      const errorMessage =
+                        error.response?.data?.message ||
+                        "Impossibile aggiornare il tracking number";
+                      alert(`Errore: ${errorMessage}`);
+                    }
                   }
                 }}
                 className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors flex items-center gap-2"
