@@ -568,6 +568,16 @@ export const updateOrderStatus = async (
               `⚠️ ${logPrefix}Fallimento invio email ordine cancellato al cliente: ${orderData.customerEmail}`
             );
           }
+
+          // Invia anche notifica all'admin
+          console.log(`📧 Tentativo invio notifica cancellazione all'admin`);
+          const adminEmailSent = await emailService.sendOrderCancelledNotificationToAdmin(orderData);
+          
+          if (adminEmailSent) {
+            console.log(`✅ Email notifica cancellazione inviata all'admin`);
+          } else {
+            console.log(`⚠️ Fallimento invio email notifica cancellazione all'admin`);
+          }
         }
       } else {
         console.error(
@@ -778,6 +788,18 @@ export const cancelOrder = async (
           console.log(
             `⚠️ ${logPrefix}Fallimento invio email ordine cancellato al cliente: ${customerEmail}`
           );
+        }
+
+        // Invia anche notifica all'admin (se non è l'admin stesso a cancellare)
+        if (userRole !== Role.ADMIN) {
+          console.log(`📧 Tentativo invio notifica cancellazione all'admin`);
+          const adminEmailSent = await emailService.sendOrderCancelledNotificationToAdmin(orderData);
+          
+          if (adminEmailSent) {
+            console.log(`✅ Email notifica cancellazione inviata all'admin`);
+          } else {
+            console.log(`⚠️ Fallimento invio email notifica cancellazione all'admin`);
+          }
         }
       }
     } catch (emailError) {

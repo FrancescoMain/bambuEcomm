@@ -84,7 +84,7 @@ const statusDescriptions: { [key: string]: string } = {
 export default function OrdersPage() {
   const user = useSelector((state: RootState) => state.auth.user);
   const token = useSelector((state: RootState) => state.auth.token);
-  const isLoading = useSelector((state: RootState) => state.auth.loading);
+  const isLoading = useSelector((state: RootState) => state.auth.isLoading);
   const { showToast } = useNotifications();
   const [orders, setOrders] = useState<Order[]>([]);
   const [filteredOrders, setFilteredOrders] = useState<Order[]>([]);
