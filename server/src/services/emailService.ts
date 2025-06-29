@@ -24,8 +24,11 @@ export interface OrderData {
     price: number;
   }>;
   total: number;
+  subtotal?: number;
+  shippingCost?: number;
   orderDate: string;
   shippingAddress?: any;
+  trackingNumber?: string;
 }
 
 export interface NewsletterData {
@@ -318,61 +321,117 @@ class EmailService {
       .map(
         (item) => `
       <tr>
-        <td style="padding: 10px; border-bottom: 1px solid #eee;">${item.name}</td>
-        <td style="padding: 10px; border-bottom: 1px solid #eee; text-align: center;">${item.quantity}</td>
-        <td style="padding: 10px; border-bottom: 1px solid #eee; text-align: right;">€${item.price.toFixed(2)}</td>
-        <td style="padding: 10px; border-bottom: 1px solid #eee; text-align: right; font-weight: bold;">€${(item.quantity * item.price).toFixed(2)}</td>
+        <td style="padding: 12px 8px; border-bottom: 1px solid #eee; word-wrap: break-word;">${item.name}</td>
+        <td style="padding: 12px 8px; border-bottom: 1px solid #eee; text-align: center;">${item.quantity}</td>
+        <td style="padding: 12px 8px; border-bottom: 1px solid #eee; text-align: right;">€${item.price.toFixed(2)}</td>
+        <td style="padding: 12px 8px; border-bottom: 1px solid #eee; text-align: right; font-weight: bold;">€${(item.quantity * item.price).toFixed(2)}</td>
       </tr>
     `
       )
       .join("");
 
+    // Calcola subtotale e spedizione
+    const subtotal = orderData.subtotal || orderData.items.reduce((sum, item) => sum + (item.quantity * item.price), 0);
+    const shippingCost = orderData.shippingCost || (subtotal >= 50 ? 0 : 4.99);
+    const calculatedTotal = subtotal + shippingCost;
+
     return `
       <!DOCTYPE html>
-      <html>        <head>
+      <html>
+        <head>
           <meta charset="utf-8">
-          <meta name="viewport" content="width=device-width, initial-scale=1">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
           <title>Ordine Confermato - Cartoleria Bambù</title>
+          <style>
+            @media only screen and (max-width: 600px) {
+              .container { width: 100% !important; padding: 10px !important; }
+              .header { padding: 20px 15px !important; }
+              .content { padding: 15px !important; }
+              table { font-size: 14px !important; }
+              .responsive-table td { padding: 8px 4px !important; }
+              .mobile-hide { display: none !important; }
+              .mobile-center { text-align: center !important; }
+            }
+          </style>
         </head>
-        <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
-          <div style="background: linear-gradient(135deg, #51946b, #6db587); padding: 30px; border-radius: 10px; text-align: center; margin-bottom: 30px;">
-            <h1 style="color: white; margin: 0; font-size: 28px;">🛍️ Ordine Confermato!</h1>
-            <p style="color: white; margin: 10px 0 0 0; font-size: 18px;">Ordine #${orderData.orderId}</p>
-          </div>
-          
-          <div style="background: #f8fbfa; padding: 25px; border-radius: 8px; margin-bottom: 20px;">
-            <h2 style="color: #51946b; margin-top: 0;">Ciao ${orderData.customerName}! 👋</h2>
-            <p>Grazie per il tuo ordine! Abbiamo ricevuto il tuo acquisto e lo stiamo preparando.</p>
+        <body style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, Arial, sans-serif; line-height: 1.6; color: #333; background-color: #f5f5f5;">
+          <div class="container" style="max-width: 600px; margin: 0 auto; background-color: white; padding: 20px;">
             
-            <div style="background: white; padding: 20px; border-radius: 5px; margin: 20px 0;">
-              <h3 style="color: #51946b; margin-top: 0;">📦 Dettagli Ordine</h3>
-              <table style="width: 100%; border-collapse: collapse;">
-                <thead>
-                  <tr style="background: #f8fbfa;">
-                    <th style="padding: 10px; text-align: left; border-bottom: 2px solid #51946b;">Prodotto</th>
-                    <th style="padding: 10px; text-align: center; border-bottom: 2px solid #51946b;">Qta</th>
-                    <th style="padding: 10px; text-align: right; border-bottom: 2px solid #51946b;">Prezzo</th>
-                    <th style="padding: 10px; text-align: right; border-bottom: 2px solid #51946b;">Totale</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  ${itemsHtml}
-                </tbody>
-                <tfoot>
-                  <tr style="background: #f8fbfa;">
-                    <td colspan="3" style="padding: 15px; text-align: right; font-weight: bold; font-size: 18px;">TOTALE:</td>
-                    <td style="padding: 15px; text-align: right; font-weight: bold; font-size: 18px; color: #51946b;">€${orderData.total.toFixed(2)}</td>
-                  </tr>
-                </tfoot>
-              </table>
+            <!-- Header -->
+            <div class="header" style="background: linear-gradient(135deg, #51946b, #6db587); padding: 30px; border-radius: 12px; text-align: center; margin-bottom: 30px;">
+              <h1 style="color: white; margin: 0; font-size: 28px; font-weight: bold;">🛍️ Ordine Confermato!</h1>
+              <p style="color: rgba(255,255,255,0.9); margin: 10px 0 0 0; font-size: 18px;">Ordine #${orderData.orderId}</p>
             </div>
             
-            <p><strong>📅 Data Ordine:</strong> ${orderData.orderDate}</p>
-            <p>Ti aggiorneremo via email quando il tuo ordine sarà spedito.</p>
-          </div>
-          
-          <div style="text-align: center; color: #666; font-size: 14px;">
-            <p>Per qualsiasi domanda, contattaci a ${this.adminEmail}</p>
+            <!-- Main Content -->
+            <div class="content" style="background: #f8fbfa; padding: 25px; border-radius: 12px; margin-bottom: 20px;">
+              <h2 style="color: #51946b; margin-top: 0; font-size: 24px;">Ciao ${orderData.customerName}! 👋</h2>
+              <p style="margin-bottom: 20px; font-size: 16px;">Grazie per il tuo ordine! Abbiamo ricevuto il tuo acquisto e lo stiamo preparando con cura.</p>
+              
+              <!-- Order Details -->
+              <div style="background: white; padding: 20px; border-radius: 8px; margin: 20px 0; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                <h3 style="color: #51946b; margin-top: 0; margin-bottom: 20px; font-size: 20px;">📦 Dettagli Ordine</h3>
+                
+                <div style="overflow-x: auto;">
+                  <table class="responsive-table" style="width: 100%; border-collapse: collapse; min-width: 300px;">
+                    <thead>
+                      <tr style="background: #f8fbfa;">
+                        <th style="padding: 12px 8px; text-align: left; border-bottom: 2px solid #51946b; font-weight: bold;">Prodotto</th>
+                        <th style="padding: 12px 8px; text-align: center; border-bottom: 2px solid #51946b; font-weight: bold;">Qta</th>
+                        <th style="padding: 12px 8px; text-align: right; border-bottom: 2px solid #51946b; font-weight: bold;">Prezzo</th>
+                        <th style="padding: 12px 8px; text-align: right; border-bottom: 2px solid #51946b; font-weight: bold;">Totale</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      ${itemsHtml}
+                    </tbody>
+                  </table>
+                </div>
+
+                <!-- Order Summary -->
+                <div style="margin-top: 20px; padding-top: 15px; border-top: 1px solid #eee;">
+                  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                    <span style="font-size: 16px;">Subtotale:</span>
+                    <span style="font-size: 16px;">€${subtotal.toFixed(2)}</span>
+                  </div>
+                  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                    <span style="font-size: 16px;">Spedizione:</span>
+                    <span style="font-size: 16px; ${shippingCost === 0 ? 'color: #51946b; font-weight: bold;' : ''}">${shippingCost === 0 ? 'GRATUITA 🎉' : '€' + shippingCost.toFixed(2)}</span>
+                  </div>
+                  <div style="display: flex; justify-content: space-between; align-items: center; padding-top: 10px; border-top: 2px solid #51946b;">
+                    <span style="font-size: 18px; font-weight: bold;">TOTALE:</span>
+                    <span style="font-size: 20px; font-weight: bold; color: #51946b;">€${orderData.total.toFixed(2)}</span>
+                  </div>
+                </div>
+              </div>
+              
+              <!-- Order Info -->
+              <div style="background: white; padding: 20px; border-radius: 8px; margin: 20px 0;">
+                <p style="margin: 0 0 10px 0;"><strong>📅 Data Ordine:</strong> ${orderData.orderDate}</p>
+                <p style="margin: 0 0 10px 0;"><strong>📧 Email:</strong> ${orderData.customerEmail}</p>
+                ${orderData.shippingAddress ? `
+                <p style="margin: 0 0 10px 0;"><strong>� Indirizzo di spedizione:</strong></p>
+                <div style="margin-left: 20px; color: #666;">
+                  ${orderData.shippingAddress.via || ''} ${orderData.shippingAddress.numero || ''}<br>
+                  ${orderData.shippingAddress.cap || ''} ${orderData.shippingAddress.citta || ''}<br>
+                  ${orderData.shippingAddress.stato || ''}
+                </div>
+                ` : ''}
+              </div>
+              
+              <!-- Shipping Info -->
+              <div style="background: #e8f5e8; padding: 15px; border-radius: 8px; border-left: 4px solid #51946b; margin: 20px 0;">
+                <p style="margin: 0; font-weight: bold; color: #51946b;">🚚 Spedizione e Tempi di Consegna</p>
+                <p style="margin: 8px 0 0 0; font-size: 14px;">Ti aggiorneremo via email quando il tuo ordine sarà spedito con il numero di tracking per seguire la spedizione. Tempi di consegna stimati: 3-5 giorni lavorativi.</p>
+              </div>
+            </div>
+            
+            <!-- Footer -->
+            <div style="text-align: center; color: #666; font-size: 14px; padding: 20px 0;">
+              <p style="margin: 0 0 10px 0;">📞 Per qualsiasi domanda, contattaci a <a href="mailto:${this.adminEmail}" style="color: #51946b;">${this.adminEmail}</a></p>
+              <p style="margin: 0; font-size: 12px; color: #999;">Cartoleria Bambù - La tua cartoleria di fiducia</p>
+            </div>
+            
           </div>
         </body>
       </html>

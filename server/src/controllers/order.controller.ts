@@ -151,6 +151,11 @@ export const createOrder = async (
         });
 
         // Prepara i dati per l'email
+        const subtotal = createdOrder.orderItems.reduce((sum, item) => {
+          return sum + (Number(item.priceAtPurchase) * item.quantity);
+        }, 0);
+        const shippingCost = subtotal >= 50 ? 0 : 4.99;
+        
         const orderData = {
           orderId: createdOrder.id.toString(),
           customerName: createdOrder.user.name || "Cliente",
@@ -161,6 +166,8 @@ export const createOrder = async (
             price: Number(item.priceAtPurchase),
           })),
           total: Number(createdOrder.totalAmount),
+          subtotal: subtotal,
+          shippingCost: shippingCost,
           orderDate: createdOrder.createdAt.toLocaleDateString("it-IT"),
           shippingAddress: createdOrder.shippingAddress,
         };
@@ -524,11 +531,16 @@ export const updateOrderStatus = async (
         };
 
         if (status === OrderStatus.SHIPPED) {
+          const orderDataWithTracking = {
+            ...orderData,
+            trackingNumber: updatedOrder.trackingNumber || undefined,
+          };
+          
           const logPrefix = updatedOrder.user ? "" : "[GUEST] ";
           console.log(
             `📧 ${logPrefix}Tentativo invio email ordine spedito a: ${orderData.customerEmail}`
           );
-          const emailSent = await emailService.sendOrderShippedEmail(orderData);
+          const emailSent = await emailService.sendOrderShippedEmail(orderDataWithTracking);
 
           if (emailSent) {
             console.log(

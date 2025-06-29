@@ -84,6 +84,7 @@ const statusDescriptions: { [key: string]: string } = {
 export default function OrdersPage() {
   const user = useSelector((state: RootState) => state.auth.user);
   const token = useSelector((state: RootState) => state.auth.token);
+  const isLoading = useSelector((state: RootState) => state.auth.loading);
   const { showToast } = useNotifications();
   const [orders, setOrders] = useState<Order[]>([]);
   const [filteredOrders, setFilteredOrders] = useState<Order[]>([]);
@@ -96,6 +97,7 @@ export default function OrdersPage() {
   const [sortBy, setSortBy] = useState("date-desc");
   const [showCancelModal, setShowCancelModal] = useState<Order | null>(null);
   const [claimingOrders, setClaimingOrders] = useState(false);
+  const [authChecked, setAuthChecked] = useState(false);
 
   // Filtri per stato (aggiornati)
   const statusFilters = [
@@ -171,6 +173,13 @@ export default function OrdersPage() {
     if (!user || !token) return;
     fetchOrders();
   }, [user, token, fetchOrders]);
+
+  // Effect per controllare lo stato auth e determinare quando è stato inizializzato
+  useEffect(() => {
+    if (!isLoading) {
+      setAuthChecked(true);
+    }
+  }, [isLoading]);
 
   // Filtraggio e ordinamento ordini
   useEffect(() => {
@@ -384,7 +393,19 @@ export default function OrdersPage() {
     }
   };
 
-  if (!user) {
+  // Mostra loading se l'auth sta ancora caricando o non è stato controllato
+  if (isLoading || !authChecked) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-[#51946b] mb-4"></div>
+          <p className="text-gray-600">Caricamento...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!user || !token) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
