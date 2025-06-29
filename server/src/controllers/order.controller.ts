@@ -152,10 +152,10 @@ export const createOrder = async (
 
         // Prepara i dati per l'email
         const subtotal = createdOrder.orderItems.reduce((sum, item) => {
-          return sum + (Number(item.priceAtPurchase) * item.quantity);
+          return sum + Number(item.priceAtPurchase) * item.quantity;
         }, 0);
         const shippingCost = subtotal >= 50 ? 0 : 4.99;
-        
+
         const orderData = {
           orderId: createdOrder.id.toString(),
           customerName: createdOrder.user.name || "Cliente",
@@ -535,12 +535,14 @@ export const updateOrderStatus = async (
             ...orderData,
             trackingNumber: updatedOrder.trackingNumber || undefined,
           };
-          
+
           const logPrefix = updatedOrder.user ? "" : "[GUEST] ";
           console.log(
             `📧 ${logPrefix}Tentativo invio email ordine spedito a: ${orderData.customerEmail}`
           );
-          const emailSent = await emailService.sendOrderShippedEmail(orderDataWithTracking);
+          const emailSent = await emailService.sendOrderShippedEmail(
+            orderDataWithTracking
+          );
 
           if (emailSent) {
             console.log(
@@ -571,12 +573,15 @@ export const updateOrderStatus = async (
 
           // Invia anche notifica all'admin
           console.log(`📧 Tentativo invio notifica cancellazione all'admin`);
-          const adminEmailSent = await emailService.sendOrderCancelledNotificationToAdmin(orderData);
-          
+          const adminEmailSent =
+            await emailService.sendOrderCancelledNotificationToAdmin(orderData);
+
           if (adminEmailSent) {
             console.log(`✅ Email notifica cancellazione inviata all'admin`);
           } else {
-            console.log(`⚠️ Fallimento invio email notifica cancellazione all'admin`);
+            console.log(
+              `⚠️ Fallimento invio email notifica cancellazione all'admin`
+            );
           }
         }
       } else {
@@ -793,12 +798,15 @@ export const cancelOrder = async (
         // Invia anche notifica all'admin (se non è l'admin stesso a cancellare)
         if (userRole !== Role.ADMIN) {
           console.log(`📧 Tentativo invio notifica cancellazione all'admin`);
-          const adminEmailSent = await emailService.sendOrderCancelledNotificationToAdmin(orderData);
-          
+          const adminEmailSent =
+            await emailService.sendOrderCancelledNotificationToAdmin(orderData);
+
           if (adminEmailSent) {
             console.log(`✅ Email notifica cancellazione inviata all'admin`);
           } else {
-            console.log(`⚠️ Fallimento invio email notifica cancellazione all'admin`);
+            console.log(
+              `⚠️ Fallimento invio email notifica cancellazione all'admin`
+            );
           }
         }
       }

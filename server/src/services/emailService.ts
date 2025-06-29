@@ -209,7 +209,7 @@ class EmailService {
 
   /**
    * Email ordine cancellato (all'admin)
-   */ 
+   */
   async sendOrderCancelledNotificationToAdmin(
     orderData: OrderData & { cancelReason?: string }
   ): Promise<boolean> {
@@ -347,7 +347,12 @@ class EmailService {
       .join("");
 
     // Calcola subtotale e spedizione dai dati forniti o calcola da zero
-    const subtotal = orderData.subtotal ?? orderData.items.reduce((sum, item) => sum + (item.quantity * item.price), 0);
+    const subtotal =
+      orderData.subtotal ??
+      orderData.items.reduce(
+        (sum, item) => sum + item.quantity * item.price,
+        0
+      );
     const shippingCost = orderData.shippingCost ?? (subtotal >= 50 ? 0 : 4.99);
 
     return `
@@ -414,7 +419,7 @@ class EmailService {
                   </div>
                   <div class="summary-row" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
                     <span class="summary-label" style="font-size: 16px;">Spedizione:</span>
-                    <span class="summary-value" style="font-size: 16px; ${shippingCost === 0 ? 'color: #51946b; font-weight: bold;' : ''}">${shippingCost === 0 ? 'GRATUITA 🎉' : '€' + shippingCost.toFixed(2)}</span>
+                    <span class="summary-value" style="font-size: 16px; ${shippingCost === 0 ? "color: #51946b; font-weight: bold;" : ""}">${shippingCost === 0 ? "GRATUITA 🎉" : "€" + shippingCost.toFixed(2)}</span>
                   </div>
                   <div class="summary-row" style="display: flex; justify-content: space-between; align-items: center; padding-top: 10px; border-top: 2px solid #51946b;">
                     <span class="summary-label" style="font-size: 18px; font-weight: bold;">TOTALE:</span>
@@ -427,21 +432,25 @@ class EmailService {
               <div style="background: white; padding: 20px; border-radius: 8px; margin: 20px 0;">
                 <p style="margin: 0 0 10px 0;"><strong>📅 Data Ordine:</strong> ${orderData.orderDate}</p>
                 <p style="margin: 0 0 10px 0;"><strong>📧 Email:</strong> ${orderData.customerEmail}</p>
-                ${orderData.shippingAddress ? `
+                ${
+                  orderData.shippingAddress
+                    ? `
                 <p style="margin: 0 0 10px 0;"><strong>🚚 Indirizzo di spedizione:</strong></p>
                 <div style="margin-left: 20px; color: #666;">
-                  ${orderData.shippingAddress.via || ''} ${orderData.shippingAddress.numero || ''}<br>
-                  ${orderData.shippingAddress.cap || ''} ${orderData.shippingAddress.citta || ''}<br>
-                  ${orderData.shippingAddress.stato || ''}
+                  ${orderData.shippingAddress.via || ""} ${orderData.shippingAddress.numero || ""}<br>
+                  ${orderData.shippingAddress.cap || ""} ${orderData.shippingAddress.citta || ""}<br>
+                  ${orderData.shippingAddress.stato || ""}
                 </div>
-                ` : ''}
+                `
+                    : ""
+                }
               </div>
               
               <!-- Shipping Info -->
               <div style="background: #e8f5e8; padding: 15px; border-radius: 8px; border-left: 4px solid #51946b; margin: 20px 0;">
                 <p style="margin: 0; font-weight: bold; color: #51946b;">🚚 Spedizione e Tempi di Consegna</p>
                 <p style="margin: 8px 0 0 0; font-size: 14px;">Ti aggiorneremo via email quando il tuo ordine sarà spedito con il numero di tracking per seguire la spedizione. Tempi di consegna stimati: 3-5 giorni lavorativi.</p>
-                ${shippingCost === 0 ? '<p style="margin: 8px 0 0 0; font-size: 14px; color: #51946b; font-weight: bold;">🎉 Spedizione gratuita per ordini superiori a €50!</p>' : ''}
+                ${shippingCost === 0 ? '<p style="margin: 8px 0 0 0; font-size: 14px; color: #51946b; font-weight: bold;">🎉 Spedizione gratuita per ordini superiori a €50!</p>' : ""}
               </div>
             </div>
             
@@ -741,13 +750,17 @@ class EmailService {
                   </tr>
                 </thead>
                 <tbody>
-                  ${orderData.items.map((item) => `
+                  ${orderData.items
+                    .map(
+                      (item) => `
                     <tr>
                       <td style="padding: 8px; border-bottom: 1px solid #eee;">${item.name}</td>
                       <td style="padding: 8px; border-bottom: 1px solid #eee; text-align: center;">${item.quantity}</td>
                       <td style="padding: 8px; border-bottom: 1px solid #eee; text-align: right;">€${(item.quantity * item.price).toFixed(2)}</td>
                     </tr>
-                  `).join("")}
+                  `
+                    )
+                    .join("")}
                 </tbody>
               </table>
             </div>
