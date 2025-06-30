@@ -8,7 +8,6 @@ import Link from "next/link";
 import {
   FiBox,
   FiClipboard,
-  FiTag,
   FiUsers,
   FiDollarSign,
   FiTrendingUp,
@@ -23,9 +22,6 @@ import {
   Bar,
   LineChart,
   Line,
-  PieChart,
-  Pie,
-  Cell,
   XAxis,
   YAxis,
   CartesianGrid,
@@ -58,12 +54,6 @@ interface SalesData {
   fatturato: number;
 }
 
-interface CategoryData {
-  name: string;
-  value: number;
-  color: string;
-}
-
 interface RecentActivity {
   time: string;
   action: string;
@@ -80,7 +70,6 @@ interface TopProduct {
 interface DashboardData {
   summary: DashboardSummary;
   salesData: SalesData[];
-  categoryData: CategoryData[];
   recentActivity: RecentActivity[];
   topProducts: TopProduct[];
 }
@@ -109,22 +98,24 @@ export default function DashboardPage() {
     // Carica dati reali dal backend
     const fetchDashboardData = async () => {
       try {
-        const apiUrl = process.env.NEXT_PUBLIC_API_URL || "https://bambu-ecomm-in2g.vercel.app/api";
+        const apiUrl =
+          process.env.NEXT_PUBLIC_API_URL ||
+          "https://bambu-ecomm-in2g.vercel.app/api";
         const response = await fetch(`${apiUrl}/dashboard/stats`, {
           headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
           },
         });
 
         if (!response.ok) {
-          throw new Error('Errore nel caricamento delle statistiche');
+          throw new Error("Errore nel caricamento delle statistiche");
         }
 
         const data = await response.json();
         setDashboardData(data);
       } catch (error) {
-        console.error('Errore nel caricamento dashboard:', error);
+        console.error("Errore nel caricamento dashboard:", error);
         // In caso di errore, mantieni la dashboard nascosta
         setDashboardData(null);
       } finally {
@@ -167,11 +158,14 @@ export default function DashboardPage() {
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
           <div className="text-6xl mb-4">📊</div>
-          <h2 className="text-2xl font-bold text-gray-900 mb-4">Dashboard non disponibile</h2>
+          <h2 className="text-2xl font-bold text-gray-900 mb-4">
+            Dashboard non disponibile
+          </h2>
           <p className="text-gray-600 mb-6">
-            Non è stato possibile caricare le statistiche. Assicurati di avere i permessi necessari.
+            Non è stato possibile caricare le statistiche. Assicurati di avere i
+            permessi necessari.
           </p>
-          <button 
+          <button
             onClick={() => window.location.reload()}
             className="bg-[#51946b] text-white px-6 py-3 rounded-lg hover:bg-[#3d7a57] transition-colors"
           >
@@ -182,8 +176,7 @@ export default function DashboardPage() {
     );
   }
 
-  const { summary, salesData, categoryData, recentActivity, topProducts } =
-    dashboardData;
+  const { summary, salesData, recentActivity, topProducts } = dashboardData;
 
   return (
     <div className="container mx-auto px-4 py-8 space-y-8">
@@ -193,8 +186,8 @@ export default function DashboardPage() {
           Dashboard Admin - Cartoleria Bambù
         </h1>
         <p className="text-xl text-green-100">
-          Benvenuto, {user.name || "Admin"}! Ecco un riepilogo dell'attività di
-          oggi.
+          Benvenuto, {user.name || "Admin"}! Ecco un riepilogo
+          dell&apos;attività di oggi.
         </p>
         <div className="mt-4 grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
           <div className="bg-white/20 rounded-lg p-3">
@@ -325,31 +318,6 @@ export default function DashboardPage() {
             </AreaChart>
           </ResponsiveContainer>
         </div>
-
-        {/* Category Distribution */}
-        <div className="bg-white p-6 rounded-xl shadow-lg border border-gray-100">
-          <h3 className="text-xl font-bold text-gray-800 mb-6 flex items-center">
-            <FiTag className="mr-3 text-[#51946b]" />
-            Vendite per Categoria
-          </h3>
-          <ResponsiveContainer width="100%" height={300}>
-            <PieChart>
-              <Pie
-                data={categoryData}
-                cx="50%"
-                cy="50%"
-                outerRadius={100}
-                dataKey="value"
-                label={({ name, value }) => `${name}: ${value}%`}
-              >
-                {categoryData.map((entry: CategoryData, index: number) => (
-                  <Cell key={`cell-${index}`} fill={entry.color} />
-                ))}
-              </Pie>
-              <Tooltip formatter={(value) => `${value}%`} />
-            </PieChart>
-          </ResponsiveContainer>
-        </div>
       </div>
 
       {/* Bottom Row */}
@@ -431,15 +399,6 @@ export default function DashboardPage() {
           >
             <FiBox className="mx-auto mb-2 text-2xl" />
             <span className="block text-sm font-medium">Aggiungi Prodotto</span>
-          </Link>
-          <Link
-            href="/dashboard/categorie"
-            className="bg-purple-500 text-white p-4 rounded-lg text-center hover:bg-purple-600 transition-colors"
-          >
-            <FiTag className="mx-auto mb-2 text-2xl" />
-            <span className="block text-sm font-medium">
-              Gestisci Categorie
-            </span>
           </Link>
           <Link
             href="/dashboard/import-prodotti"

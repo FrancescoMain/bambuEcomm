@@ -227,7 +227,7 @@ export default function ChiSiamoPage() {
               </h2>
               <p className="text-xl text-gray-600 max-w-3xl mx-auto">
                 Vieni a scoprire il nostro spazio accogliente dove trovi tutto
-                quello che serve per la scuola, l'ufficio e la creatività
+                quello che serve per la scuola, l&apos;ufficio e la creatività
               </p>
             </div>
 
