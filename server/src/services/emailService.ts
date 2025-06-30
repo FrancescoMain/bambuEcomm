@@ -570,7 +570,17 @@ class EmailService {
                 <div class="tracking-code" style="background: #f8f9fa; padding: 12px 15px; border-radius: 6px; margin-bottom: 15px; border: 1px solid #e9ecef;">
                   <code style="font-family: 'Courier New', monospace; font-size: 16px; font-weight: bold; color: #28a745;">${orderData.trackingNumber}</code>
                 </div>
-                <p style="margin: 0; font-size: 14px; color: #666;">Puoi tracciare il tuo pacco usando questo numero sul sito del corriere oppure sui principali siti di tracking spedizioni.</p>
+                
+                <!-- GLS Tracking Button -->
+                <div style="text-align: center; margin: 20px 0;">
+                  <a href="https://gls-group.eu/IT/it/ricerca-spedizione?match=${orderData.trackingNumber}" 
+                     target="_blank" 
+                     style="background: #ff6600; color: white; padding: 12px 25px; text-decoration: none; border-radius: 8px; display: inline-block; font-weight: bold; font-size: 16px; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">
+                    🚚 Traccia con GLS
+                  </a>
+                </div>
+                
+                <p style="margin: 0; font-size: 14px; color: #666;">Clicca sul pulsante sopra per tracciare la tua spedizione direttamente sul sito GLS, oppure usa il numero di tracking su altri siti di tracking spedizioni.</p>
               </div>
             `
                   : `

@@ -334,8 +334,8 @@ export default function OrdersPage() {
   };
 
   const handleTrackOrder = (trackingNumber: string) => {
-    // In a real app, this would integrate with actual tracking services
-    const trackingUrl = `https://www.sda.it/wps/portal/Servizi/ricerca_spedizioni?locale=it&tracing.letteraVettura=${trackingNumber}`;
+    // Tracking con GLS
+    const trackingUrl = `https://gls-group.eu/IT/it/ricerca-spedizione?match=${trackingNumber}`;
     window.open(trackingUrl, "_blank");
   };
 

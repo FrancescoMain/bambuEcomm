@@ -48,6 +48,7 @@ const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
   const token = useSelector((state: RootState) => state.auth.token);
   const [newStatus, setNewStatus] = useState(order.status);
   const [isSaving, setIsSaving] = useState(false);
+  const [isAddingTracking, setIsAddingTracking] = useState(false);
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [cancellingOrder, setCancellingOrder] = useState(false);
 
@@ -242,53 +243,100 @@ const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
                 </button>
               )}
 
-              <button
-                onClick={async () => {
-                  const trackingNumber = prompt(
-                    "Inserisci il numero di tracking:"
-                  );
-                  if (trackingNumber) {
-                    try {
-                      // Usa l'API service centralizzato
-                      const apiService = (await import("@/api/apiService"))
-                        .default;
+              {/* Mostra il pulsante "Aggiungi Tracking" solo se non è già presente */}
+              {!order.trackingNumber && (
+                <button
+                  onClick={async () => {
+                    const trackingNumber = prompt(
+                      "Inserisci il numero di tracking:"
+                    );
+                    if (trackingNumber) {
+                      setIsAddingTracking(true);
+                      try {
+                        // Usa l'API service centralizzato
+                        const apiService = (await import("@/api/apiService"))
+                          .default;
 
-                      await apiService.patch(`/orders/${order.id}/tracking`, {
-                        trackingNumber,
-                      });
+                        await apiService.patch(`/orders/${order.id}/tracking`, {
+                          trackingNumber,
+                        });
 
-                      alert("Tracking number aggiornato con successo!");
-                      onClose(); // Chiudi il modal
-                      window.location.reload(); // Ricarica la pagina per aggiornare i dati
-                    } catch (error: any) {
-                      console.error(
-                        "Errore durante l'aggiornamento del tracking:",
-                        error
-                      );
-                      const errorMessage =
-                        error.response?.data?.message ||
-                        "Impossibile aggiornare il tracking number";
-                      alert(`Errore: ${errorMessage}`);
+                        alert("Tracking number aggiornato con successo!");
+                        onClose(); // Chiudi il modal
+                        window.location.reload(); // Ricarica la pagina per aggiornare i dati
+                      } catch (error: any) {
+                        console.error(
+                          "Errore durante l'aggiornamento del tracking:",
+                          error
+                        );
+                        const errorMessage =
+                          error.response?.data?.message ||
+                          "Impossibile aggiornare il tracking number";
+                        alert(`Errore: ${errorMessage}`);
+                      } finally {
+                        setIsAddingTracking(false);
+                      }
                     }
-                  }
-                }}
-                className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors flex items-center gap-2"
-              >
-                <svg
-                  className="w-4 h-4"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
+                  }}
+                  disabled={isAddingTracking}
+                  className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                  />
-                </svg>
-                Aggiungi Tracking
-              </button>
+                  {isAddingTracking ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      Aggiornamento...
+                    </>
+                  ) : (
+                    <>
+                      <svg
+                        className="w-4 h-4"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                        />
+                      </svg>
+                      Aggiungi Tracking
+                    </>
+                  )}
+                </button>
+              )}
+
+              {/* Mostra il tracking number se presente */}
+              {order.trackingNumber && (
+                <div className="px-4 py-2 bg-green-50 border border-green-200 rounded-md flex items-center gap-2">
+                  <svg
+                    className="w-4 h-4 text-green-600"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"
+                    />
+                  </svg>
+                  <span className="text-green-800 font-medium">
+                    Tracking: {order.trackingNumber}
+                  </span>
+                  <button
+                    onClick={() => {
+                      const trackingUrl = `https://gls-group.eu/IT/it/ricerca-spedizione?match=${order.trackingNumber}`;
+                      window.open(trackingUrl, "_blank");
+                    }}
+                    className="ml-2 text-blue-600 hover:text-blue-800 underline text-sm"
+                  >
+                    Traccia su GLS
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         </div>
