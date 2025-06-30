@@ -26,6 +26,7 @@ export interface Order {
   stato?: string;
   telefono?: string;
   note?: string;
+  trackingNumber?: string;
 }
 
 export default function OrderList() {
