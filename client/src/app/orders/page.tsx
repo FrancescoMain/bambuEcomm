@@ -87,8 +87,6 @@ export default function OrdersPage() {
   const [statusFilter, setStatusFilter] = useState("ALL");
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState("date-desc");
-  const [showCancelModal, setShowCancelModal] = useState<Order | null>(null);
-  const [claimingOrders, setClaimingOrders] = useState(false);
   const [authChecked, setAuthChecked] = useState(false);
 
   // Filtri per stato (aggiornati)
@@ -216,113 +214,6 @@ export default function OrdersPage() {
     setFilteredOrders(filtered);
   }, [orders, statusFilter, searchQuery, sortBy]);
 
-  const handleCancelOrder = async (orderId: string) => {
-    setActionLoading(orderId);
-    try {
-      const apiUrl =
-        process.env.NEXT_PUBLIC_API_URL ||
-        "https://bambu-ecomm-in2g.vercel.app/api";
-
-      const res = await fetch(`${apiUrl}/orders/${orderId}/cancel`, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-      });
-
-      if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(
-          errorData.message || "Errore nell'annullamento dell'ordine"
-        );
-      }
-
-      const result = await res.json();
-
-      // Mostra un messaggio di successo più dettagliato
-      const successMessage = result.refund
-        ? `✅ Ordine cancellato con successo! Il rimborso di €${(
-            result.refund.amount / 100
-          ).toFixed(
-            2
-          )} è stato processato e sarà visibile sulla tua carta entro 5-10 giorni lavorativi.`
-        : result.message ||
-          "Richiesta di cancellazione inviata. Il rimborso sarà elaborato entro 5-10 giorni lavorativi.";
-
-      showToast(successMessage, "success");
-      setShowCancelModal(null);
-      await fetchOrders(); // Ricarica gli ordini
-    } catch (err) {
-      showToast(
-        err instanceof Error ? err.message : "Errore sconosciuto",
-        "error"
-      );
-    } finally {
-      setActionLoading(null);
-    }
-  };
-
-  // Funzione per determinare se un ordine può essere cancellato
-  const canCancelOrder = (order: Order): boolean => {
-    const cancelableStatuses = ["PENDING", "CONFIRMED"];
-    if (!cancelableStatuses.includes(order.status)) return false;
-
-    // Controlla se sono passate più di 24 ore dalla creazione dell'ordine
-    const orderDate = new Date(order.createdAt);
-    const cancelDeadline = new Date(orderDate.getTime() + 24 * 60 * 60 * 1000);
-    const now = new Date();
-
-    return now <= cancelDeadline;
-  };
-
-  // Funzione per calcolare il tempo rimanente per la cancellazione
-  const getCancelTimeRemaining = (order: Order): string | null => {
-    if (!canCancelOrder(order)) return null;
-
-    const orderDate = new Date(order.createdAt);
-    const cancelDeadline = new Date(orderDate.getTime() + 24 * 60 * 60 * 1000); // 24 ore
-    const now = new Date();
-
-    if (now > cancelDeadline) return null;
-
-    const remaining = cancelDeadline.getTime() - now.getTime();
-    const hours = Math.floor(remaining / (60 * 60 * 1000));
-    const minutes = Math.floor((remaining % (60 * 60 * 1000)) / (60 * 1000));
-
-    return `${hours}h ${minutes}m`;
-  };
-
-  const handleRequestReturn = async (orderId: string) => {
-    if (!confirm("Sei sicuro di voler richiedere il reso per questo ordine?"))
-      return;
-
-    setActionLoading(orderId);
-    try {
-      const apiUrl =
-        process.env.NEXT_PUBLIC_API_URL ||
-        "https://bambu-ecomm-in2g.vercel.app/api";
-      const res = await fetch(`${apiUrl}/orders/${orderId}/return`, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-      });
-
-      if (!res.ok) {
-        throw new Error("Errore nella richiesta di reso");
-      }
-
-      alert("Richiesta di reso inviata con successo! Ti contatteremo presto.");
-      await fetchOrders(); // Ricarica gli ordini
-    } catch (err) {
-      alert(err instanceof Error ? err.message : "Errore sconosciuto");
-    } finally {
-      setActionLoading(null);
-    }
-  };
-
   const handleTrackOrder = (trackingNumber: string) => {
     // Tracking con GLS
     const trackingUrl = `https://gls-group.eu/IT/it/ricerca-spedizione?match=${trackingNumber}`;
@@ -339,14 +230,9 @@ export default function OrdersPage() {
     });
   };
 
-  const canRequestReturn = (status: string) => {
-    return ["DELIVERED"].includes(status);
-  };
-
   const handleClaimGuestOrders = async () => {
     if (!token) return;
 
-    setClaimingOrders(true);
     try {
       const apiUrl =
         process.env.NEXT_PUBLIC_API_URL ||
@@ -378,8 +264,6 @@ export default function OrdersPage() {
         err instanceof Error ? err.message : "Errore sconosciuto",
         "error"
       );
-    } finally {
-      setClaimingOrders(false);
     }
   };
 
@@ -514,48 +398,6 @@ export default function OrdersPage() {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 py-8">
-        {/* Info Box per Cancellazioni */}
-        <div className="mb-8 bg-gradient-to-r from-blue-50 to-green-50 border border-blue-200 rounded-xl p-6">
-          <div className="flex items-start gap-4">
-            <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
-              <svg
-                className="w-6 h-6 text-blue-600"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                />
-              </svg>
-            </div>
-            <div className="flex-1">
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                📋 Informazioni su Cancellazioni e Rimborsi
-              </h3>
-              <div className="text-sm text-gray-700 space-y-2">
-                <p>
-                  <strong>⏰ Periodo di cancellazione:</strong> Puoi cancellare
-                  gratuitamente i tuoi ordini entro 24 ore dalla conferma,
-                  purché non siano già stati spediti.
-                </p>
-                <p>
-                  <strong>💳 Rimborsi automatici:</strong> I rimborsi vengono
-                  processati automaticamente tramite Stripe sulla carta
-                  utilizzata per il pagamento e saranno visibili entro 5-10
-                  giorni lavorativi.
-                </p>
-                <p>
-                  <strong>📞 Assistenza:</strong> Per ordini spediti o per
-                  richieste speciali, contatta il nostro servizio clienti.
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
         {loading ? (
           <div className="text-center py-12">
             <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-[#51946b]"></div>
@@ -646,14 +488,6 @@ export default function OrdersPage() {
                           {statusDescriptions[order.status] || "Stato ordine"}
                         </div>
 
-                        {/* Tempo rimanente per cancellazione */}
-                        {canCancelOrder(order) &&
-                          getCancelTimeRemaining(order) && (
-                            <span className="text-xs text-yellow-700 bg-yellow-100 border border-yellow-200 px-2 py-1 rounded-full">
-                              ⏰ {getCancelTimeRemaining(order)} per cancellare
-                            </span>
-                          )}
-
                         <span className="font-bold text-lg text-[#51946b]">
                           €{order.total.toFixed(2)}
                         </span>
@@ -682,33 +516,6 @@ export default function OrdersPage() {
                           className="px-4 py-2 text-sm bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
                         >
                           Traccia
-                        </button>
-                      )}
-
-                      {canCancelOrder(order) && (
-                        <button
-                          onClick={() => setShowCancelModal(order)}
-                          disabled={actionLoading === order.id}
-                          className="px-4 py-2 text-sm bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors disabled:opacity-50 flex items-center gap-2"
-                        >
-                          {actionLoading === order.id ? (
-                            <>
-                              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                              Cancellazione...
-                            </>
-                          ) : (
-                            <>❌ Richiedi cancellazione</>
-                          )}
-                        </button>
-                      )}
-
-                      {canRequestReturn(order.status) && (
-                        <button
-                          onClick={() => handleRequestReturn(order.id)}
-                          disabled={actionLoading === order.id}
-                          className="px-4 py-2 text-sm bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors disabled:opacity-50"
-                        >
-                          {actionLoading === order.id ? "..." : "Richiedi reso"}
                         </button>
                       )}
                     </div>
@@ -891,74 +698,6 @@ export default function OrdersPage() {
                   </p>
                 </div>
               )}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Modal di cancellazione */}
-      {showCancelModal && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6">
-            <div className="text-center">
-              <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <svg
-                  className="w-8 h-8 text-red-600"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16c-.77.833.192 2.5 1.732 2.5z"
-                  />
-                </svg>
-              </div>
-              <h3 className="text-xl font-bold text-gray-900 mb-2">
-                Richiedi Cancellazione Ordine
-              </h3>
-              <p className="text-gray-600 mb-2">Ordine #{showCancelModal.id}</p>
-              <p className="text-sm text-gray-500 mb-6">
-                Sei sicuro di voler richiedere la cancellazione di questo
-                ordine? Il rimborso sarà elaborato automaticamente entro 5-10
-                giorni lavorativi sulla carta utilizzata per il pagamento.
-              </p>
-
-              {/* Tempo rimanente per la cancellazione */}
-              {getCancelTimeRemaining(showCancelModal) && (
-                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mb-4">
-                  <p className="text-sm text-yellow-800">
-                    ⏰ Tempo rimanente per la cancellazione gratuita:{" "}
-                    {getCancelTimeRemaining(showCancelModal)}
-                  </p>
-                </div>
-              )}
-
-              <div className="flex gap-3 mt-6">
-                <button
-                  onClick={() => setShowCancelModal(null)}
-                  disabled={actionLoading === showCancelModal.id}
-                  className="flex-1 px-4 py-3 border border-gray-300 text-gray-700 rounded-xl font-medium hover:bg-gray-50 transition-colors disabled:opacity-50"
-                >
-                  Annulla
-                </button>
-                <button
-                  onClick={() => handleCancelOrder(showCancelModal.id)}
-                  disabled={actionLoading === showCancelModal.id}
-                  className="flex-1 px-4 py-3 bg-red-600 text-white rounded-xl font-medium hover:bg-red-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
-                >
-                  {actionLoading === showCancelModal.id ? (
-                    <>
-                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                      Elaborazione...
-                    </>
-                  ) : (
-                    "Conferma Cancellazione"
-                  )}
-                </button>
-              </div>
             </div>
           </div>
         </div>
