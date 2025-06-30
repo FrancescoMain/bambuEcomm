@@ -44,8 +44,6 @@ const statusTranslations: { [key: string]: string } = {
   SHIPPED: "Spedito",
   DELIVERED: "Consegnato",
   CANCELLED: "Annullato",
-  RETURNED: "Reso",
-  REFUNDED: "Rimborsato",
 };
 
 const statusColors: { [key: string]: string } = {
@@ -55,8 +53,6 @@ const statusColors: { [key: string]: string } = {
   SHIPPED: "bg-green-100 text-green-800 border-green-200",
   DELIVERED: "bg-emerald-100 text-emerald-800 border-emerald-200",
   CANCELLED: "bg-red-100 text-red-800 border-red-200",
-  RETURNED: "bg-gray-100 text-gray-800 border-gray-200",
-  REFUNDED: "bg-orange-100 text-orange-800 border-orange-200",
 };
 
 const statusIcons: { [key: string]: string } = {
@@ -66,8 +62,6 @@ const statusIcons: { [key: string]: string } = {
   SHIPPED: "🚚",
   DELIVERED: "🏠",
   CANCELLED: "❌",
-  RETURNED: "↩️",
-  REFUNDED: "💰",
 };
 
 const statusDescriptions: { [key: string]: string } = {
@@ -77,8 +71,6 @@ const statusDescriptions: { [key: string]: string } = {
   SHIPPED: "Il tuo ordine è in viaggio",
   DELIVERED: "Ordine consegnato con successo",
   CANCELLED: "Ordine annullato",
-  RETURNED: "Ordine reso",
-  REFUNDED: "Rimborso processato",
 };
 
 export default function OrdersPage() {
@@ -107,8 +99,6 @@ export default function OrdersPage() {
     { value: "PROCESSING", label: "In preparazione" },
     { value: "SHIPPED", label: "Spedito" },
     { value: "DELIVERED", label: "Consegnato" },
-    { value: "CANCELLED", label: "Annullato" },
-    { value: "REFUNDED", label: "Rimborsato" },
   ];
 
   const sortOptions = [

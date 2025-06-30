@@ -632,16 +632,6 @@ const ProductDetailPage: React.FC = () => {
               </h3>
               <p className="text-gray-600 text-sm">Garanzia sulla qualità</p>
             </div>
-
-            <div className="bg-white rounded-2xl p-6 text-center shadow-lg">
-              <div className="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <span className="text-2xl">↩️</span>
-              </div>
-              <h3 className="font-bold text-gray-900 mb-2">Reso Facile</h3>
-              <p className="text-gray-600 text-sm">
-                30 giorni per cambiare idea
-              </p>
-            </div>
           </div>
         </div>
       </section>
