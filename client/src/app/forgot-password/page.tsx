@@ -15,7 +15,7 @@ export default function ForgotPasswordPage() {
   const { showToast } = useNotifications();
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    
+
     // Validazione custom per evitare tooltip nativi
     if (!email.trim()) {
       showToast("Per favore inserisci la tua email", "warning");
@@ -25,14 +25,17 @@ export default function ForgotPasswordPage() {
       showToast("Per favore inserisci un indirizzo email valido", "warning");
       return;
     }
-    
+
     setIsLoading(true);
 
     try {
       const response = await authService.forgotPassword(email);
 
       setEmailSent(true);
-      showToast(response.message || "Email di reset inviata con successo!", "success");
+      showToast(
+        response.message || "Email di reset inviata con successo!",
+        "success"
+      );
     } catch (error: any) {
       console.error("Errore forgot password:", error);
       showToast(
@@ -57,7 +60,7 @@ export default function ForgotPasswordPage() {
             >
               <Image
                 src="/bambu-logo.jpg"
-                alt="Cartolibreria Bambù"
+                alt="Cartoleria Bambù"
                 width={64}
                 height={64}
                 priority
@@ -65,7 +68,7 @@ export default function ForgotPasswordPage() {
               />
               <div className="ml-3">
                 <h1 className="text-2xl font-bold text-[#51946b]">Bambù</h1>
-                <p className="text-sm text-gray-600">Cartolibreria</p>
+                <p className="text-sm text-gray-600">Cartoleria</p>
               </div>
             </Link>
           </div>
@@ -155,7 +158,7 @@ export default function ForgotPasswordPage() {
           >
             <Image
               src="/bambu-logo.jpg"
-              alt="Cartolibreria Bambù"
+              alt="Cartoleria Bambù"
               width={64}
               height={64}
               priority
@@ -163,7 +166,7 @@ export default function ForgotPasswordPage() {
             />
             <div className="ml-3">
               <h1 className="text-2xl font-bold text-[#51946b]">Bambù</h1>
-              <p className="text-sm text-gray-600">Cartolibreria</p>
+              <p className="text-sm text-gray-600">Cartoleria</p>
             </div>
           </Link>
           <h2 className="text-3xl font-bold text-gray-900 mb-2">

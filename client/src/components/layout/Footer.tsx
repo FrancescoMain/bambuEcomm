@@ -13,7 +13,7 @@ const Footer = () => {
           <div className="col-span-1">
             <div className="flex items-center gap-2 mb-4">
               <span className="text-3xl">🌿</span>
-              <h3 className="text-2xl font-bold">BAMBU</h3>
+              <h3 className="text-2xl font-bold">BAMBÙ</h3>
             </div>
             <p className="text-green-100 mb-6 leading-relaxed">
               La tua libreria online di fiducia. Scopri un mondo di cultura,
@@ -101,7 +101,7 @@ const Footer = () => {
           <div className="text-center">
             <div className="flex items-center justify-center gap-2 mb-4">
               <span className="text-3xl">🌿</span>
-              <h3 className="text-2xl font-bold">BAMBU</h3>
+              <h3 className="text-2xl font-bold">BAMBÙ</h3>
             </div>
             <p className="text-green-100 mb-4">
               La tua libreria online di fiducia
@@ -193,7 +193,7 @@ const Footer = () => {
           <div className="flex flex-col md:flex-row justify-between items-center gap-4">
             <div className="text-center md:text-left">
               <p className="text-green-100">
-                © 2025 Bambu Ecomm S.r.l. | P.IVA 12345678901
+                © 2025 Cartoleria Bambù | P.IVA 10611291211
               </p>
               <p className="text-green-200 text-sm">
                 Corso Umberto I, 367 - 80058 Torre Annunziata (NA), Italia

@@ -25,9 +25,9 @@ const notoSans = Noto_Sans({
 });
 
 export const metadata = {
-  title: "Cartolibreria Bambù",
+  title: "Cartoleria Bambù",
   description:
-    "Cartolibreria Bambù - Quaderni, cancelleria, giochi e molto altro!",
+    "Cartoleria Bambù - Quaderni, cancelleria, giochi e molto altro!",
 };
 
 export default function RootLayout({

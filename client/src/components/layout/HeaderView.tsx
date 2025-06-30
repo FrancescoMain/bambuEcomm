@@ -86,7 +86,7 @@ function HeaderView({
                 >
                   <Image
                     src="/bambu-logo.jpg"
-                    alt="Cartolibreria Bambù"
+                    alt="Cartoleria Bambù"
                     width={44}
                     height={44}
                     priority
@@ -94,7 +94,7 @@ function HeaderView({
                   />
                   <div className="ml-3">
                     <h1 className="text-xl font-bold text-[#51946b]">Bambù</h1>
-                    <p className="text-xs text-gray-600">Cartolibreria</p>
+                    <p className="text-xs text-gray-600">Cartoleria</p>
                   </div>
                 </Link>
               </div>{" "}
@@ -297,7 +297,7 @@ function HeaderView({
                 >
                   <Image
                     src="/bambu-logo.jpg"
-                    alt="Cartolibreria Bambù"
+                    alt="Cartoleria Bambù"
                     width={32}
                     height={32}
                     priority
