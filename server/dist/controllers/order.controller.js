@@ -750,8 +750,12 @@ const updateOrderTracking = async (req, res) => {
         res.status(400).json({ message: "ID ordine non valido." });
         return;
     }
-    if (!trackingNumber || typeof trackingNumber !== 'string' || trackingNumber.trim().length === 0) {
-        res.status(400).json({ message: "Numero di tracking non valido o mancante." });
+    if (!trackingNumber ||
+        typeof trackingNumber !== "string" ||
+        trackingNumber.trim().length === 0) {
+        res
+            .status(400)
+            .json({ message: "Numero di tracking non valido o mancante." });
         return;
     }
     try {

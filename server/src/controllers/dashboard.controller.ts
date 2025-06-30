@@ -1,12 +1,13 @@
 import { Request, Response } from "express";
 import { PrismaClient, OrderStatus } from "@prisma/client";
-import { subDays, isThisMonth, isToday, isThisWeek, format } from "date-fns";
+import { subDays, format } from "date-fns";
+import { Decimal } from "@prisma/client/runtime/library";
 
 const prisma = new PrismaClient();
 
 interface AuthenticatedRequest extends Request {
   user?: {
-    userId: number;
+    userId: string;
     role: string;
   };
 }
@@ -47,7 +48,7 @@ export const getDashboardStats = async (
       prisma.order.count({
         where: {
           status: {
-            in: [OrderStatus.PENDING, OrderStatus.CONFIRMED],
+            in: [OrderStatus.PENDING, OrderStatus.PROCESSING],
           },
         },
       }),
@@ -110,8 +111,8 @@ export const getDashboardStats = async (
       }),
     ]);
 
-    const totalRevenue = currentMonthRevenue._sum.totalAmount || 0;
-    const previousRevenue = previousMonthRevenue._sum.totalAmount || 0;
+    const totalRevenue = Number(currentMonthRevenue._sum.totalAmount || 0);
+    const previousRevenue = Number(previousMonthRevenue._sum.totalAmount || 0);
     const monthlyGrowth = previousRevenue > 0 
       ? ((totalRevenue - previousRevenue) / previousRevenue) * 100 
       : totalRevenue > 0 ? 100 : 0;
@@ -156,9 +157,9 @@ export const getDashboardStats = async (
 
       salesData.push({
         month: format(monthStart, "MMM"),
-        vendite: monthlyRevenue._sum.totalAmount || 0,
+        vendite: Number(monthlyRevenue._sum.totalAmount || 0),
         ordini: monthlyOrders,
-        fatturato: monthlyRevenue._sum.totalAmount || 0,
+        fatturato: Number(monthlyRevenue._sum.totalAmount || 0),
       });
     }
 
@@ -187,7 +188,7 @@ export const getDashboardStats = async (
         return {
           name: product?.titolo || 'Prodotto sconosciuto',
           sold: item._sum.quantity || 0,
-          revenue: item._sum.priceAtPurchase || 0,
+          revenue: Number(item._sum.priceAtPurchase || 0),
         };
       })
     );

@@ -1,7 +1,6 @@
 import { Router } from "express";
 import { getDashboardStats } from "../controllers/dashboard.controller";
-import { authenticateToken } from "../middleware/authMiddleware";
-import { authorizeRole } from "../middleware/roleMiddleware";
+import { authenticateToken, authorizeRole } from "../middleware/auth.middleware";
 import { Role } from "@prisma/client";
 
 const router = Router();

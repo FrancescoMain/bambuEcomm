@@ -20,6 +20,7 @@ const checkout_routes_1 = __importDefault(require("./routes/checkout.routes")); 
 const webhook_routes_1 = __importDefault(require("./routes/webhook.routes")); // Import webhook routes
 const variant_routes_1 = __importDefault(require("./routes/variant.routes")); // Import variant routes
 const email_routes_1 = __importDefault(require("./routes/email.routes")); // Import email routes
+const dashboard_routes_1 = __importDefault(require("./routes/dashboard.routes")); // Import dashboard routes
 const test_controller_1 = require("./controllers/test.controller"); // Import test controller
 dotenv_1.default.config();
 const app = (0, express_1.default)();
@@ -52,6 +53,7 @@ app.use("/api/products", productImport_routes_1.default); // Mount product impor
 app.use("/api", checkout_routes_1.default); // Mount checkout routes
 app.use("/api/variants", variant_routes_1.default); // Mount variant routes
 app.use("/api/email", email_routes_1.default); // Mount email routes
+app.use("/api/dashboard", dashboard_routes_1.default); // Mount dashboard routes
 // Test routes (solo per sviluppo/debug)
 app.post("/api/test/cleanup-carts", test_controller_1.testCleanupCarts);
 // TODO: Aggiungere le altre rotte (notifications)
