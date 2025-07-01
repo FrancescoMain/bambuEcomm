@@ -302,7 +302,7 @@ export default function ChiSiamoPage() {
                       <FiMail className="w-6 h-6 mt-1 text-[#51946b]" />
                       <div>
                         <p className="font-medium text-gray-900">Email</p>
-                        <p className="text-gray-600">info@bambuecomm.it</p>
+                        <p className="text-gray-600">Cartoleriabambu@icloud.com</p>
                       </div>
                     </div>
                   </div>
@@ -315,9 +315,9 @@ export default function ChiSiamoPage() {
                           Orari di Apertura
                         </h4>
                         <div className="space-y-2 text-sm text-gray-600">
-                          <p>Lunedì - Venerdì: 9:00 - 19:00</p>
-                          <p>Sabato: 9:00 - 13:00</p>
-                          <p>Domenica: Chiuso</p>
+                          <p>Lunedì - Venerdì: 7:15 - 13:30 / 16:30 - 20:30</p>
+                          <p>Sabato: 7:30 - 13:30</p>
+                          <p>Domenica: 8:30 - 13:30</p>
                         </div>
                       </div>
                     </div>
@@ -326,11 +326,34 @@ export default function ChiSiamoPage() {
               </div>
 
               <div>
-                <div className="bg-gray-100 rounded-2xl h-80 md:h-96 flex items-center justify-center">
-                  <div className="text-center text-gray-500">
-                    <FiGlobe className="h-16 w-16 mx-auto mb-4" />
-                    <p className="text-lg font-medium">Mappa interattiva</p>
-                    <p className="text-sm">Google Maps integrazione</p>
+                <div className="bg-white rounded-2xl overflow-hidden shadow-lg">
+                  <iframe
+                    src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3017.1!2d14.4538!3d40.7536!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x133b944f2f2f2f2f%3A0x1234567890abcdef!2sCorso%20Umberto%20I%2C%20367%2C%2080058%20Torre%20Annunziata%20NA!5e0!3m2!1sit!2sit!4v1704110400000!5m2!1sit!2sit"
+                    width="100%"
+                    height="384"
+                    style={{ border: 0 }}
+                    allowFullScreen
+                    loading="lazy"
+                    referrerPolicy="no-referrer-when-downgrade"
+                    title="Cartoleria Bambù - Corso Umberto I, 367, Torre Annunziata"
+                    className="w-full h-80 md:h-96"
+                  />
+                  <div className="p-4 bg-gray-50">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h4 className="font-semibold text-gray-900">Cartoleria Bambù</h4>
+                        <p className="text-sm text-gray-600">Corso Umberto I, 367</p>
+                        <p className="text-sm text-gray-600">80058 Torre Annunziata (NA)</p>
+                      </div>
+                      <a
+                        href="https://maps.google.com/?q=Corso+Umberto+I,+367,+Torre+Annunziata,+NA"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="px-4 py-2 bg-[#51946b] text-white text-sm rounded-lg hover:bg-[#3d7a57] transition-colors"
+                      >
+                        Apri in Maps
+                      </a>
+                    </div>
                   </div>
                 </div>
               </div>
