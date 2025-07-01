@@ -90,7 +90,7 @@ export default function ChiSiamoPage() {
               </div>
               <h1 className="text-4xl md:text-6xl font-bold mb-6">Chi Siamo</h1>
               <p className="text-xl md:text-2xl text-green-100 leading-relaxed">
-                La tua cartoleria di fiducia dal 2019 - Tutto per ufficio,
+                La tua cartoleria di fiducia dal 2016 - Tutto per ufficio,
                 scuola e creatività
               </p>
             </div>
@@ -109,7 +109,7 @@ export default function ChiSiamoPage() {
                 </h2>
                 <div className="space-y-4 text-gray-600 leading-relaxed">
                   <p className="text-lg">
-                    Cartoleria Bambù nasce nel 2019 dalla passione per la
+                    Cartoleria Bambù nasce nel 2016 dalla passione per la
                     scrittura, la creatività e tutto quello che serve per
                     rendere speciali i momenti di studio e lavoro.
                   </p>
@@ -148,7 +148,7 @@ export default function ChiSiamoPage() {
                       Il nostro negozio
                     </h3>
                     <p className="text-green-100">
-                      Dal 2019 al vostro servizio
+                      Dal 2016 al vostro servizio
                     </p>
                   </div>
                 </div>
@@ -302,7 +302,9 @@ export default function ChiSiamoPage() {
                       <FiMail className="w-6 h-6 mt-1 text-[#51946b]" />
                       <div>
                         <p className="font-medium text-gray-900">Email</p>
-                        <p className="text-gray-600">Cartoleriabambu@icloud.com</p>
+                        <p className="text-gray-600">
+                          Cartoleriabambu@icloud.com
+                        </p>
                       </div>
                     </div>
                   </div>
@@ -341,9 +343,15 @@ export default function ChiSiamoPage() {
                   <div className="p-4 bg-gray-50">
                     <div className="flex items-center justify-between">
                       <div>
-                        <h4 className="font-semibold text-gray-900">Cartoleria Bambù</h4>
-                        <p className="text-sm text-gray-600">Corso Umberto I, 367</p>
-                        <p className="text-sm text-gray-600">80058 Torre Annunziata (NA)</p>
+                        <h4 className="font-semibold text-gray-900">
+                          Cartoleria Bambù
+                        </h4>
+                        <p className="text-sm text-gray-600">
+                          Corso Umberto I, 367
+                        </p>
+                        <p className="text-sm text-gray-600">
+                          80058 Torre Annunziata (NA)
+                        </p>
                       </div>
                       <a
                         href="https://maps.google.com/?q=Corso+Umberto+I,+367,+Torre+Annunziata,+NA"
@@ -382,13 +390,6 @@ export default function ChiSiamoPage() {
                 className="inline-flex items-center justify-center px-8 py-4 bg-white text-[#51946b] font-semibold rounded-xl hover:bg-green-50 transition-colors duration-300 shadow-lg"
               >
                 Esplora i Prodotti
-              </Link>
-              <Link
-                href="/offerte"
-                className="inline-flex items-center justify-center px-8 py-4 bg-green-500 text-white font-semibold rounded-xl hover:bg-green-400 transition-colors duration-300 border-2 border-green-400"
-              >
-                <FiStar className="h-5 w-5 mr-2" />
-                Scopri le Offerte
               </Link>
             </div>
           </div>
