@@ -9,7 +9,6 @@ import { LoadingProvider } from "@/components/layout/LoadingContext";
 import GlobalLoader from "@/components/layout/GlobalLoader";
 import { CartProvider } from "@/components/layout/CartProvider"; // Import CartProvider
 import { NotificationProvider } from "@/components/ui/NotificationProvider";
-import GoogleAnalytics from "@/components/analytics/GoogleAnalytics";
 
 // Configure Plus Jakarta Sans
 const plusJakartaSans = Plus_Jakarta_Sans({
@@ -89,6 +88,21 @@ export default function RootLayout({
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <link rel="icon" href="/bambu-logo.jpg" type="image/jpeg" />
         <link rel="shortcut icon" href="/bambu-logo.jpg" type="image/jpeg" />
+        {/* Google Analytics */}
+        <script
+          async
+          src="https://www.googletagmanager.com/gtag/js?id=G-35M2MW6EKZ"
+        />
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              window.dataLayer = window.dataLayer || [];
+              function gtag(){dataLayer.push(arguments);}
+              gtag('js', new Date());
+              gtag('config', 'G-35M2MW6EKZ');
+            `,
+          }}
+        />
         {/* Redundant font link (next/font is used) - commented out */}
         {/* <link
           rel="stylesheet"
@@ -97,11 +111,6 @@ export default function RootLayout({
         {/* Redundant Tailwind CDN (PostCSS setup is expected) - commented out */}
       </head>
       <body className={`font-sans antialiased`}>
-        {process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID && (
-          <GoogleAnalytics
-            GA_MEASUREMENT_ID={process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID}
-          />
-        )}{" "}
         <ClientProvider>
           <NotificationProvider>
             <CartProvider>
