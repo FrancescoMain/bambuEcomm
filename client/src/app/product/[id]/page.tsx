@@ -9,6 +9,7 @@ import ProductCard from "@/components/layout/ProductCard";
 import { useLoading } from "@/components/layout/LoadingContext";
 import { useCartActions } from "@/components/layout/CartProvider";
 import productDetailService from "@/api/productDetailService";
+import ProductSEO from "@/components/seo/ProductSEO";
 
 type Product = {
   id: number;
@@ -277,6 +278,9 @@ const ProductDetailPage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white">
+      {/* SEO Component */}
+      <ProductSEO product={product} />
+
       {/* Hero Section with Breadcrumb */}
       <section className="relative bg-gradient-to-r from-[#51946b] to-[#3d7a57] text-white overflow-hidden">
         <div className="absolute inset-0 bg-black/10"></div>

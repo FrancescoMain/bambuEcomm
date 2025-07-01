@@ -12,6 +12,63 @@ import {
 import { useCartActions } from "@/components/layout/CartProvider";
 import { useLoading } from "@/components/layout/LoadingContext";
 import { useSelector } from "react-redux";
+import Head from "next/head";
+
+// Structured Data per LocalBusiness
+const structuredData = {
+  "@context": "https://schema.org",
+  "@type": "LocalBusiness",
+  name: "Cartoleria Bambù",
+  image: "https://www.xn--cartoleriabamb-jrb.com/bambu-logo.jpg",
+  description:
+    "Cartoleria Bambù a Torre Annunziata dal 2016. Quaderni, penne, cancelleria, giochi e materiale per ufficio.",
+  address: {
+    "@type": "PostalAddress",
+    streetAddress: "Corso Umberto I, 367",
+    addressLocality: "Torre Annunziata",
+    addressRegion: "Campania",
+    postalCode: "80058",
+    addressCountry: "IT",
+  },
+  geo: {
+    "@type": "GeoCoordinates",
+    latitude: 40.7473,
+    longitude: 14.4501,
+  },
+  url: "https://www.xn--cartoleriabamb-jrb.com",
+  telephone: "+39 3492719021",
+  email: "cartoleriabambu@icloud.com",
+  foundingDate: "2016",
+  openingHoursSpecification: [
+    {
+      "@type": "OpeningHoursSpecification",
+      dayOfWeek: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"],
+      opens: "07:15",
+      closes: "13:30",
+    },
+    {
+      "@type": "OpeningHoursSpecification",
+      dayOfWeek: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"],
+      opens: "16:30",
+      closes: "20:30",
+    },
+    {
+      "@type": "OpeningHoursSpecification",
+      dayOfWeek: "Saturday",
+      opens: "07:30",
+      closes: "13:30",
+    },
+    {
+      "@type": "OpeningHoursSpecification",
+      dayOfWeek: "Sunday",
+      opens: "08:30",
+      closes: "13:30",
+    },
+  ],
+  priceRange: "€€",
+  paymentAccepted: ["Cash", "Credit Card"],
+  currenciesAccepted: "EUR",
+};
 
 // Tipo locale per la compatibilità con i componenti esistenti
 type LocalProduct = {
@@ -153,6 +210,14 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white">
+      <Head>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify(structuredData),
+          }}
+        />
+      </Head>
       {/* Hero Section */}
       <section className="relative bg-gradient-to-r from-[#51946b] to-[#3d7a57] text-white overflow-hidden">
         <div className="absolute inset-0 bg-black/10"></div>
@@ -160,12 +225,12 @@ export default function Home() {
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             <div className="space-y-8">
               <h1 className="text-4xl lg:text-6xl font-bold leading-tight">
-                La tua <span className="text-yellow-300">Cartolibreria</span> di
-                fiducia
+                Cartoleria Bambù{" "}
+                <span className="text-yellow-300">Torre Annunziata</span>
               </h1>{" "}
               <p className="text-xl lg:text-2xl text-gray-100">
-                Scopri quaderni, cancelleria e giochi. Tutto quello che ti serve
-                per studiare e creare.
+                Dal 2016 la tua cartoleria di fiducia a Torre Annunziata.
+                Quaderni, penne, cancelleria e materiale scolastico online.
               </p>
               {/* Search Bar Hero */}
               <div className="relative max-w-lg">

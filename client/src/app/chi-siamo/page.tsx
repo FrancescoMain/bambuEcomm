@@ -1,8 +1,7 @@
-"use client";
-
 import React from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { Metadata } from "next";
 import {
   FiCheckCircle,
   FiHeart,
@@ -17,6 +16,23 @@ import {
   FiMail,
   FiClock,
 } from "react-icons/fi";
+
+export const metadata: Metadata = {
+  title: "Chi Siamo | Cartoleria Bambù Torre Annunziata",
+  description:
+    "Scopri la storia di Cartoleria Bambù, la tua cartoleria di fiducia a Torre Annunziata dal 2016. Qualità, passione e servizio da 6 anni.",
+  keywords:
+    "cartoleria Torre Annunziata, storia cartoleria bambù, negozio cancelleria, chi siamo",
+  openGraph: {
+    title: "Chi Siamo | Cartoleria Bambù Torre Annunziata",
+    description:
+      "Dal 2016 la tua cartoleria di fiducia a Torre Annunziata. Scopri la nostra storia e i nostri valori.",
+    type: "website",
+  },
+  alternates: {
+    canonical: "https://www.xn--cartoleriabamb-jrb.com/chi-siamo",
+  },
+};
 
 const stats = [
   { label: "Anni di Esperienza", value: "6+" },

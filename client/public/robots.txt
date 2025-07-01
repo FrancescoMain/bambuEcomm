@@ -1,0 +1,31 @@
+User-agent: *
+Allow: /
+
+# Blocca aree riservate e sensibili
+Disallow: /api/
+Disallow: /dashboard/
+Disallow: /admin/
+Disallow: /cart
+Disallow: /checkout
+Disallow: /login
+Disallow: /register
+Disallow: /reset-password
+Disallow: /forgot-password
+Disallow: /orders
+
+# Permetti risorse importanti
+Allow: /api/products/search
+Allow: /*.css
+Allow: /*.js
+Allow: /*.png
+Allow: /*.jpg
+Allow: /*.jpeg
+Allow: /*.gif
+Allow: /*.svg
+Allow: /*.webp
+
+# Sitemap
+Sitemap: https://www.xn--cartoleriabamb-jrb.com/sitemap.xml
+
+# Tempo di crawl (opzionale)
+Crawl-delay: 1
