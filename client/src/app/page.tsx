@@ -19,7 +19,7 @@ const structuredData = {
   "@context": "https://schema.org",
   "@type": "LocalBusiness",
   name: "Cartoleria Bambù",
-  image: "https://www.xn--cartoleriabamb-jrb.com/bambu-logo.jpg",
+  image: "https://www.xn--cartoleriabamb-jrb.com/logo-panda.png",
   description:
     "Cartoleria Bambù a Torre Annunziata dal 2016. Quaderni, penne, cancelleria, giochi e materiale per ufficio.",
   address: {
@@ -36,7 +36,7 @@ const structuredData = {
     longitude: 14.4501,
   },
   url: "https://www.xn--cartoleriabamb-jrb.com",
-  telephone: "+39 3492719021",
+  telephone: "+39 08119970664",
   email: "cartoleriabambu@icloud.com",
   foundingDate: "2016",
   openingHoursSpecification: [
@@ -287,9 +287,9 @@ export default function Home() {
               <div className="relative">
                 <div className="absolute inset-0 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-full blur-3xl opacity-20 animate-pulse"></div>
                 <img
-                  src="/bambu-logo.jpg"
-                  alt="Bambu Logo"
-                  className="relative w-96 h-96 object-cover rounded-full shadow-2xl"
+                  src="/logo-panda.png"
+                  alt="Cartoleria Bambù Logo"
+                  className="relative w-80 h-80 object-contain rounded-full shadow-2xl bg-white p-4"
                 />
               </div>
             </div>
@@ -498,7 +498,7 @@ export default function Home() {
 
             {/* WhatsApp */}
             <a
-              href="https://wa.me/3492719021?text=Ciao!%20Vorrei%20informazioni%20sui%20vostri%20prodotti"
+              href="https://wa.me/08119970664?text=Ciao!%20Vorrei%20informazioni%20sui%20vostri%20prodotti"
               target="_blank"
               rel="noopener noreferrer"
               className="group bg-white rounded-2xl p-8 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2"
@@ -523,7 +523,7 @@ export default function Home() {
           {/* WhatsApp Contact Button */}
           <div className="text-center">
             <a
-              href="https://wa.me/3492719021?text=Ciao!%20Vorrei%20informazioni%20sui%20vostri%20prodotti"
+              href="https://wa.me/08119970664?text=Ciao!%20Vorrei%20informazioni%20sui%20vostri%20prodotti"
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center bg-green-500 hover:bg-green-600 text-white font-bold py-4 px-8 rounded-full transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl"

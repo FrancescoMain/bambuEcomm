@@ -310,7 +310,7 @@ export default function ChiSiamoPage() {
                       <FiPhone className="w-6 h-6 mt-1 text-[#51946b]" />
                       <div>
                         <p className="font-medium text-gray-900">Telefono</p>
-                        <p className="text-gray-600">081 1858 5191</p>
+                        <p className="text-gray-600">081 1997 0664</p>
                       </div>
                     </div>
 

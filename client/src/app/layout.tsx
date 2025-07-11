@@ -86,8 +86,9 @@ export default function RootLayout({
     >
       <head>
         <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <link rel="icon" href="/bambu-logo.jpg" type="image/jpeg" />
-        <link rel="shortcut icon" href="/bambu-logo.jpg" type="image/jpeg" />
+        <link rel="icon" href="/logo-panda.png" type="image/png" />
+        <link rel="shortcut icon" href="/logo-panda.png" type="image/png" />
+        <link rel="apple-touch-icon" href="/logo-panda.png" />
         {/* Google Analytics */}
         <script
           async

@@ -11,8 +11,12 @@ const Footer = () => {
         <div className="hidden md:grid md:grid-cols-4 gap-8 mb-12">
           {/* Logo & Description */}
           <div className="col-span-1">
-            <div className="flex items-center gap-2 mb-4">
-              <span className="text-3xl">🌿</span>
+            <div className="flex items-center gap-3 mb-4">
+              <img
+                src="/logo-panda.png"
+                alt="Cartoleria Bambù Logo"
+                className="w-10 h-10 rounded-full object-cover flex-shrink-0"
+              />
               <h3 className="text-2xl font-bold">BAMBÙ</h3>
             </div>
             <p className="text-green-100 mb-6 leading-relaxed">
@@ -26,7 +30,7 @@ const Footer = () => {
               </div>
               <div className="flex items-center gap-2">
                 <span>📞</span>
-                <span>081 1858 5191</span>
+                <span>081 1997 0664</span>
               </div>
             </div>
           </div>
@@ -49,22 +53,22 @@ const Footer = () => {
             <h4 className="text-lg font-bold mb-4">Categorie</h4>
             <div className="space-y-3">
               <Link
-                href="/search?category=Libri"
+                href="/search?category=Scuola"
                 className="block text-green-100 hover:text-white transition-colors"
               >
-                Libri
+                Scuola
               </Link>
               <Link
-                href="/search?category=Cancelleria"
+                href="/search?category=Giochi"
                 className="block text-green-100 hover:text-white transition-colors"
               >
-                Cancelleria
+                Giochi
               </Link>
               <Link
-                href="/search?category=Zaini"
+                href="/search?category=Ufficio"
                 className="block text-green-100 hover:text-white transition-colors"
               >
-                Zaini e Borse
+                Ufficio
               </Link>
             </div>
           </div>
@@ -99,8 +103,12 @@ const Footer = () => {
         <div className="md:hidden space-y-8 mb-12">
           {/* Logo & Description */}
           <div className="text-center">
-            <div className="flex items-center justify-center gap-2 mb-4">
-              <span className="text-3xl">🌿</span>
+            <div className="flex items-center justify-center gap-3 mb-4">
+              <img
+                src="/logo-panda.png"
+                alt="Cartoleria Bambù Logo"
+                className="w-10 h-10 rounded-full object-cover flex-shrink-0"
+              />
               <h3 className="text-2xl font-bold">BAMBÙ</h3>
             </div>
             <p className="text-green-100 mb-4">
@@ -126,23 +134,23 @@ const Footer = () => {
             <h4 className="text-lg font-bold mb-4 text-center">Categorie</h4>
             <div className="grid grid-cols-2 gap-3 text-center">
               <Link
-                href="/search?category=Libri"
+                href="/search?category=Scuola"
                 className="text-green-100 hover:text-white transition-colors"
               >
-                Libri
+                Scuola
               </Link>
               <Link
-                href="/search?category=Cancelleria"
+                href="/search?category=Giochi"
                 className="text-green-100 hover:text-white transition-colors"
               >
-                Cancelleria
+                Giochi
               </Link>
 
               <Link
-                href="/search?category=Zaini"
+                href="/search?category=Ufficio"
                 className="text-green-100 hover:text-white transition-colors"
               >
-                Zaini e Borse
+                Ufficio
               </Link>
             </div>
           </div>
