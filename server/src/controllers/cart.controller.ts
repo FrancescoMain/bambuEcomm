@@ -101,6 +101,11 @@ export const addItemToCart = async (
         cartId: cart.id,
         productId: productId,
       },
+      select: {
+        id: true,
+        quantity: true,
+        selectedVariants: true,
+      },
     });
 
     if (existingCartItem) {
@@ -110,7 +115,7 @@ export const addItemToCart = async (
         data: {
           quantity: existingCartItem.quantity + quantity,
           selectedVariants:
-            selectedVariants || existingCartItem.selectedVariants, // Mantiene le varianti esistenti se non specificate
+            (selectedVariants || existingCartItem.selectedVariants) as any, // Cast per compatibilità
         },
       });
     } else {
@@ -120,7 +125,7 @@ export const addItemToCart = async (
           cartId: cart.id,
           productId: productId,
           quantity: quantity,
-          selectedVariants: selectedVariants, // Salva le varianti selezionate (può essere null per backward compatibility)
+          selectedVariants: selectedVariants as any, // Cast per compatibilità con InputJsonValue
         },
       });
     }

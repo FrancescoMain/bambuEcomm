@@ -97,7 +97,7 @@ export const createOrder = async (
         productId: item.productId,
         quantity: item.quantity,
         priceAtPurchase: item.product.prezzo, // Salva il prezzo al momento dell'acquisto
-        selectedVariants: item.selectedVariants, // Salva le varianti selezionate dal carrello
+        selectedVariants: item.selectedVariants as any, // Cast per compatibilità con InputJsonValue
       });
     }
 
