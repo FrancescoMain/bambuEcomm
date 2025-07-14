@@ -4,6 +4,7 @@ export interface Category {
   id: number;
   name: string;
   parentId?: number | null;
+  updatedAt?: string;
   // ...altri campi se servono
 }
 
