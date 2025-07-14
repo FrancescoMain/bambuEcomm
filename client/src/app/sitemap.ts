@@ -1,6 +1,7 @@
 import { MetadataRoute } from "next";
+import categoryService from "../api/categoryService";
 
-export default function sitemap(): MetadataRoute.Sitemap {
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = "https://www.xn--cartoleriabamb-jrb.com";
   const currentDate = new Date().toISOString();
 
@@ -42,5 +43,21 @@ export default function sitemap(): MetadataRoute.Sitemap {
   //   priority: 0.6,
   // }))
 
-  return staticPages;
+  // Fetch dynamic categories
+  try {
+    const categories = await categoryService.getAllCategories();
+    const categoryPages = categories
+      .filter((category) => !category.parentId) // Only parent categories
+      .map((category) => ({
+        url: `${baseUrl}/search?category=${encodeURIComponent(category.name)}`,
+        lastModified: category.updatedAt || currentDate,
+        changeFrequency: "weekly" as const,
+        priority: 0.7,
+      }));
+
+    return [...staticPages, ...categoryPages];
+  } catch (error) {
+    console.error("Error fetching categories for sitemap:", error);
+    return staticPages;
+  }
 }

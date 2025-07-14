@@ -1,8 +1,21 @@
 "use client";
 
 import Link from "next/link";
+import { useSelector, useDispatch } from "react-redux";
+import { useEffect } from "react";
+import { selectParentCategories, selectCategoriesLoading } from "../../redux/categorySelectors";
+import { fetchCategoriesStart } from "../../redux/categorySlice";
 
 const Footer = () => {
+  const dispatch = useDispatch();
+  const parentCategories = useSelector(selectParentCategories);
+  const categoriesLoading = useSelector(selectCategoriesLoading);
+
+  // Load categories when component mounts
+  useEffect(() => {
+    dispatch(fetchCategoriesStart());
+  }, [dispatch]);
+
   return (
     <footer className="bg-gradient-to-r from-[#51946b] to-[#3d7a57] text-white">
       {/* Main Footer Content */}
@@ -52,24 +65,19 @@ const Footer = () => {
           <div className="col-span-1">
             <h4 className="text-lg font-bold mb-4">Categorie</h4>
             <div className="space-y-3">
-              <Link
-                href="/search?category=Scuola"
-                className="block text-green-100 hover:text-white transition-colors"
-              >
-                Scuola
-              </Link>
-              <Link
-                href="/search?category=Giochi"
-                className="block text-green-100 hover:text-white transition-colors"
-              >
-                Giochi
-              </Link>
-              <Link
-                href="/search?category=Ufficio"
-                className="block text-green-100 hover:text-white transition-colors"
-              >
-                Ufficio
-              </Link>
+              {categoriesLoading ? (
+                <div className="text-green-100">Caricamento categorie...</div>
+              ) : (
+                parentCategories.slice(0, 3).map((category) => (
+                  <Link
+                    key={category.id}
+                    href={`/search?category=${encodeURIComponent(category.name)}`}
+                    className="block text-green-100 hover:text-white transition-colors"
+                  >
+                    {category.name}
+                  </Link>
+                ))
+              )}
             </div>
           </div>
 
@@ -133,25 +141,19 @@ const Footer = () => {
           <div>
             <h4 className="text-lg font-bold mb-4 text-center">Categorie</h4>
             <div className="grid grid-cols-2 gap-3 text-center">
-              <Link
-                href="/search?category=Scuola"
-                className="text-green-100 hover:text-white transition-colors"
-              >
-                Scuola
-              </Link>
-              <Link
-                href="/search?category=Giochi"
-                className="text-green-100 hover:text-white transition-colors"
-              >
-                Giochi
-              </Link>
-
-              <Link
-                href="/search?category=Ufficio"
-                className="text-green-100 hover:text-white transition-colors"
-              >
-                Ufficio
-              </Link>
+              {categoriesLoading ? (
+                <div className="col-span-2 text-green-100">Caricamento categorie...</div>
+              ) : (
+                parentCategories.slice(0, 4).map((category) => (
+                  <Link
+                    key={category.id}
+                    href={`/search?category=${encodeURIComponent(category.name)}`}
+                    className="text-green-100 hover:text-white transition-colors"
+                  >
+                    {category.name}
+                  </Link>
+                ))
+              )}
             </div>
           </div>
         </div>
