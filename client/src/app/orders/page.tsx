@@ -15,6 +15,10 @@ interface OrderItem {
   };
   quantity: number;
   priceAtPurchase: number;
+  selectedVariants?: Record<
+    number,
+    { id: number; nome: string; immagine?: string }
+  >; // Nuove varianti
 }
 
 interface Order {
@@ -680,6 +684,26 @@ export default function OrdersPage() {
                         <p className="text-sm text-gray-600">
                           Quantità: {item.quantity}
                         </p>
+                        {/* Mostra le varianti selezionate se disponibili */}
+                        {item.selectedVariants &&
+                          Object.keys(item.selectedVariants).length > 0 && (
+                            <p className="text-sm text-blue-600 mt-1">
+                              <span className="font-medium">Varianti:</span>{" "}
+                              {Object.values(item.selectedVariants).map(
+                                (variant, index) => (
+                                  <span key={index}>
+                                    {variant.nome}
+                                    {index <
+                                    Object.values(item.selectedVariants!)
+                                      .length -
+                                      1
+                                      ? ", "
+                                      : ""}
+                                  </span>
+                                )
+                              )}
+                            </p>
+                          )}
                         <p className="text-sm text-[#51946b] font-medium">
                           €{Number(item.priceAtPurchase).toFixed(2)}
                         </p>

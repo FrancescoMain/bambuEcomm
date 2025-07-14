@@ -7,6 +7,10 @@ export interface CartItem {
   immagine?: string;
   quantity: number;
   cartItemId?: number; // <-- add for backend sync
+  selectedVariants?: Record<
+    number,
+    { id: number; nome: string; immagine?: string }
+  >; // Nuove varianti selezionate
 }
 
 interface CartState {

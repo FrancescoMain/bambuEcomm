@@ -150,6 +150,8 @@ const ProductDetailPage: React.FC = () => {
           : parseFloat(product.prezzo as string) || 0,
       immagine: product.immagine || "",
       quantity,
+      selectedVariants:
+        Object.keys(selectedVariants).length > 0 ? selectedVariants : undefined, // Aggiungiamo le varianti selezionate
     });
   };
 

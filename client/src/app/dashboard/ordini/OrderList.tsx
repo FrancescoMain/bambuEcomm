@@ -18,6 +18,10 @@ export interface Order {
     product?: { titolo: string };
     quantity: number;
     priceAtPurchase: number | string;
+    selectedVariants?: Record<
+      number,
+      { id: number; nome: string; immagine?: string }
+    >; // Nuove varianti
   }>;
   via?: string;
   numero?: string;

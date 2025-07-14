@@ -1,3 +1,7 @@
+// BACKUP SCHEMA PRIMA DELL'AGGIUNTA DELLE VARIANTI
+// Data: 2025-07-14
+// Questo è lo schema attuale del database prima delle modifiche per le varianti
+
 generator client {
   provider = "prisma-client-js"
 }
@@ -68,7 +72,6 @@ model Order {
   totalAmount       Decimal     @db.Decimal(10, 2)
   status            OrderStatus @default(PENDING)
   paymentIntentId   String?     @unique
-  trackingNumber    String?     // Numero di tracking per la spedizione
   createdAt         DateTime    @default(now())
   updatedAt         DateTime    @updatedAt
   shippingAddressId Int?
@@ -83,6 +86,7 @@ model Order {
   stato             String?
   telefono          String?
   via               String?
+  trackingNumber    String?
   billingAddress    Address?    @relation("BillingAddress", fields: [billingAddressId], references: [id])
   shippingAddress   Address?    @relation("ShippingAddress", fields: [shippingAddressId], references: [id])
   user              User?       @relation(fields: [userId], references: [id])
@@ -90,16 +94,15 @@ model Order {
 }
 
 model OrderItem {
-  id               Int      @id @default(autoincrement())
-  orderId          Int
-  productId        Int
-  quantity         Int
-  priceAtPurchase  Decimal  @db.Decimal(10, 2)
-  selectedVariants Json?    // Nuove varianti selezionate (opzionale per backward compatibility)
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
-  order            Order    @relation(fields: [orderId], references: [id])
-  product          Product  @relation(fields: [productId], references: [id])
+  id              Int      @id @default(autoincrement())
+  orderId         Int
+  productId       Int
+  quantity        Int
+  priceAtPurchase Decimal  @db.Decimal(10, 2)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  order           Order    @relation(fields: [orderId], references: [id])
+  product         Product  @relation(fields: [productId], references: [id])
 
   @@unique([orderId, productId])
 }
@@ -130,15 +133,14 @@ model Cart {
 }
 
 model CartItem {
-  id               Int      @id @default(autoincrement())
-  cartId           Int
-  productId        Int
-  quantity         Int
-  selectedVariants Json?    // Nuove varianti selezionate (opzionale per backward compatibility)
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
-  cart             Cart     @relation(fields: [cartId], references: [id])
-  product          Product  @relation(fields: [productId], references: [id])
+  id        Int      @id @default(autoincrement())
+  cartId    Int
+  productId Int
+  quantity  Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  cart      Cart     @relation(fields: [cartId], references: [id])
+  product   Product  @relation(fields: [productId], references: [id])
 
   @@unique([cartId, productId])
 }

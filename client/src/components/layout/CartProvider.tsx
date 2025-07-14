@@ -28,6 +28,10 @@ interface CartItem {
   immagine?: string;
   quantity: number;
   cartItemId?: number;
+  selectedVariants?: Record<
+    number,
+    { id: number; nome: string; immagine?: string }
+  >; // Nuove varianti selezionate
 }
 
 // Add BackendCartItem type for API responses
@@ -199,7 +203,11 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
     try {
       if (currentUser) {
         try {
-          await addCartItemApi(item.productId, item.quantity);
+          await addCartItemApi(
+            item.productId,
+            item.quantity,
+            item.selectedVariants
+          );
           const response = await apiService.get<any>("/cart");
           if (response && Array.isArray(response.items)) {
             const newCart: CartItem[] = response.items.map(

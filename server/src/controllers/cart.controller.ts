@@ -70,7 +70,7 @@ export const addItemToCart = async (
       return;
     }
 
-    const { productId, quantity } = req.body;
+    const { productId, quantity, selectedVariants } = req.body;
 
     // Trova o crea il carrello dell'utente
     let cart = await prisma.cart.findUnique({
@@ -104,10 +104,14 @@ export const addItemToCart = async (
     });
 
     if (existingCartItem) {
-      // Aggiorna la quantità se l'articolo esiste già
+      // Aggiorna la quantità e le varianti se l'articolo esiste già
       await prisma.cartItem.update({
         where: { id: existingCartItem.id },
-        data: { quantity: existingCartItem.quantity + quantity },
+        data: {
+          quantity: existingCartItem.quantity + quantity,
+          selectedVariants:
+            selectedVariants || existingCartItem.selectedVariants, // Mantiene le varianti esistenti se non specificate
+        },
       });
     } else {
       // Crea un nuovo articolo nel carrello
@@ -116,6 +120,7 @@ export const addItemToCart = async (
           cartId: cart.id,
           productId: productId,
           quantity: quantity,
+          selectedVariants: selectedVariants, // Salva le varianti selezionate (può essere null per backward compatibility)
         },
       });
     }

@@ -167,6 +167,24 @@ const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
                     <p className="text-sm text-gray-600">
                       Quantità: {item.quantity}
                     </p>
+                    {/* Mostra le varianti selezionate se disponibili */}
+                    {item.selectedVariants &&
+                      Object.keys(item.selectedVariants).length > 0 && (
+                        <div className="text-sm text-blue-600 mt-1">
+                          <span className="font-medium">Varianti:</span>{" "}
+                          {Object.values(item.selectedVariants).map(
+                            (variant, index) => (
+                              <span key={index}>
+                                {variant.nome}
+                                {index <
+                                Object.values(item.selectedVariants!).length - 1
+                                  ? ", "
+                                  : ""}
+                              </span>
+                            )
+                          )}
+                        </div>
+                      )}
                   </div>
                   <p className="font-medium">
                     {new Intl.NumberFormat("it-IT", {
