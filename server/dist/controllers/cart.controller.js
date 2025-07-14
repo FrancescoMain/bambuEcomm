@@ -53,7 +53,7 @@ const addItemToCart = async (req, res) => {
             res.status(401).json({ message: "Utente non autorizzato." });
             return;
         }
-        const { productId, quantity } = req.body;
+        const { productId, quantity, selectedVariants } = req.body;
         // Trova o crea il carrello dell'utente
         let cart = await prisma.cart.findUnique({
             where: { userId },
@@ -78,12 +78,20 @@ const addItemToCart = async (req, res) => {
                 cartId: cart.id,
                 productId: productId,
             },
+            select: {
+                id: true,
+                quantity: true,
+                selectedVariants: true,
+            },
         });
         if (existingCartItem) {
-            // Aggiorna la quantità se l'articolo esiste già
+            // Aggiorna la quantità e le varianti se l'articolo esiste già
             await prisma.cartItem.update({
                 where: { id: existingCartItem.id },
-                data: { quantity: existingCartItem.quantity + quantity },
+                data: {
+                    quantity: existingCartItem.quantity + quantity,
+                    selectedVariants: (selectedVariants || existingCartItem.selectedVariants), // Cast per compatibilità
+                },
             });
         }
         else {
@@ -93,6 +101,7 @@ const addItemToCart = async (req, res) => {
                     cartId: cart.id,
                     productId: productId,
                     quantity: quantity,
+                    selectedVariants: selectedVariants, // Cast per compatibilità con InputJsonValue
                 },
             });
         }

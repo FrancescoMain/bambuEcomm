@@ -86,7 +86,9 @@ const getDashboardStats = async (req, res) => {
         const previousRevenue = Number(previousMonthRevenue._sum.totalAmount || 0);
         const monthlyGrowth = previousRevenue > 0
             ? ((totalRevenue - previousRevenue) / previousRevenue) * 100
-            : totalRevenue > 0 ? 100 : 0;
+            : totalRevenue > 0
+                ? 100
+                : 0;
         // 3. Valore medio ordine
         const averageOrderValue = totalOrders > 0 ? totalRevenue / totalOrders : 0;
         // 4. Dati vendite ultimi 12 mesi
@@ -130,14 +132,14 @@ const getDashboardStats = async (req, res) => {
         }
         // 5. Top prodotti venduti
         const topProducts = await prisma.orderItem.groupBy({
-            by: ['productId'],
+            by: ["productId"],
             _sum: {
                 quantity: true,
                 priceAtPurchase: true,
             },
             orderBy: {
                 _sum: {
-                    quantity: 'desc',
+                    quantity: "desc",
                 },
             },
             take: 5,
@@ -148,7 +150,7 @@ const getDashboardStats = async (req, res) => {
                 select: { titolo: true },
             });
             return {
-                name: product?.titolo || 'Prodotto sconosciuto',
+                name: product?.titolo || "Prodotto sconosciuto",
                 sold: item._sum.quantity || 0,
                 revenue: Number(item._sum.priceAtPurchase || 0),
             };
@@ -156,7 +158,7 @@ const getDashboardStats = async (req, res) => {
         // 6. Attività recenti (ultimi 10 ordini/eventi)
         const recentOrders = await prisma.order.findMany({
             take: 5,
-            orderBy: { createdAt: 'desc' },
+            orderBy: { createdAt: "desc" },
             select: {
                 id: true,
                 status: true,
@@ -168,38 +170,32 @@ const getDashboardStats = async (req, res) => {
         });
         const recentActivity = recentOrders.map((order) => {
             const timeAgo = Math.floor((now.getTime() - new Date(order.createdAt).getTime()) / (1000 * 60));
-            let action = '';
-            let type = 'order';
+            let action = "";
+            let type = "order";
             switch (order.status) {
                 case client_1.OrderStatus.PENDING:
                     action = `Nuovo ordine #${order.id}`;
                     break;
                 case client_1.OrderStatus.SHIPPED:
                     action = `Ordine #${order.id} spedito`;
-                    type = 'shipping';
+                    type = "shipping";
                     break;
                 case client_1.OrderStatus.DELIVERED:
                     action = `Ordine #${order.id} consegnato`;
-                    type = 'delivery';
+                    type = "delivery";
                     break;
                 default:
                     action = `Ordine #${order.id} aggiornato`;
             }
             return {
-                time: timeAgo < 60 ? `${timeAgo} min fa` : `${Math.floor(timeAgo / 60)}h fa`,
+                time: timeAgo < 60
+                    ? `${timeAgo} min fa`
+                    : `${Math.floor(timeAgo / 60)}h fa`,
                 action,
                 type,
                 urgent: false,
             };
         });
-        // 7. Distribuzione per categoria (mock per ora, da implementare se abbiamo categorie)
-        const categoryData = [
-            { name: "Quaderni e Agende", value: 35, color: "#51946b" },
-            { name: "Penne e Matite", value: 25, color: "#3d7a57" },
-            { name: "Cartoleria Creativa", value: 20, color: "#7db892" },
-            { name: "Zaini e Astucci", value: 15, color: "#a5c9b0" },
-            { name: "Altri", value: 5, color: "#c2d6c7" },
-        ];
         const dashboardData = {
             summary: {
                 totalOrders,
@@ -216,7 +212,6 @@ const getDashboardStats = async (req, res) => {
                 averageOrderValue: Math.round(averageOrderValue * 100) / 100,
             },
             salesData,
-            categoryData, // Mock per ora
             recentActivity,
             topProducts: topProductsWithDetails,
         };
@@ -225,7 +220,7 @@ const getDashboardStats = async (req, res) => {
     catch (error) {
         console.error("Errore nel recupero delle statistiche dashboard:", error);
         res.status(500).json({
-            message: "Errore interno del server nel recupero delle statistiche"
+            message: "Errore interno del server nel recupero delle statistiche",
         });
     }
 };

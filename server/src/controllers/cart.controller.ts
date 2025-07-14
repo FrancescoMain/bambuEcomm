@@ -114,8 +114,8 @@ export const addItemToCart = async (
         where: { id: existingCartItem.id },
         data: {
           quantity: existingCartItem.quantity + quantity,
-          selectedVariants:
-            (selectedVariants || existingCartItem.selectedVariants) as any, // Cast per compatibilità
+          selectedVariants: (selectedVariants ||
+            existingCartItem.selectedVariants) as any, // Cast per compatibilità
         },
       });
     } else {

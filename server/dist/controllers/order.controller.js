@@ -78,6 +78,7 @@ const createOrder = async (req, res) => {
                 productId: item.productId,
                 quantity: item.quantity,
                 priceAtPurchase: item.product.prezzo, // Salva il prezzo al momento dell'acquisto
+                selectedVariants: item.selectedVariants, // Cast per compatibilità con InputJsonValue
             });
         }
         // Creazione ordine e svuotamento carrello in una transazione

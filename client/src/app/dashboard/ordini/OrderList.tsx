@@ -103,6 +103,12 @@ export default function OrderList() {
                         : undefined,
                       quantity: Number(oi.quantity),
                       priceAtPurchase: oi.priceAtPurchase as number | string,
+                      selectedVariants: oi.selectedVariants as
+                        | Record<
+                            number,
+                            { id: number; nome: string; immagine?: string }
+                          >
+                        | undefined, // Aggiungiamo le varianti
                     };
                   })
                 : [],
