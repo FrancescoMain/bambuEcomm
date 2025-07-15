@@ -257,7 +257,11 @@ export const getOrderById = async (
       where: { id: orderId },
       include: {
         orderItems: {
-          include: {
+          select: {
+            id: true,
+            quantity: true,
+            priceAtPurchase: true,
+            selectedVariants: true,
             product: { select: { id: true, titolo: true, immagine: true } },
           },
         },
@@ -332,7 +336,11 @@ export const getUserOrders = async (
       orderBy: { createdAt: "desc" },
       include: {
         orderItems: {
-          include: {
+          select: {
+            id: true,
+            quantity: true,
+            priceAtPurchase: true,
+            selectedVariants: true, // Includiamo le varianti per gli ordini utente
             product: {
               select: { id: true, titolo: true, immagine: true, prezzo: true },
             },
@@ -420,7 +428,11 @@ export const getAllOrders = async (
       include: {
         user: { select: { id: true, name: true, email: true } },
         orderItems: {
-          include: {
+          select: {
+            id: true,
+            quantity: true,
+            priceAtPurchase: true,
+            selectedVariants: true,
             product: { select: { id: true, titolo: true } },
           },
         },
