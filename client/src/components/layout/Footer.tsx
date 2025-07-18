@@ -3,7 +3,10 @@
 import Link from "next/link";
 import { useSelector, useDispatch } from "react-redux";
 import { useEffect } from "react";
-import { selectParentCategories, selectCategoriesLoading } from "../../redux/categorySelectors";
+import {
+  selectParentCategories,
+  selectCategoriesLoading,
+} from "../../redux/categorySelectors";
 import { fetchCategoriesStart } from "../../redux/categorySlice";
 
 const Footer = () => {
@@ -15,6 +18,23 @@ const Footer = () => {
   useEffect(() => {
     dispatch(fetchCategoriesStart());
   }, [dispatch]);
+
+  // Load iubenda script when component mounts
+  useEffect(() => {
+    const loadIubendaScript = () => {
+      if (
+        typeof window !== "undefined" &&
+        !window.document.querySelector('script[src*="iubenda.js"]')
+      ) {
+        const script = document.createElement("script");
+        script.src = "https://cdn.iubenda.com/iubenda.js";
+        script.async = true;
+        document.head.appendChild(script);
+      }
+    };
+
+    loadIubendaScript();
+  }, []);
 
   return (
     <footer className="bg-gradient-to-r from-[#51946b] to-[#3d7a57] text-white">
@@ -71,7 +91,9 @@ const Footer = () => {
                 parentCategories.slice(0, 3).map((category) => (
                   <Link
                     key={category.id}
-                    href={`/search?category=${encodeURIComponent(category.name)}`}
+                    href={`/search?category=${encodeURIComponent(
+                      category.name
+                    )}`}
                     className="block text-green-100 hover:text-white transition-colors"
                   >
                     {category.name}
@@ -142,12 +164,16 @@ const Footer = () => {
             <h4 className="text-lg font-bold mb-4 text-center">Categorie</h4>
             <div className="grid grid-cols-2 gap-3 text-center">
               {categoriesLoading ? (
-                <div className="col-span-2 text-green-100">Caricamento categorie...</div>
+                <div className="col-span-2 text-green-100">
+                  Caricamento categorie...
+                </div>
               ) : (
                 parentCategories.slice(0, 4).map((category) => (
                   <Link
                     key={category.id}
-                    href={`/search?category=${encodeURIComponent(category.name)}`}
+                    href={`/search?category=${encodeURIComponent(
+                      category.name
+                    )}`}
                     className="text-green-100 hover:text-white transition-colors"
                   >
                     {category.name}
@@ -210,27 +236,26 @@ const Footer = () => {
               </p>
             </div>
             <div className="flex flex-wrap justify-center gap-4 text-sm">
-              <Link
-                href="/privacy"
-                className="text-green-100 hover:text-white transition-colors"
+              <a
+                href="https://www.iubenda.com/privacy-policy/33504144"
+                className="iubenda-white iubenda-noiframe iubenda-embed iubenda-noiframe text-green-100 hover:text-white transition-colors"
+                title="Privacy Policy"
               >
                 Privacy Policy
-              </Link>
+              </a>
               <Link
                 href="/terms"
                 className="text-green-100 hover:text-white transition-colors"
               >
                 Termini di Servizio
               </Link>
-              <Link
-                href="/cookies"
-                className="text-green-100 hover:text-white transition-colors"
+              <a
+                href="https://www.iubenda.com/privacy-policy/33504144/cookie-policy"
+                className="iubenda-white iubenda-noiframe iubenda-embed iubenda-noiframe text-green-100 hover:text-white transition-colors"
+                title="Cookie Policy"
               >
                 Cookie Policy
-              </Link>
-              <button className="text-green-100 hover:text-white transition-colors">
-                Gestione Cookie
-              </button>
+              </a>
             </div>
           </div>
         </div>

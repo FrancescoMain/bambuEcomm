@@ -9,6 +9,8 @@ import { LoadingProvider } from "@/components/layout/LoadingContext";
 import GlobalLoader from "@/components/layout/GlobalLoader";
 import { CartProvider } from "@/components/layout/CartProvider"; // Import CartProvider
 import { NotificationProvider } from "@/components/ui/NotificationProvider";
+import IubendaScripts from "@/components/layout/IubendaScripts";
+import GoogleAnalytics from "@/components/layout/GoogleAnalytics";
 
 // Configure Plus Jakarta Sans
 const plusJakartaSans = Plus_Jakarta_Sans({
@@ -89,21 +91,6 @@ export default function RootLayout({
         <link rel="icon" href="/logo-panda.png" type="image/png" />
         <link rel="shortcut icon" href="/logo-panda.png" type="image/png" />
         <link rel="apple-touch-icon" href="/logo-panda.png" />
-        {/* Google Analytics */}
-        <script
-          async
-          src="https://www.googletagmanager.com/gtag/js?id=G-6680SVPRN1"
-        />
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `
-              window.dataLayer = window.dataLayer || [];
-              function gtag(){dataLayer.push(arguments);}
-              gtag('js', new Date());
-              gtag('config', 'G-6680SVPRN1');
-            `,
-          }}
-        />
         {/* Redundant font link (next/font is used) - commented out */}
         {/* <link
           rel="stylesheet"
@@ -112,6 +99,10 @@ export default function RootLayout({
         {/* Redundant Tailwind CDN (PostCSS setup is expected) - commented out */}
       </head>
       <body className={`font-sans antialiased`}>
+        {/* Client-side scripts to avoid hydration mismatch */}
+        <IubendaScripts />
+        <GoogleAnalytics />
+
         <ClientProvider>
           <NotificationProvider>
             <CartProvider>
