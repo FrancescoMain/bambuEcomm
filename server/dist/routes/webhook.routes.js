@@ -50,6 +50,7 @@ router.post("/webhook", express_1.default.raw({ type: "application/json" }), (re
                             productId: Number(item.productId),
                             quantity: Number(item.quantity),
                             priceAtPurchase: Number(item.prezzo),
+                            selectedVariants: item.selectedVariants || null, // Includi le varianti selezionate
                         }));
                     }
                 }

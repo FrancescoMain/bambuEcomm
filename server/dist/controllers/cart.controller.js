@@ -90,7 +90,8 @@ const addItemToCart = async (req, res) => {
                 where: { id: existingCartItem.id },
                 data: {
                     quantity: existingCartItem.quantity + quantity,
-                    selectedVariants: (selectedVariants || existingCartItem.selectedVariants), // Cast per compatibilità
+                    selectedVariants: (selectedVariants ||
+                        existingCartItem.selectedVariants), // Cast per compatibilità
                 },
             });
         }

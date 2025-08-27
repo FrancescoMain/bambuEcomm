@@ -52,6 +52,7 @@ router.post(
           productId: number;
           quantity: number;
           priceAtPurchase: number;
+          selectedVariants?: any; // Aggiungi supporto per le varianti
         };
         let orderItemsData: OrderItemCreate[] = [];
         if (session.metadata?.cart) {
@@ -62,6 +63,7 @@ router.post(
                 productId: Number(item.productId),
                 quantity: Number(item.quantity),
                 priceAtPurchase: Number(item.prezzo),
+                selectedVariants: item.selectedVariants || null, // Includi le varianti selezionate
               }));
             }
           } catch (e) {
