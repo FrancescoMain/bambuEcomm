@@ -27,19 +27,43 @@ router.post("/checkout-session", (req: Request, res) => {
       if (!cart || !Array.isArray(cart) || cart.length === 0) {
         return res.status(400).json({ error: "Carrello vuoto." });
       }
-      const session = await stripe.checkout.sessions.create({
-        payment_method_types: ["card"],
-        mode: "payment",
-        line_items: cart.map((item: any) => ({
+
+      // Calcola il subtotale
+      const subtotal = cart.reduce((sum: number, item: any) => sum + (item.prezzo * item.quantity), 0);
+      const shippingThreshold = 50;
+      const shippingCost = subtotal >= shippingThreshold ? 0 : 4.99;
+
+      // Crea line items per i prodotti
+      const productLineItems = cart.map((item: any) => ({
+        price_data: {
+          currency: "eur",
+          product_data: {
+            name: item.titolo,
+          },
+          unit_amount: Math.round(item.prezzo * 100),
+        },
+        quantity: item.quantity,
+      }));
+
+      // Aggiungi spedizione come line item separato se necessario
+      const lineItems = [...productLineItems];
+      if (shippingCost > 0) {
+        lineItems.push({
           price_data: {
             currency: "eur",
             product_data: {
-              name: item.titolo,
+              name: "Spedizione",
             },
-            unit_amount: Math.round(item.prezzo * 100),
+            unit_amount: Math.round(shippingCost * 100),
           },
-          quantity: item.quantity,
-        })),
+          quantity: 1,
+        });
+      }
+
+      const session = await stripe.checkout.sessions.create({
+        payment_method_types: ["card"],
+        mode: "payment",
+        line_items: lineItems,
         customer_email: user?.email || form.email,
         metadata: {
           userId: user?.userId || "",
@@ -52,6 +76,9 @@ router.post("/checkout-session", (req: Request, res) => {
           cap: form.cap,
           stato: form.stato,
           note: form.note || "",
+          subtotal: subtotal.toFixed(2),
+          shippingCost: shippingCost.toFixed(2),
+          total: (subtotal + shippingCost).toFixed(2),
           cart: JSON.stringify(cart.map((item: any) => ({
             ...item,
             selectedVariants: item.selectedVariants || null // Includi le varianti selezionate
