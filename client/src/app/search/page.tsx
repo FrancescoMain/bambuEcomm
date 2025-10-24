@@ -28,6 +28,7 @@ interface Product {
   immagine: string;
   categoria?: string;
   autore?: string;
+  available?: boolean;
   [key: string]: unknown;
 }
 
@@ -169,7 +170,8 @@ function SearchPageContent() {
       }
 
       const results = await searchService.searchProducts(params);
-      setProducts(results);
+      const availableProducts = results.filter((product: Product) => product.available !== false);
+      setProducts(availableProducts);
       setHasMore(results.length === 20);
     } catch (error) {
       console.error("Search error:", error);
@@ -199,7 +201,8 @@ function SearchPageContent() {
     setLoading(true);
     try {
       const moreProducts = await searchService.loadMoreProducts(20);
-      setProducts((prev) => [...prev, ...moreProducts]);
+      const availableMoreProducts = moreProducts.filter((product: Product) => product.available !== false);
+      setProducts((prev) => [...prev, ...availableMoreProducts]);
       setLoadCount((prev) => prev + 1);
       setHasMore(moreProducts.length === 20);
     } catch (error) {
