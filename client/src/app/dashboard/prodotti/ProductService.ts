@@ -82,10 +82,10 @@ export class ProductService {
 
   async toggleProductAvailability(id: number) {
     try {
-      const response = await apiService.patch(`/products/${id}/availability`);
+      const response = await apiService.patch<any>(`/products/${id}/availability`);
       return { success: true, product: response.product, error: null };
     } catch (error) {
-      return { success: false, error: "Errore durante il cambio di disponibilità" };
+      return { success: false, product: null, error: "Errore durante il cambio di disponibilità" };
     }
   }
   async uploadImage(file: File): Promise<string | null> {
