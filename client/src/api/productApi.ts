@@ -10,6 +10,7 @@ export interface Product {
   immagine: string; // singola immagine come stringa
   createdAt: string;
   updatedAt: string;
+  available?: boolean; // disponibilità del prodotto
   categoria: {
     // array di categorie
     id: number;

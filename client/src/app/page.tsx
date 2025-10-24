@@ -82,6 +82,7 @@ type LocalProduct = {
   immagine?: string;
   prezzo: number | string;
   categoria?: { name: string }[];
+  available?: boolean;
 };
 
 // Funzione per convertire Product API in LocalProduct
@@ -91,6 +92,7 @@ const convertApiProductToLocal = (apiProduct: Product): LocalProduct => ({
   immagine: apiProduct.immagine || "/file.svg", // ✅ Corretto: usa 'immagine'
   prezzo: parseFloat(apiProduct.prezzo) || 0, // ✅ Corretto: converte stringa in numero
   categoria: apiProduct.categoria?.map((cat) => ({ name: cat.name })) || [], // ✅ Corretto: usa array categoria
+  available: apiProduct.available, // Disponibilità del prodotto
 });
 
 // Tipi locali per il carrello
@@ -151,7 +153,9 @@ export default function Home() {
       .then((response: PaginatedProductsResponse) => {
         const productsArray = response.data || [];
         const products = Array.isArray(productsArray)
-          ? productsArray.map(convertApiProductToLocal)
+          ? productsArray
+              .filter((product) => product.available !== false) // Filtra solo prodotti disponibili
+              .map(convertApiProductToLocal)
           : [];
         setFeaturedProducts(products.slice(0, 8)); // Prime 8 per featured
         setError("");
@@ -455,6 +459,7 @@ export default function Home() {
                             : parseFloat(product.prezzo as string) || 0,
                         immagine: product.immagine || "/file.svg",
                         categoria: product.categoria?.[0]?.name || "",
+                        available: product.available,
                       }}
                       isInCart={cartItems.some(
                         (item: CartItem) =>
