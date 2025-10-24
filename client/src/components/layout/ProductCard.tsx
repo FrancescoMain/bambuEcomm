@@ -24,6 +24,7 @@ interface ProductCardProps {
     prezzo: number;
     immagine: string;
     categoria?: string;
+    available?: boolean;
     [key: string]: unknown;
   };
   onAddToCart: (product: ProductCardProps["product"]) => void;
@@ -84,7 +85,16 @@ const ProductCard = ({
                   parseFloat(product.prezzo as unknown as string) || 0
                 ).toFixed(2)}`}
           </span>
-          {isInCart ? (
+          {product.available === false ? (
+            <button
+              className="ml-2 px-2 py-1 bg-gray-300 text-gray-600 text-xs rounded-lg flex items-center justify-center font-medium cursor-not-allowed"
+              type="button"
+              aria-label="Non disponibile"
+              disabled
+            >
+              Non disponibile
+            </button>
+          ) : isInCart ? (
             <button
               className="ml-2 px-2 py-1 bg-[#e8f2ec] text-[#0e1a13] text-xs rounded-lg flex items-center justify-center font-medium opacity-60 cursor-not-allowed"
               type="button"

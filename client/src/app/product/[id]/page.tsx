@@ -20,6 +20,7 @@ type Product = {
   categoria?: { name: string }[];
   stock?: number;
   url?: string;
+  available?: boolean;
   varianti?: {
     id: number;
     nome: string;
@@ -522,12 +523,18 @@ const ProductDetailPage: React.FC = () => {
 
                 {/* Action Buttons */}
                 <div className="space-y-3">
-                  <button
-                    onClick={handleAddToCartClick}
-                    className="w-full bg-[#51946b] text-white py-4 rounded-xl font-bold text-lg hover:bg-[#3d7a57] transition-colors shadow-lg hover:shadow-xl transform hover:scale-105"
-                  >
-                    🛒 Aggiungi al Carrello
-                  </button>
+                  {product.available === false ? (
+                    <div className="w-full bg-gray-300 text-gray-600 py-4 rounded-xl font-bold text-lg text-center cursor-not-allowed">
+                      ⚠️ Prodotto Non Disponibile
+                    </div>
+                  ) : (
+                    <button
+                      onClick={handleAddToCartClick}
+                      className="w-full bg-[#51946b] text-white py-4 rounded-xl font-bold text-lg hover:bg-[#3d7a57] transition-colors shadow-lg hover:shadow-xl transform hover:scale-105"
+                    >
+                      🛒 Aggiungi al Carrello
+                    </button>
+                  )}
                   <button
                     onClick={handleShare}
                     className="w-full border-2 border-[#51946b] text-[#51946b] py-3 rounded-xl font-semibold hover:bg-[#51946b] hover:text-white transition-colors"
@@ -672,6 +679,7 @@ const ProductDetailPage: React.FC = () => {
                           relatedProduct.categoria?.[
                             relatedProduct.categoria.length - 1
                           ]?.name || "",
+                        available: relatedProduct.available,
                       }}
                       isInCart={cartItems.some(
                         (item) => item.productId === relatedProduct.id

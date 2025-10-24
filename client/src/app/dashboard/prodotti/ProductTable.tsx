@@ -8,6 +8,7 @@ interface ProductTableProps {
   error: string | null;
   onEdit: (product: Product) => void;
   onDelete: (id: number) => void;
+  onToggleAvailability?: (id: number) => void;
 }
 
 export default function ProductTable({
@@ -16,6 +17,7 @@ export default function ProductTable({
   error,
   onEdit,
   onDelete,
+  onToggleAvailability,
 }: ProductTableProps) {
   if (loading) {
     return <div>Caricamento prodotti...</div>;
@@ -47,6 +49,9 @@ export default function ProductTable({
             </th>
             <th className="p-3 text-left text-sm font-semibold text-gray-600 w-16">
               Stock
+            </th>
+            <th className="p-3 text-left text-sm font-semibold text-gray-600 w-28">
+              Disponibilità
             </th>
             <th className="p-3 text-left text-sm font-semibold text-gray-600 min-w-[100px] max-w-[120px]">
               Varianti
@@ -92,6 +97,19 @@ export default function ProductTable({
                 )}
               </td>
               <td className="p-3 text-sm text-gray-800 w-16">{p.stock ?? 0}</td>
+              <td className="p-3 text-sm text-gray-800 w-28">
+                <button
+                  className={`px-2 py-1 rounded text-xs font-semibold transition-colors w-full ${
+                    p.available !== false
+                      ? "bg-green-600 hover:bg-green-700 text-white"
+                      : "bg-gray-400 hover:bg-gray-500 text-white"
+                  }`}
+                  onClick={() => onToggleAvailability?.(p.id)}
+                  title={p.available !== false ? "Clicca per rendere non disponibile" : "Clicca per rendere disponibile"}
+                >
+                  {p.available !== false ? "Disponibile" : "Non disponibile"}
+                </button>
+              </td>
               <td className="p-3 text-sm text-gray-800 min-w-[100px] max-w-[120px]">
                 <div className="text-xs">
                   {p.varianti && p.varianti.length > 0

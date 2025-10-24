@@ -23,6 +23,7 @@ export interface Product {
   categoria?: { id: number; name: string }[];
   stock?: number;
   varianti?: ProductVariantType[];
+  available?: boolean;
 }
 
 export interface ProductFormData extends Partial<Product> {

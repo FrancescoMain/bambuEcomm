@@ -150,6 +150,24 @@ export default function ProductCrud() {
     });
   };
 
+  const handleToggleAvailability = async (id: number) => {
+    const result = await productService.toggleProductAvailability(id);
+    if (result.success && result.product) {
+      setProducts((prev) =>
+        prev.map((p) => (p.id === id ? { ...p, available: result.product.available } : p))
+      );
+      showToast(
+        `Prodotto ${result.product.available ? "disponibile" : "non disponibile"}`,
+        "success"
+      );
+    } else {
+      showToast(
+        result.error || "Errore durante il cambio di disponibilità",
+        "error"
+      );
+    }
+  };
+
   const handleFormChange = (data: ProductFormData) => {
     setForm(data);
   };
@@ -257,6 +275,7 @@ export default function ProductCrud() {
             product={product}
             onEdit={handleEdit}
             onDelete={handleDelete}
+            onToggleAvailability={handleToggleAvailability}
           />
         ))}
       </div>
@@ -269,6 +288,7 @@ export default function ProductCrud() {
           error={error}
           onEdit={handleEdit}
           onDelete={handleDelete}
+          onToggleAvailability={handleToggleAvailability}
         />
       </div>
 

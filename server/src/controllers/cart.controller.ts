@@ -93,6 +93,12 @@ export const addItemToCart = async (
       return;
     }
 
+    // Controlla se il prodotto è disponibile
+    if (!product.available) {
+      res.status(400).json({ message: "Prodotto non disponibile per l'acquisto." });
+      return;
+    }
+
     // Rimosso controllo stock: il modello non lo prevede più
 
     // Controlla se l'articolo è già nel carrello

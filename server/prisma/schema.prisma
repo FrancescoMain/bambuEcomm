@@ -42,6 +42,7 @@ model Product {
   prezzo      Decimal              @db.Decimal(10, 2)
   titolo      String
   stock       Int                  @default(0)
+  available   Boolean              @default(true)
   cartItems   CartItem[]
   orderItems  OrderItem[]
   varianti    ProductVariantType[]

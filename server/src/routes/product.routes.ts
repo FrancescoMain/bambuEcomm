@@ -6,6 +6,7 @@ import {
   createProduct,
   updateProduct,
   deleteProduct,
+  toggleProductAvailability,
 } from "../controllers/product.controller";
 import {
   authenticateToken,
@@ -88,6 +89,12 @@ router.delete(
   authenticateToken,
   authorizeRole([Role.ADMIN]),
   deleteProduct
+);
+router.patch(
+  "/:id/availability",
+  authenticateToken,
+  authorizeRole([Role.ADMIN]),
+  toggleProductAvailability
 );
 router.post(
   "/upload-image",

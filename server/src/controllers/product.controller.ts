@@ -434,6 +434,56 @@ export const updateProduct = async (
   }
 };
 
+// Toggle disponibilità prodotto (Admin only - protetto da middleware)
+export const toggleProductAvailability = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  const { id } = req.params;
+  const productId = parseInt(id, 10);
+
+  if (isNaN(productId)) {
+    res.status(400).json({ message: "ID prodotto non valido" });
+    return;
+  }
+
+  try {
+    // Recupera il prodotto corrente per ottenere lo stato di disponibilità
+    const currentProduct = await prisma.product.findUnique({
+      where: { id: productId },
+      select: { available: true },
+    });
+
+    if (!currentProduct) {
+      res.status(404).json({ message: "Prodotto non trovato" });
+      return;
+    }
+
+    // Toggle dello stato di disponibilità
+    const updatedProduct = await prisma.product.update({
+      where: { id: productId },
+      data: { available: !currentProduct.available },
+      include: { categoria: true, varianti: { include: { valori: true } } },
+    });
+
+    res.json({
+      message: `Prodotto ${updatedProduct.available ? "disponibile" : "non disponibile"}`,
+      product: updatedProduct,
+    });
+  } catch (error) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError) {
+      if (error.code === "P2025") {
+        res.status(404).json({ message: "Prodotto non trovato" });
+        return;
+      }
+    }
+    res.status(500).json({
+      message: "Errore nel cambio di disponibilità del prodotto",
+      error: (error as Error).message,
+    });
+  }
+};
+
 // Eliminare un prodotto (Admin only - protetto da middleware)
 export const deleteProduct = async (
   req: Request,

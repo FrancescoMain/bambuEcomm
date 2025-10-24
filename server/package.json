@@ -15,7 +15,7 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
-    "@prisma/client": "^6.8.2",
+    "@prisma/client": "^6.18.0",
     "@types/stripe": "^8.0.416",
     "@vercel/node": "^5.2.2",
     "bcryptjs": "^3.0.2",
@@ -29,7 +29,6 @@
     "jsonwebtoken": "^9.0.2",
     "multer": "^2.0.1",
     "pg": "^8.16.0",
-    "prisma": "^6.8.2",
     "resend": "^4.6.0",
     "streamifier": "^0.1.1",
     "stripe": "^18.2.1",
@@ -45,6 +44,7 @@
     "@types/node": "^22.15.30",
     "@types/streamifier": "^0.1.2",
     "nodemon": "^3.1.10",
+    "prisma": "^6.18.0",
     "ts-node": "^10.9.2",
     "typescript": "^5.8.3"
   }

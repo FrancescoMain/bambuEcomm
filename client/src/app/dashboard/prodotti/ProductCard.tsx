@@ -6,6 +6,7 @@ interface ProductCardProps {
   product: Product;
   onEdit: (product: Product) => void;
   onDelete: (id: number) => void;
+  onToggleAvailability?: (id: number) => void;
 }
 
 const StockBadge: React.FC<{ stock: number }> = ({ stock }) => {
@@ -34,6 +35,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
   product,
   onEdit,
   onDelete,
+  onToggleAvailability,
 }) => {
   const imageUrl = product.immagine || "/bambu-logo.jpg"; // Fallback image
 
@@ -61,19 +63,31 @@ const ProductCard: React.FC<ProductCardProps> = ({
           }).format(product.prezzo)}
         </p>
       </div>
-      <div className="p-4 bg-gray-50 border-t grid grid-cols-2 gap-2">
+      <div className="p-4 bg-gray-50 border-t">
         <button
-          onClick={() => onEdit(product)}
-          className="flex items-center justify-center px-3 py-2 bg-blue-500 text-white text-sm font-medium rounded-md hover:bg-blue-600 transition-colors"
+          onClick={() => onToggleAvailability?.(product.id)}
+          className={`w-full mb-2 px-3 py-2 text-white text-sm font-medium rounded-md transition-colors ${
+            product.available !== false
+              ? "bg-green-600 hover:bg-green-700"
+              : "bg-gray-400 hover:bg-gray-500"
+          }`}
         >
-          <FiEdit className="mr-2" /> Modifica
+          {product.available !== false ? "Disponibile" : "Non disponibile"}
         </button>
-        <button
-          onClick={() => onDelete(product.id)}
-          className="flex items-center justify-center px-3 py-2 bg-red-500 text-white text-sm font-medium rounded-md hover:bg-red-600 transition-colors"
-        >
-          <FiTrash2 className="mr-2" /> Elimina
-        </button>
+        <div className="grid grid-cols-2 gap-2">
+          <button
+            onClick={() => onEdit(product)}
+            className="flex items-center justify-center px-3 py-2 bg-blue-500 text-white text-sm font-medium rounded-md hover:bg-blue-600 transition-colors"
+          >
+            <FiEdit className="mr-2" /> Modifica
+          </button>
+          <button
+            onClick={() => onDelete(product.id)}
+            className="flex items-center justify-center px-3 py-2 bg-red-500 text-white text-sm font-medium rounded-md hover:bg-red-600 transition-colors"
+          >
+            <FiTrash2 className="mr-2" /> Elimina
+          </button>
+        </div>
       </div>
     </div>
   );

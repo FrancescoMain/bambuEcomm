@@ -79,6 +79,15 @@ export class ProductService {
       return { success: false, error: "Errore durante l'eliminazione" };
     }
   }
+
+  async toggleProductAvailability(id: number) {
+    try {
+      const response = await apiService.patch(`/products/${id}/availability`);
+      return { success: true, product: response.product, error: null };
+    } catch (error) {
+      return { success: false, error: "Errore durante il cambio di disponibilità" };
+    }
+  }
   async uploadImage(file: File): Promise<string | null> {
     const formData = new FormData();
     formData.append("image", file);
