@@ -4,7 +4,7 @@ import express, { Response } from "express";
 import Stripe from "stripe";
 import { OrderStatus } from "@prisma/client";
 import prisma from "../lib/prisma";
-import stripe from "../lib/stripe";
+import stripe, { usingStripeMock } from "../lib/stripe";
 import { priceCart, CartLineInput } from "../lib/cartPricing";
 import { getSettings } from "../lib/settings";
 import { releaseCoupon, reserveCoupon } from "../lib/coupons";
@@ -23,6 +23,15 @@ const router = express.Router();
 const toCents = (eur: number) => Math.round(eur * 100);
 /** Importo minimo accettato da Stripe per un pagamento in euro */
 const STRIPE_MIN_TOTAL = 0.5;
+/**
+ * Solo metodi con esito immediato (carte, Apple Pay, Google Pay): i pagamenti differiti (SEPA, bonifico)
+ * richiedono gli eventi checkout.session.async_payment_* sul webhook Stripe. Quando sono configurati,
+ * eliminare questo limite per usare i metodi attivi nella dashboard Stripe.
+ * stripe-mock (sviluppo) segue l'ultima versione dell'API, dove il parametro non esiste più.
+ */
+const PAYMENT_METHODS: Pick<Stripe.Checkout.SessionCreateParams, "payment_method_types"> = usingStripeMock
+  ? {}
+  : { payment_method_types: ["card"] };
 
 /** Validazione comune a carta e contrassegno: restituisce preventivo e form, oppure risponde 400. */
 const prepareCheckout = async (req: AuthRequest, res: Response) => {
@@ -155,6 +164,7 @@ router.post(
         }
         session = await stripe.checkout.sessions.create({
         mode: "payment",
+        ...PAYMENT_METHODS,
         locale: "it",
         line_items: lineItems,
         discounts,

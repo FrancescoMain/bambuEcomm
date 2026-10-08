@@ -48,8 +48,8 @@ WhatsApp), indirizzo o "Ritiro in negozio", note e dati per la fattura.
   **conto alla rovescia** (es. rientro a scuola), **vantaggi** e **FAQ**.
 - **Spedizioni**: costo, soglia di spedizione gratuita, tempi, ritiro in negozio, consegna in giornata (CAP).
   Nei testi puoi scrivere `{soglia}` e `{costo}`: vengono sostituiti con i valori attuali.
-- **Pagamenti**: contrassegno con commissione. Carte, Apple Pay, Google Pay, PayPal e Klarna si
-  attivano dalla dashboard di Stripe.
+- **Pagamenti**: contrassegno con commissione. Online si paga con carte, Apple Pay e Google Pay; per
+  aggiungere PayPal o Klarna serve un piccolo intervento tecnico.
 - **Omaggio** sopra una soglia di spesa, **popup newsletter**, **contatti e orari**, **social**, **P.IVA**.
 
 ## Il resto

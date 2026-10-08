@@ -76,7 +76,7 @@ Legenda: ✅ fatto · ⚙️ fatto, va attivato o configurato · 💬 da decider
 | Consegna in giornata con corriere proprio (Napoli) | ⚙️ Pronto: si attiva da Impostazioni (CAP abilitati, orario limite, costo) |
 | Contrassegno con commissione | ⚙️ Pronto: si attiva da Impostazioni → Pagamenti (escluso per prodotti personalizzati, come Varzi) |
 | Carte, Apple Pay, Google Pay | ✅ Tramite Stripe |
-| PayPal, Klarna | ⚙️ Il codice è pronto: si abilitano dalla dashboard Stripe (Impostazioni → Metodi di pagamento) |
+| PayPal, Klarna | ⚙️ Quasi pronti: dopo aver aggiunto gli eventi al webhook Stripe si toglie il limite alle carte e si attivano dalla dashboard Stripe |
 | Richiesta fattura (dati fiscali) | ✅ Ragione sociale, P.IVA, codice fiscale, SDI, PEC |
 | Messaggi promozionali Klarna in scheda prodotto | 💬 Richiede l'attivazione di Klarna |
 

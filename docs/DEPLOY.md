@@ -47,8 +47,11 @@ Dopo il deploy l'intestazione `x-vercel-id` delle risposte dell'API deve contene
 - Webhook (Developers → Webhooks) verso `https://<api>/api/webhook` con gli eventi:
   `checkout.session.completed`, `checkout.session.async_payment_succeeded`,
   `checkout.session.async_payment_failed`, `checkout.session.expired`.
-- Metodi di pagamento: il checkout non forza più solo la carta, quindi PayPal, Klarna e gli altri
-  metodi si attivano da Settings → Payment methods senza toccare il codice.
+- Metodi di pagamento: per ora il checkout accetta solo carte (con Apple Pay e Google Pay), come il sito
+  vecchio, perché i metodi con incasso differito (SEPA, bonifico) hanno bisogno degli eventi
+  `checkout.session.async_payment_*` sul webhook. Per aprire PayPal, Klarna e gli altri: aggiungi i quattro
+  eventi qui sopra, togli il limite `PAYMENT_METHODS` in `server/src/routes/checkout.routes.ts` e attiva i metodi
+  da Settings → Payment methods.
 - Le sessioni create dal vecchio sito prima del deploy vengono ancora gestite (percorso "legacy" nel webhook).
 - Come funziona: al clic su "Paga" l'ordine viene creato "in attesa di pagamento" (con l'eventuale codice
   sconto già prenotato) e Stripe riceve solo il suo numero. Il webhook lo conferma solo se la sessione

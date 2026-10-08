@@ -23,12 +23,12 @@ export function PaymentsSection() {
       <Block
         icon={<CreditCard className="h-5 w-5" />}
         title="Pagamenti online"
-        description="Carte di credito e debito, Apple Pay, Google Pay, PayPal, Klarna…"
+        description="Carte di credito e debito, Apple Pay e Google Pay"
       >
         <p className="text-[15px] leading-relaxed text-ink-soft">
-          I pagamenti online passano da <strong>Stripe</strong>, che accredita gli incassi sul conto del negozio. Per attivare o
-          spegnere un metodo di pagamento (ad esempio PayPal o il pagamento a rate con Klarna) non serve modificare il sito: si fa
-          dalla dashboard di Stripe, alla voce «Metodi di pagamento». Al checkout i clienti vedranno subito i metodi attivi.
+          I pagamenti online passano da <strong>Stripe</strong>, che accredita gli incassi sul conto del negozio. Al checkout i
+          clienti pagano con carta di credito o debito, Apple Pay e Google Pay. Per aggiungere altri metodi (ad esempio PayPal o
+          il pagamento a rate con Klarna) serve prima un piccolo intervento tecnico sul sito: chiedi allo sviluppatore.
         </p>
         <a
           href="https://dashboard.stripe.com/settings/payment_methods"
