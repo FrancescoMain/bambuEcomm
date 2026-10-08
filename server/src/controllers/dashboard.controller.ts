@@ -1,274 +1,168 @@
 import { Request, Response } from "express";
-import { PrismaClient, OrderStatus } from "@prisma/client";
-import { subDays, format } from "date-fns";
-import { Decimal } from "@prisma/client/runtime/library";
+import { OrderStatus, Prisma } from "@prisma/client";
+import prisma from "../lib/prisma";
+import { activeDiscountWhere } from "../lib/pricing";
 
-const prisma = new PrismaClient();
+// Stati che contano come vendita (pagati o da evadere)
+const SOLD: OrderStatus[] = [
+  OrderStatus.PENDING,
+  OrderStatus.PROCESSING,
+  OrderStatus.SHIPPED,
+  OrderStatus.DELIVERED,
+];
 
-interface AuthenticatedRequest extends Request {
-  user?: {
-    userId: string;
-    role: string;
-  };
-}
+const MONTHS = ["Gen", "Feb", "Mar", "Apr", "Mag", "Giu", "Lug", "Ago", "Set", "Ott", "Nov", "Dic"];
 
-export const getDashboardStats = async (
-  req: AuthenticatedRequest,
-  res: Response
-): Promise<void> => {
+export const getDashboardStats = async (req: Request, res: Response): Promise<void> => {
   try {
     const now = new Date();
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    const thisWeekStart = subDays(today, 7);
-    const thisMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+    const weekAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
+    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+    const prevMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    const yearAgo = new Date(now.getFullYear(), now.getMonth() - 11, 1);
 
-    // 1. Statistiche ordini
     const [
       totalOrders,
       newOrdersToday,
-      pendingOrders,
+      toShip,
       shippedToday,
       totalCustomers,
       newCustomersThisWeek,
       totalProducts,
+      unavailableProducts,
+      onSaleProducts,
+      revenueThisMonth,
+      revenuePrevMonth,
+      monthly,
+      topProducts,
+      recentOrders,
+      unreadMessages,
+      pendingReviews,
+      pendingWithdrawals,
+      stockAlerts,
+      newsletterSubscribers,
     ] = await Promise.all([
-      // Ordini totali
-      prisma.order.count(),
-
-      // Ordini di oggi
-      prisma.order.count({
-        where: {
-          createdAt: {
-            gte: today,
-          },
-        },
-      }),
-
-      // Ordini in attesa
-      prisma.order.count({
-        where: {
-          status: {
-            in: [OrderStatus.PENDING, OrderStatus.PROCESSING],
-          },
-        },
-      }),
-
-      // Spediti oggi
-      prisma.order.count({
-        where: {
-          status: OrderStatus.SHIPPED,
-          updatedAt: {
-            gte: today,
-          },
-        },
-      }),
-
-      // Clienti totali
+      prisma.order.count({ where: { status: { in: SOLD } } }),
+      prisma.order.count({ where: { createdAt: { gte: today }, status: { in: SOLD } } }),
+      prisma.order.count({ where: { status: { in: [OrderStatus.PENDING, OrderStatus.PROCESSING] } } }),
+      prisma.order.count({ where: { status: OrderStatus.SHIPPED, updatedAt: { gte: today } } }),
       prisma.user.count(),
-
-      // Nuovi clienti questa settimana
-      prisma.user.count({
-        where: {
-          createdAt: {
-            gte: thisWeekStart,
-          },
-        },
-      }),
-
-      // Prodotti totali
+      prisma.user.count({ where: { createdAt: { gte: weekAgo } } }),
       prisma.product.count(),
-    ]);
-
-    // 2. Fatturato del mese corrente e precedente
-    const [currentMonthRevenue, previousMonthRevenue] = await Promise.all([
+      prisma.product.count({ where: { available: false } }),
+      prisma.product.count({ where: activeDiscountWhere(now) }),
       prisma.order.aggregate({
-        where: {
-          createdAt: {
-            gte: thisMonthStart,
-          },
-          status: {
-            notIn: [OrderStatus.CANCELLED, OrderStatus.REFUNDED],
-          },
-        },
-        _sum: {
+        where: { createdAt: { gte: monthStart }, status: { in: SOLD } },
+        _sum: { totalAmount: true },
+        _count: { _all: true },
+      }),
+      prisma.order.aggregate({
+        where: { createdAt: { gte: prevMonthStart, lt: monthStart }, status: { in: SOLD } },
+        _sum: { totalAmount: true },
+      }),
+      // Vendite per mese degli ultimi 12 mesi in un'unica query
+      prisma.$queryRaw<{ month: Date; orders: bigint; revenue: Prisma.Decimal | null }[]>`
+        SELECT date_trunc('month', "createdAt") AS month, COUNT(*)::bigint AS orders, SUM("totalAmount") AS revenue
+        FROM "Order"
+        WHERE "createdAt" >= ${yearAgo} AND status::text IN (${Prisma.join(SOLD)})
+        GROUP BY 1 ORDER BY 1`,
+      prisma.$queryRaw<{ productId: number; titolo: string; sold: bigint; revenue: Prisma.Decimal | null }[]>`
+        SELECT oi."productId", p.titolo, SUM(oi.quantity)::bigint AS sold,
+               SUM(oi.quantity * oi."priceAtPurchase") AS revenue
+        FROM "OrderItem" oi
+        JOIN "Order" o ON o.id = oi."orderId"
+        JOIN "Product" p ON p.id = oi."productId"
+        WHERE o.status::text IN (${Prisma.join(SOLD)})
+        GROUP BY oi."productId", p.titolo
+        ORDER BY sold DESC LIMIT 5`,
+      prisma.order.findMany({
+        where: { status: { not: OrderStatus.AWAITING_PAYMENT } },
+        take: 6,
+        orderBy: { createdAt: "desc" },
+        select: {
+          id: true,
+          status: true,
+          createdAt: true,
           totalAmount: true,
+          nome: true,
+          cognome: true,
+          metodoConsegna: true,
+          user: { select: { name: true } },
         },
       }),
-
-      prisma.order.aggregate({
-        where: {
-          createdAt: {
-            gte: new Date(now.getFullYear(), now.getMonth() - 1, 1),
-            lt: thisMonthStart,
-          },
-          status: {
-            notIn: [OrderStatus.CANCELLED, OrderStatus.REFUNDED],
-          },
-        },
-        _sum: {
-          totalAmount: true,
-        },
-      }),
+      prisma.contactMessage.count({ where: { letto: false } }),
+      prisma.review.count({ where: { approvata: false } }),
+      prisma.withdrawalRequest.count({ where: { stato: "ricevuta" } }),
+      prisma.stockAlert.count({ where: { notifiedAt: null } }),
+      prisma.newsletterSubscriber.count({ where: { attivo: true } }),
     ]);
 
-    const totalRevenue = Number(currentMonthRevenue._sum.totalAmount || 0);
-    const previousRevenue = Number(previousMonthRevenue._sum.totalAmount || 0);
-    const monthlyGrowth =
-      previousRevenue > 0
-        ? ((totalRevenue - previousRevenue) / previousRevenue) * 100
-        : totalRevenue > 0
-          ? 100
-          : 0;
+    const revenue = Number(revenueThisMonth._sum.totalAmount || 0);
+    const prevRevenue = Number(revenuePrevMonth._sum.totalAmount || 0);
+    const monthlyGrowth = prevRevenue > 0 ? ((revenue - prevRevenue) / prevRevenue) * 100 : revenue > 0 ? 100 : 0;
 
-    // 3. Valore medio ordine
-    const averageOrderValue = totalOrders > 0 ? totalRevenue / totalOrders : 0;
-
-    // 4. Dati vendite ultimi 12 mesi
-    const salesData = [];
-    for (let i = 11; i >= 0; i--) {
-      const monthStart = new Date(now.getFullYear(), now.getMonth() - i, 1);
-      const monthEnd = new Date(now.getFullYear(), now.getMonth() - i + 1, 0);
-
-      const [monthlyOrders, monthlyRevenue] = await Promise.all([
-        prisma.order.count({
-          where: {
-            createdAt: {
-              gte: monthStart,
-              lte: monthEnd,
-            },
-            status: {
-              notIn: [OrderStatus.CANCELLED, OrderStatus.REFUNDED],
-            },
-          },
-        }),
-
-        prisma.order.aggregate({
-          where: {
-            createdAt: {
-              gte: monthStart,
-              lte: monthEnd,
-            },
-            status: {
-              notIn: [OrderStatus.CANCELLED, OrderStatus.REFUNDED],
-            },
-          },
-          _sum: {
-            totalAmount: true,
-          },
-        }),
-      ]);
-
-      salesData.push({
-        month: format(monthStart, "MMM"),
-        vendite: Number(monthlyRevenue._sum.totalAmount || 0),
-        ordini: monthlyOrders,
-        fatturato: Number(monthlyRevenue._sum.totalAmount || 0),
-      });
-    }
-
-    // 5. Top prodotti venduti
-    const topProducts = await prisma.orderItem.groupBy({
-      by: ["productId"],
-      _sum: {
-        quantity: true,
-        priceAtPurchase: true,
-      },
-      orderBy: {
-        _sum: {
-          quantity: "desc",
-        },
-      },
-      take: 5,
-    });
-
-    const topProductsWithDetails = await Promise.all(
-      topProducts.map(async (item) => {
-        const product = await prisma.product.findUnique({
-          where: { id: item.productId },
-          select: { titolo: true },
-        });
-
-        return {
-          name: product?.titolo || "Prodotto sconosciuto",
-          sold: item._sum.quantity || 0,
-          revenue: Number(item._sum.priceAtPurchase || 0),
-        };
-      })
+    const byMonth = new Map(
+      monthly.map((m) => [`${m.month.getFullYear()}-${m.month.getMonth()}`, m] as const)
     );
-
-    // 6. Attività recenti (ultimi 10 ordini/eventi)
-    const recentOrders = await prisma.order.findMany({
-      take: 5,
-      orderBy: { createdAt: "desc" },
-      select: {
-        id: true,
-        status: true,
-        createdAt: true,
-        user: {
-          select: { name: true },
-        },
-      },
-    });
-
-    const recentActivity = recentOrders.map((order) => {
-      const timeAgo = Math.floor(
-        (now.getTime() - new Date(order.createdAt).getTime()) / (1000 * 60)
-      );
-      let action = "";
-      let type = "order";
-
-      switch (order.status) {
-        case OrderStatus.PENDING:
-          action = `Nuovo ordine #${order.id}`;
-          break;
-        case OrderStatus.SHIPPED:
-          action = `Ordine #${order.id} spedito`;
-          type = "shipping";
-          break;
-        case OrderStatus.DELIVERED:
-          action = `Ordine #${order.id} consegnato`;
-          type = "delivery";
-          break;
-        default:
-          action = `Ordine #${order.id} aggiornato`;
-      }
-
+    const salesData = Array.from({ length: 12 }, (_, idx) => {
+      const d = new Date(now.getFullYear(), now.getMonth() - 11 + idx, 1);
+      const row = byMonth.get(`${d.getFullYear()}-${d.getMonth()}`);
+      const value = Number(row?.revenue || 0);
       return {
-        time:
-          timeAgo < 60
-            ? `${timeAgo} min fa`
-            : `${Math.floor(timeAgo / 60)}h fa`,
-        action,
-        type,
-        urgent: false,
+        month: MONTHS[d.getMonth()],
+        vendite: value,
+        fatturato: value,
+        ordini: Number(row?.orders || 0),
       };
     });
 
-    const dashboardData = {
+    res.json({
       summary: {
         totalOrders,
         newOrdersToday,
-        pendingOrders,
+        pendingOrders: toShip,
         shippedToday,
-        totalRevenue: Math.round(totalRevenue),
-        monthlyGrowth: Math.round(monthlyGrowth * 100) / 100,
+        totalRevenue: Math.round(revenue * 100) / 100,
+        monthlyGrowth: Math.round(monthlyGrowth * 10) / 10,
         totalProducts,
-        lowStockProducts: 0, // Da implementare se abbiamo stock tracking
+        unavailableProducts,
+        onSaleProducts,
+        lowStockProducts: unavailableProducts,
         totalCustomers,
         newCustomersThisWeek,
-        conversionRate: 0, // Da calcolare se abbiamo analytics
-        averageOrderValue: Math.round(averageOrderValue * 100) / 100,
+        conversionRate: 0,
+        averageOrderValue:
+          revenueThisMonth._count._all > 0
+            ? Math.round((revenue / revenueThisMonth._count._all) * 100) / 100
+            : 0,
+      },
+      todo: {
+        ordiniDaEvadere: toShip,
+        messaggiNonLetti: unreadMessages,
+        recensioniDaApprovare: pendingReviews,
+        recessiDaGestire: pendingWithdrawals,
+        richiesteDisponibilita: stockAlerts,
+        iscrittiNewsletter: newsletterSubscribers,
       },
       salesData,
-      recentActivity,
-      topProducts: topProductsWithDetails,
-    };
-
-    res.json(dashboardData);
+      recentOrders: recentOrders.map((o) => ({
+        id: o.id,
+        status: o.status,
+        createdAt: o.createdAt,
+        total: Number(o.totalAmount),
+        cliente: `${o.nome || ""} ${o.cognome || ""}`.trim() || o.user?.name || "Cliente",
+        metodoConsegna: o.metodoConsegna,
+      })),
+      topProducts: topProducts.map((p) => ({
+        id: p.productId,
+        name: p.titolo,
+        sold: Number(p.sold),
+        revenue: Math.round(Number(p.revenue || 0) * 100) / 100,
+      })),
+    });
   } catch (error) {
     console.error("Errore nel recupero delle statistiche dashboard:", error);
-    res.status(500).json({
-      message: "Errore interno del server nel recupero delle statistiche",
-    });
+    res.status(500).json({ message: "Errore interno del server nel recupero delle statistiche" });
   }
 };

@@ -1,10 +1,8 @@
-import ProductImportForm from "@/components/admin/ProductImportForm";
+import type { Metadata } from "next";
+import { ImportProducts } from "@/components/admin/catalog/import/ImportProducts";
 
-export default function ImportProdottiPage() {
-  return (
-    <div>
-      <h1 className="text-2xl font-bold mb-4">Importa Prodotti</h1>
-      <ProductImportForm />
-    </div>
-  );
+export const metadata: Metadata = { title: "Importa prodotti" };
+
+export default function Page() {
+  return <ImportProducts />;
 }

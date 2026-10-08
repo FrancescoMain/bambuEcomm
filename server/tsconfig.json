@@ -15,5 +15,5 @@
     }
   },
   "include": ["src/**/*"], // Specifica i file da includere nella compilazione
-  "exclude": ["node_modules", "**/*.spec.ts"] // Specifica i file da escludere
+  "exclude": ["node_modules", "**/*.spec.ts", "**/*.test.ts"] // Specifica i file da escludere
 }

@@ -5,3 +5,8 @@ node_modules
 /generated/prisma
 
 .vercel
+
+# File locali con segreti: mai nel repository
+.env.local
+.env.*.local
+dist

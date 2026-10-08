@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { body } from "express-validator";
+import { OrderStatus, Role } from "@prisma/client";
 import {
-  createOrder,
   getOrderById,
   getUserOrders,
   getAllOrders,
@@ -9,75 +9,41 @@ import {
   updateOrderTracking,
   cancelOrder,
   claimGuestOrders,
+  requestGuestOrdersClaim,
 } from "../controllers/order.controller";
-import {
-  authenticateToken,
-  authorizeRole,
-} from "../middleware/auth.middleware";
-import { OrderStatus, Role } from "@prisma/client";
+import { authenticateToken, authorizeRole } from "../middleware/auth.middleware";
+import { noStore, rateLimit } from "../lib/http";
 
 const router = Router();
 
-// Middleware di autenticazione per tutte le rotte degli ordini
-router.use(authenticateToken);
+// Tutte le rotte degli ordini richiedono l'autenticazione
+router.use(authenticateToken, noStore);
 
-// Creare un nuovo ordine
-router.post(
-  "/",
-  [
-    body("shippingAddressId")
-      .isInt({ gt: 0 })
-      .withMessage("ID indirizzo di spedizione non valido."),
-    body("billingAddressId")
-      .isInt({ gt: 0 })
-      .withMessage("ID indirizzo di fatturazione non valido."),
-  ],
-  createOrder
-);
-
-// Ottenere gli ordini dell'utente autenticato
+// Ordini dell'utente autenticato
 router.get("/my-orders", getUserOrders);
-router.get("/user", getUserOrders); // Endpoint alternativo per compatibilità
+router.get("/user", getUserOrders); // alias per compatibilità
 
-// Reclamare ordini guest con la propria email
+// Ordini fatti da ospite: prima si chiede il link via email, poi lo si conferma
+router.post("/claim-guest-orders/request", rateLimit(5, 60 * 60 * 1000), requestGuestOrdersClaim);
 router.post("/claim-guest-orders", claimGuestOrders);
 
-// Ottenere un ordine specifico per ID (utente proprietario o Admin)
-router.get("/:id", getOrderById);
-
-// Cancellare un ordine (utente proprietario o Admin)
-// L'utente può cancellare solo se lo stato lo permette (es. non spedito)
-// L'admin ha più flessibilità
-router.patch("/:id/cancel", cancelOrder);
-
-// --- Rotte solo per Admin ---
-
-// Ottenere tutti gli ordini (Admin only)
+// --- Solo admin ---
 router.get("/", authorizeRole([Role.ADMIN]), getAllOrders);
-
-// Aggiornare lo stato di un ordine (Admin only)
 router.patch(
   "/:id/status",
   authorizeRole([Role.ADMIN]),
-  [
-    body("status")
-      .isIn(Object.values(OrderStatus))
-      .withMessage("Stato dell'ordine non valido."),
-  ],
+  [body("status").isIn(Object.values(OrderStatus)).withMessage("Stato dell'ordine non valido.")],
   updateOrderStatus
 );
-
-// Aggiornare il tracking number di un ordine (Admin only)
 router.patch(
   "/:id/tracking",
   authorizeRole([Role.ADMIN]),
-  [
-    body("trackingNumber")
-      .isString()
-      .isLength({ min: 1 })
-      .withMessage("Numero di tracking non valido."),
-  ],
+  [body("trackingNumber").isString().isLength({ max: 100 }).withMessage("Numero di tracking non valido.")],
   updateOrderTracking
 );
+
+// Proprietario o admin
+router.get("/:id", getOrderById);
+router.patch("/:id/cancel", cancelOrder);
 
 export default router;

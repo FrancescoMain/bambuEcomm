@@ -4,7 +4,7 @@ import { validationResult } from "express-validator";
 import cloudinary from "../utils/cloudinary";
 import streamifier from "streamifier";
 
-const prisma = new PrismaClient();
+import prisma from "../lib/prisma";
 
 // Ottenere tutti i tipi di variante per un prodotto
 export const getVariantTypes = async (

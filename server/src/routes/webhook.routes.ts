@@ -1,269 +1,167 @@
 import express from "express";
 import Stripe from "stripe";
-import { PrismaClient } from "@prisma/client";
-import emailService from "../services/emailService";
+import { OrderStatus, Prisma } from "@prisma/client";
+import prisma from "../lib/prisma";
+import stripe from "../lib/stripe";
+import { confirmPaidOrder, failPendingOrder, sendOrderEmails } from "../services/order.service";
 
 const router = express.Router();
-const prisma = new PrismaClient();
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: "2025-05-28.basil",
-});
+/**
+ * Sessioni create dalla versione precedente del sito (prima del deploy):
+ * l'ordine non esiste ancora e il carrello è nei metadata. Lo creiamo qui
+ * come faceva il vecchio webhook, una sola volta per sessione/pagamento.
+ */
+const handleLegacySession = async (session: Stripe.Checkout.Session) => {
+  const m = session.metadata || {};
+  if (!m.cart || session.payment_status !== "paid") return;
+  const paymentIntentId = (session.payment_intent as string) || null;
 
-// Webhook endpoint per Stripe
-router.post(
-  "/webhook",
-  express.raw({ type: "application/json" }),
-  (req, res) => {
-    (async () => {
-      const sig = req.headers["stripe-signature"];
-      let event;
-      try {
-        event = stripe.webhooks.constructEvent(
-          req.body,
-          sig as string,
-          process.env.STRIPE_WEBHOOK_SECRET!
-        );
-      } catch (err: any) {
-        console.error("Webhook signature verification failed.", err.message);
-        return res.status(400).send(`Webhook Error: ${err.message}`);
-      }
-
-      // Gestisci solo il pagamento completato
-      if (event.type === "checkout.session.completed") {
-        const session = event.data.object as Stripe.Checkout.Session;
-        // Supporta anche guest: salva email e dati spedizione
-        const userId = session.metadata?.userId
-          ? Number(session.metadata.userId)
-          : null;
-        const customerEmail =
-          session.customer_email || session.metadata?.email || null;
-        const nome = session.metadata?.nome || null;
-        const cognome = session.metadata?.cognome || null;
-        const telefono = session.metadata?.telefono || null;
-        const via = session.metadata?.via || null;
-        const numero = session.metadata?.numero || null;
-        const citta = session.metadata?.citta || null;
-        const cap = session.metadata?.cap || null;
-        const stato = session.metadata?.stato || null;
-        const note = session.metadata?.note || null;
-        // Salva i prodotti acquistati dal carrello serializzato in metadata.cart (se presente)
-        type OrderItemCreate = {
-          productId: number;
-          quantity: number;
-          priceAtPurchase: number;
-          selectedVariants?: any; // Aggiungi supporto per le varianti
-        };
-        let orderItemsData: OrderItemCreate[] = [];
-        if (session.metadata?.cart) {
-          try {
-            const cart = JSON.parse(session.metadata.cart);
-            if (Array.isArray(cart)) {
-              orderItemsData = cart.map((item: any) => ({
-                productId: Number(item.productId),
-                quantity: Number(item.quantity),
-                priceAtPurchase: Number(item.prezzo),
-                selectedVariants: item.selectedVariants || null, // Includi le varianti selezionate
-              }));
-            }
-          } catch (e) {
-            console.error("Errore parsing cart da metadata:", e);
-          }
-        }
-
-        console.log(`🔧 DEBUG: Dati ordine per creazione:`, {
-          userId: userId || "GUEST",
-          customerEmail,
-          guestEmail: !userId ? customerEmail : undefined,
-          sessionId: session.id,
-          paymentIntent: session.payment_intent,
-        });
-
-        const createdOrder = await prisma.order.create({
-          data: {
-            paymentIntentId: session.payment_intent as string,
-            userId: userId || undefined,
-            guestEmail: !userId ? customerEmail : undefined,
-            status: "PROCESSING",
-            totalAmount: session.amount_total
-              ? Number(session.amount_total) / 100
-              : 0,
-            nome,
-            cognome,
-            telefono,
-            via,
-            numero,
-            citta,
-            cap,
-            stato,
-            note,
-            orderItems: orderItemsData.length
-              ? { create: orderItemsData }
-              : undefined,
-          },
-          include: {
-            orderItems: {
-              include: {
-                product: true,
-              },
-            },
-            user: {
-              select: { id: true, name: true, email: true },
-            },
-          },
-        });
-
-        console.log(`✅ Ordine creato via webhook:`, {
-          orderId: createdOrder.id,
-          userId: createdOrder.userId || "GUEST",
-          guestEmail: createdOrder.guestEmail,
-          customerEmail: createdOrder.user?.email,
-          total: createdOrder.totalAmount,
-          status: createdOrder.status,
-        });
-
-        // 🛒 SVUOTA IL CARRELLO DOPO ORDINE COMPLETATO
-        console.log(
-          "🛒 Webhook - Svuotamento carrello per ordine:",
-          createdOrder.id
-        );
-        try {
-          if (userId) {
-            // Per utenti registrati: svuota il carrello nel database
-            // Prima trova il cart dell'utente
-            const userCart = await prisma.cart.findUnique({
-              where: { userId: userId },
-            });
-
-            if (userCart) {
-              // Elimina tutti i CartItem del cart
-              await prisma.cartItem.deleteMany({
-                where: { cartId: userCart.id },
-              });
-              console.log(
-                `✅ Webhook - Carrello DB svuotato per utente ${userId} (cart ID: ${userCart.id})`
-              );
-            } else {
-              console.log(
-                `ℹ️ Webhook - Nessun carrello trovato per utente ${userId}`
-              );
-            }
-          } else {
-            // Per guest: il carrello frontend si occuperà di svuotarsi
-            // tramite localStorage quando riceve la conferma di pagamento
-            console.log(
-              "ℹ️ Webhook - Ordine guest: carrello frontend gestito via localStorage"
-            );
-          }
-        } catch (cartError) {
-          console.error(
-            "❌ Webhook - Errore durante svuotamento carrello:",
-            cartError
-          );
-          // Non blocchiamo il webhook se lo svuotamento carrello fallisce
-        }
-
-        // 🔥 INVIO EMAIL ORDINE CONFERMATO
-        console.log(
-          "🔧 DEBUG: Webhook - Iniziando processo invio email per ordine:",
-          createdOrder.id
-        );
-        try {
-          // Determina email e nome cliente (utente registrato o guest)
-          const customerEmailFinal =
-            createdOrder.user?.email ||
-            createdOrder.guestEmail ||
-            customerEmail;
-          const customerNameFinal =
-            createdOrder.user?.name ||
-            `${nome || ""} ${cognome || ""}`.trim() ||
-            "Cliente";
-
-          if (customerEmailFinal) {
-            // Prepara i dati per l'email
-            const orderData = {
-              orderId: createdOrder.id.toString(),
-              customerName: customerNameFinal,
-              customerEmail: customerEmailFinal,
-              items: createdOrder.orderItems.map((item) => ({
-                name: item.product.titolo,
-                quantity: item.quantity,
-                price: Number(item.priceAtPurchase),
-              })),
-              total: Number(createdOrder.totalAmount),
-              orderDate: createdOrder.createdAt.toLocaleDateString("it-IT"),
-              shippingAddress: {
-                nome,
-                cognome,
-                via,
-                numero,
-                citta,
-                cap,
-                stato,
-              },
-            };
-
-            console.log(
-              "🔧 DEBUG: Webhook - Dati ordine preparati:",
-              orderData
-            );
-
-            // Email al cliente
-            console.log(
-              `📧 Webhook - Tentativo invio email conferma ordine a: ${orderData.customerEmail}`
-            );
-            const customerEmailSent =
-              await emailService.sendOrderConfirmationEmail(orderData);
-
-            if (customerEmailSent) {
-              console.log(
-                `✅ Webhook - Email conferma ordine inviata al cliente: ${orderData.customerEmail}`
-              );
-            } else {
-              console.log(
-                `⚠️ Webhook - Fallimento invio email conferma ordine al cliente: ${orderData.customerEmail}`
-              );
-            }
-
-            // Email all'admin
-            console.log(
-              `📧 Webhook - Tentativo invio notifica ordine all'admin`
-            );
-            const adminEmailSent =
-              await emailService.sendOrderNotificationToAdmin(orderData);
-
-            if (adminEmailSent) {
-              console.log(
-                `✅ Webhook - Email notifica ordine inviata all'admin`
-              );
-            } else {
-              console.log(
-                `⚠️ Webhook - Fallimento invio email notifica ordine all'admin`
-              );
-            }
-          } else {
-            console.error(
-              "❌ Webhook - Nessuna email trovata per l'ordine:",
-              createdOrder.id
-            );
-          }
-        } catch (emailError) {
-          console.error(
-            "❌ Webhook - Errore durante invio email ordine:",
-            emailError
-          );
-          // Non blocchiamo il webhook se le email falliscono
-        }
-      }
-      res.json({ received: true });
-    })();
+  const existing = await prisma.order.findFirst({
+    where: {
+      OR: [{ stripeSessionId: session.id }, ...(paymentIntentId ? [{ paymentIntentId }] : [])],
+    },
+    select: { id: true },
+  });
+  if (existing) {
+    await sendOrderEmails(existing.id);
+    return;
   }
-);
 
-// TEST: rispondi sempre 200 per debug routing
-router.post("/webhook-test", (req, res) => {
-  console.log("/api/webhook-test hit", new Date().toISOString());
-  res.status(200).json({ message: "Webhook test OK" });
+  let items: { productId: number; quantity: number; priceAtPurchase: number; selectedVariants: any }[] = [];
+  try {
+    const cart = JSON.parse(m.cart);
+    if (Array.isArray(cart)) {
+      items = cart.map((item: any) => ({
+        productId: Number(item.productId),
+        quantity: Number(item.quantity),
+        priceAtPurchase: Number(item.prezzo),
+        selectedVariants: item.selectedVariants || null,
+      }));
+    }
+  } catch (e) {
+    console.error("Errore parsing cart da metadata:", e);
+  }
+  const userId = m.userId ? Number(m.userId) : null;
+  try {
+    const created = await prisma.order.create({
+      data: {
+        paymentIntentId,
+        stripeSessionId: session.id,
+        userId: userId || undefined,
+        guestEmail: !userId ? session.customer_email || m.email || null : undefined,
+        status: OrderStatus.PROCESSING,
+        totalAmount: session.amount_total ? session.amount_total / 100 : 0,
+        nome: m.nome || null,
+        cognome: m.cognome || null,
+        telefono: m.telefono || null,
+        via: m.via || null,
+        numero: m.numero || null,
+        citta: m.citta || null,
+        cap: m.cap || null,
+        stato: m.stato || null,
+        note: m.note || null,
+        orderItems: items.length
+          ? {
+              create: items.map((i, idx) => ({
+                ...i,
+                // il vecchio vincolo era (ordine, prodotto): distinguiamo eventuali duplicati
+                variantKey: `legacy-${idx}`,
+              })),
+            }
+          : undefined,
+      },
+    });
+    if (userId) {
+      await prisma.cartItem.deleteMany({ where: { cart: { userId } } });
+    }
+    if (!(await sendOrderEmails(created.id))) throw new Error("Invio email di conferma non riuscito");
+  } catch (error) {
+    // Consegna doppia in parallelo: l'altra richiesta ha già creato l'ordine
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") return;
+    throw error;
+  }
+};
+
+/** Solo i metadata identificano l'ordine: client_reference_id può arrivare da link di pagamento esterni */
+const orderIdOf = (session: Stripe.Checkout.Session): number | null => {
+  const raw = session.metadata?.orderId;
+  const id = raw ? parseInt(raw, 10) : NaN;
+  return Number.isFinite(id) ? id : null;
+};
+
+const handleSessionPaid = async (session: Stripe.Checkout.Session) => {
+  const orderId = orderIdOf(session);
+  if (!orderId) {
+    await handleLegacySession(session);
+    return;
+  }
+  if (session.payment_status !== "paid") {
+    // Pagamento differito (es. bonifico/SEPA): l'ordine resta in attesa con il riferimento
+    // al pagamento, così la pulizia notturna non lo annulla; arriverà async_payment_succeeded
+    await prisma.order.updateMany({
+      where: { id: orderId, status: OrderStatus.AWAITING_PAYMENT },
+      data: { paymentIntentId: (session.payment_intent as string) || undefined },
+    });
+    return;
+  }
+  const result = await confirmPaidOrder(orderId, {
+    sessionId: session.id,
+    paymentIntentId: (session.payment_intent as string) || null,
+    amountTotal: session.amount_total !== null ? session.amount_total / 100 : null,
+  });
+  if (result === "not-found") {
+    console.warn(`Webhook: sessione ${session.id} non corrisponde all'ordine #${orderId}, ignorata`);
+    return;
+  }
+  if (result === "confirmed" || result === "already") {
+    // Se l'email di conferma non è partita (es. servizio email giù) facciamo riprovare Stripe
+    if (!(await sendOrderEmails(orderId))) throw new Error(`Email di conferma ordine #${orderId} non inviata`);
+  }
+  console.log(`✅ Ordine #${orderId}: ${result} (sessione ${session.id})`);
+};
+
+const handleSessionFailed = async (session: Stripe.Checkout.Session, status: OrderStatus) => {
+  const orderId = orderIdOf(session);
+  if (!orderId) return;
+  const order = await prisma.order.findUnique({ where: { id: orderId }, select: { stripeSessionId: true } });
+  if (!order || (order.stripeSessionId && order.stripeSessionId !== session.id)) return;
+  await failPendingOrder(orderId, status);
+};
+
+// Webhook Stripe (montato prima di express.json: serve il body raw per la firma)
+router.post("/webhook", express.raw({ type: "application/json" }), async (req, res) => {
+  const sig = req.headers["stripe-signature"];
+  let event: Stripe.Event;
+  try {
+    event = stripe.webhooks.constructEvent(req.body, sig as string, process.env.STRIPE_WEBHOOK_SECRET!);
+  } catch (err) {
+    console.error("Webhook signature verification failed.", (err as Error).message);
+    res.status(400).send(`Webhook Error: ${(err as Error).message}`);
+    return;
+  }
+
+  try {
+    switch (event.type) {
+      case "checkout.session.completed":
+      case "checkout.session.async_payment_succeeded":
+        await handleSessionPaid(event.data.object as Stripe.Checkout.Session);
+        break;
+      case "checkout.session.async_payment_failed":
+        await handleSessionFailed(event.data.object as Stripe.Checkout.Session, OrderStatus.FAILED);
+        break;
+      case "checkout.session.expired":
+        await handleSessionFailed(event.data.object as Stripe.Checkout.Session, OrderStatus.CANCELLED);
+        break;
+      default:
+        break;
+    }
+    res.json({ received: true });
+  } catch (error) {
+    // 500 => Stripe riproverà l'invio dell'evento più tardi
+    console.error(`Errore gestione webhook ${event.type}:`, error);
+    res.status(500).json({ received: false });
+  }
 });
 
 export default router;

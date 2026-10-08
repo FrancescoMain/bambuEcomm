@@ -2,7 +2,7 @@ import { Request, Response } from "express";
 import { PrismaClient, Prisma, Role } from "@prisma/client";
 import { validationResult } from "express-validator";
 
-const prisma = new PrismaClient();
+import prisma from "../lib/prisma";
 
 interface AuthenticatedRequest extends Request {
   user?: {

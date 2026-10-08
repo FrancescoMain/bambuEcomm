@@ -21,6 +21,8 @@ model User {
   notifications Notification[]
   orders        Order[]
   resetTokens   PasswordResetToken[]
+  wishlistItems WishlistItem[]
+  reviews       Review[]
 }
 
 model PasswordResetToken {
@@ -34,26 +36,53 @@ model PasswordResetToken {
 }
 
 model Product {
-  id          Int                  @id @default(autoincrement())
-  createdAt   DateTime             @default(now())
-  updatedAt   DateTime             @updatedAt
-  descrizione String?
-  immagine    String?
-  prezzo      Decimal              @db.Decimal(10, 2)
-  titolo      String
-  stock       Int                  @default(0)
-  available   Boolean              @default(true)
-  cartItems   CartItem[]
-  orderItems  OrderItem[]
-  varianti    ProductVariantType[]
-  categoria   Category[]           @relation("ProductCategories")
-  promotions  Promotion[]          @relation("ProductPromotions")
+  id                         Int                  @id @default(autoincrement())
+  createdAt                  DateTime             @default(now())
+  updatedAt                  DateTime             @updatedAt
+  descrizione                String?
+  immagine                   String?
+  /// Immagini aggiuntive (galleria). `immagine` resta la copertina.
+  immagini                   String[]             @default([])
+  prezzo                     Decimal              @db.Decimal(10, 2)
+  /// Prezzo in offerta: se valorizzato (e nella finestra di date) è il prezzo pagato.
+  prezzoScontato             Decimal?             @db.Decimal(10, 2)
+  scontoInizio               DateTime?
+  scontoFine                 DateTime?
+  titolo                     String
+  marca                      String?
+  /// Codice articolo / EAN
+  codice                     String?
+  stock                      Int                  @default(0)
+  available                  Boolean              @default(true)
+  /// Mostrato nella sezione "In evidenza" della home
+  inEvidenza                 Boolean              @default(false)
+  /// Il cliente può aggiungere un testo (es. nome da stampare)
+  personalizzabile           Boolean              @default(false)
+  etichettaPersonalizzazione String?
+  /// Quantità massima acquistabile per ordine (null = nessun limite)
+  maxPerOrdine               Int?
+  cartItems                  CartItem[]
+  orderItems                 OrderItem[]
+  varianti                   ProductVariantType[]
+  categoria                  Category[]           @relation("ProductCategories")
+  promotions                 Promotion[]          @relation("ProductPromotions")
+  wishlistItems              WishlistItem[]
+  stockAlerts                StockAlert[]
+  reviews                    Review[]
+
+  @@index([available, createdAt])
+  @@index([prezzoScontato])
+  @@index([inEvidenza])
+  @@index([marca])
 }
 
 model Category {
   id          Int         @id @default(autoincrement())
   name        String      @unique
   description String?
+  immagine    String?
+  /// Ordine manuale nel menu (più basso = prima)
+  ordine      Int         @default(0)
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @updatedAt
   parentId    Int?
@@ -61,48 +90,86 @@ model Category {
   children    Category[]  @relation("CategoryHierarchy")
   promotions  Promotion[] @relation("CategoryPromotions")
   products    Product[]   @relation("ProductCategories")
+
+  @@index([parentId])
 }
 
 model Order {
-  id                Int         @id @default(autoincrement())
-  userId            Int?
-  totalAmount       Decimal     @db.Decimal(10, 2)
-  status            OrderStatus @default(PENDING)
-  paymentIntentId   String?     @unique
-  trackingNumber    String?     // Numero di tracking per la spedizione
-  createdAt         DateTime    @default(now())
-  updatedAt         DateTime    @updatedAt
-  shippingAddressId Int?
-  billingAddressId  Int?
-  cap               String?
-  citta             String?
-  cognome           String?
-  guestEmail        String?
-  nome              String?
-  note              String?
-  numero            String?
-  stato             String?
-  telefono          String?
-  via               String?
-  billingAddress    Address?    @relation("BillingAddress", fields: [billingAddressId], references: [id])
-  shippingAddress   Address?    @relation("ShippingAddress", fields: [shippingAddressId], references: [id])
-  user              User?       @relation(fields: [userId], references: [id])
-  orderItems        OrderItem[]
+  id                   Int                 @id @default(autoincrement())
+  userId               Int?
+  totalAmount          Decimal             @db.Decimal(10, 2)
+  status               OrderStatus         @default(PENDING)
+  paymentIntentId      String?             @unique
+  /// Sessione Stripe Checkout che ha generato l'ordine (idempotenza webhook)
+  stripeSessionId      String?             @unique
+  trackingNumber       String? // Numero di tracking per la spedizione
+  /// "spedizione" | "ritiro" | "giornata" (consegna in giornata)
+  metodoConsegna       String?
+  /// "stripe" | "contrassegno"
+  metodoPagamento      String?
+  commissionePagamento Decimal?            @db.Decimal(10, 2)
+  subtotale            Decimal?            @db.Decimal(10, 2)
+  costoSpedizione      Decimal?            @db.Decimal(10, 2)
+  sconto               Decimal?            @db.Decimal(10, 2)
+  codiceCoupon         String?
+  /// Codice sconto usato (l'utilizzo viene prenotato alla creazione dell'ordine)
+  promotionId          Int?
+  /// Email di conferma al cliente inviata (per non perderla se il primo invio fallisce)
+  emailInviataAt       DateTime?
+  /// Dati per la fattura (se richiesta)
+  richiestaFattura     Boolean             @default(false)
+  ragioneSociale       String?
+  partitaIva           String?
+  codiceFiscale        String?
+  codiceSdi            String?
+  pec                  String?
+  createdAt            DateTime            @default(now())
+  updatedAt            DateTime            @updatedAt
+  shippingAddressId    Int?
+  billingAddressId     Int?
+  cap                  String?
+  citta                String?
+  cognome              String?
+  guestEmail           String?
+  nome                 String?
+  note                 String?
+  numero               String?
+  stato                String?
+  telefono             String?
+  via                  String?
+  billingAddress       Address?            @relation("BillingAddress", fields: [billingAddressId], references: [id])
+  shippingAddress      Address?            @relation("ShippingAddress", fields: [shippingAddressId], references: [id])
+  user                 User?               @relation(fields: [userId], references: [id])
+  orderItems           OrderItem[]
+  recessi              WithdrawalRequest[]
+
+  @@index([userId])
+  @@index([guestEmail])
+  @@index([status, createdAt])
+  @@index([createdAt])
 }
 
 model OrderItem {
-  id               Int      @id @default(autoincrement())
-  orderId          Int
-  productId        Int
-  quantity         Int
-  priceAtPurchase  Decimal  @db.Decimal(10, 2)
-  selectedVariants Json?    // Nuove varianti selezionate (opzionale per backward compatibility)
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
-  order            Order    @relation(fields: [orderId], references: [id])
-  product          Product  @relation(fields: [productId], references: [id])
+  id                Int      @id @default(autoincrement())
+  orderId           Int
+  productId         Int
+  quantity          Int
+  priceAtPurchase   Decimal  @db.Decimal(10, 2)
+  /// Prezzo di listino al momento dell'acquisto (per mostrare lo sconto applicato)
+  prezzoListino     Decimal? @db.Decimal(10, 2)
+  /// Titolo al momento dell'acquisto: lo storico resta leggibile anche se il prodotto cambia
+  titolo            String?
+  selectedVariants  Json? // Nuove varianti selezionate (opzionale per backward compatibility)
+  /// Firma delle varianti scelte (es. "52:310|53:320"): stesso prodotto in varianti diverse = righe diverse
+  variantKey        String   @default("")
+  personalizzazione String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  order             Order    @relation(fields: [orderId], references: [id])
+  product           Product  @relation(fields: [productId], references: [id])
 
-  @@unique([orderId, productId])
+  @@unique([orderId, productId, variantKey])
+  @@index([productId])
 }
 
 model Address {
@@ -119,6 +186,8 @@ model Address {
   user              User     @relation(fields: [userId], references: [id])
   billingOrders     Order[]  @relation("BillingAddress")
   shippingOrders    Order[]  @relation("ShippingAddress")
+
+  @@index([userId])
 }
 
 model Cart {
@@ -131,17 +200,22 @@ model Cart {
 }
 
 model CartItem {
-  id               Int      @id @default(autoincrement())
-  cartId           Int
-  productId        Int
-  quantity         Int
-  selectedVariants Json?    // Nuove varianti selezionate (opzionale per backward compatibility)
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
-  cart             Cart     @relation(fields: [cartId], references: [id])
-  product          Product  @relation(fields: [productId], references: [id])
+  id                Int      @id @default(autoincrement())
+  cartId            Int
+  productId         Int
+  quantity          Int
+  selectedVariants  Json? // Nuove varianti selezionate (opzionale per backward compatibility)
+  /// Vedi OrderItem.variantKey
+  variantKey        String   @default("")
+  personalizzazione String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  cart              Cart     @relation(fields: [cartId], references: [id])
+  product           Product  @relation(fields: [productId], references: [id])
 
-  @@unique([cartId, productId])
+  @@unique([cartId, productId, variantKey])
+  @@index([productId])
+  @@index([updatedAt])
 }
 
 model Promotion {
@@ -154,6 +228,11 @@ model Promotion {
   endDate            DateTime
   isActive           Boolean    @default(true)
   code               String?    @unique
+  /// Importo minimo del carrello per usare il codice
+  minimoOrdine       Decimal?   @db.Decimal(10, 2)
+  /// Numero massimo di utilizzi (null = illimitato)
+  maxUtilizzi        Int?
+  utilizzi           Int        @default(0)
   createdAt          DateTime   @default(now())
   updatedAt          DateTime   @updatedAt
   categories         Category[] @relation("CategoryPromotions")
@@ -171,6 +250,8 @@ model Notification {
   createdAt         DateTime         @default(now())
   updatedAt         DateTime         @updatedAt
   user              User?            @relation(fields: [userId], references: [id])
+
+  @@index([userId])
 }
 
 model ProductVariantType {
@@ -179,6 +260,8 @@ model ProductVariantType {
   productId Int
   product   Product               @relation(fields: [productId], references: [id])
   valori    ProductVariantValue[]
+
+  @@index([productId])
 }
 
 model ProductVariantValue {
@@ -187,6 +270,77 @@ model ProductVariantValue {
   immagine String?
   typeId   Int
   type     ProductVariantType @relation(fields: [typeId], references: [id])
+
+  @@index([typeId])
+}
+
+/// Impostazioni del negozio modificabili dal pannello admin (chiave -> JSON)
+model Setting {
+  key       String   @id
+  value     Json
+  updatedAt DateTime @updatedAt
+}
+
+model WishlistItem {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  productId Int
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, productId])
+}
+
+model NewsletterSubscriber {
+  id        Int      @id @default(autoincrement())
+  email     String   @unique
+  nome      String?
+  attivo    Boolean  @default(true)
+  createdAt DateTime @default(now())
+}
+
+/// "Avvisami quando torna disponibile"
+model StockAlert {
+  id         Int       @id @default(autoincrement())
+  email      String
+  productId  Int
+  createdAt  DateTime  @default(now())
+  notifiedAt DateTime?
+  product    Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([email, productId])
+  @@index([productId, notifiedAt])
+}
+
+model Review {
+  id        Int      @id @default(autoincrement())
+  productId Int
+  userId    Int?
+  nome      String
+  voto      Int
+  testo     String?
+  approvata Boolean  @default(false)
+  createdAt DateTime @default(now())
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([productId, approvata])
+}
+
+model ContactMessage {
+  id        Int      @id @default(autoincrement())
+  /// "contatto" | "b2b" | "preventivo"
+  tipo      String   @default("contatto")
+  /// Campi aggiuntivi del form (ragione sociale, P.IVA, ...)
+  dati      Json?
+  nome      String
+  email     String
+  telefono  String?
+  oggetto   String?
+  messaggio String
+  letto     Boolean  @default(false)
+  createdAt DateTime @default(now())
 }
 
 enum Role {
@@ -218,4 +372,39 @@ enum NotificationType {
   NEW_USER_REGISTERED_ADMIN
   PRODUCT_REVIEW_SUBMITTED_ADMIN
   CONTACT_FORM_SUBMITTED_ADMIN
+}
+
+/// Recesso online (diritto di ripensamento, art. 52 Codice del Consumo)
+model WithdrawalRequest {
+  id        Int      @id @default(autoincrement())
+  orderId   Int
+  email     String
+  nome      String
+  /// Articoli oggetto del recesso: [{ orderItemId, titolo, quantity }]
+  articoli  Json
+  motivo    String?
+  note      String?
+  /// "ricevuta" | "accettata" | "rifiutata" | "rimborsata"
+  stato     String   @default("ricevuta")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  order     Order    @relation(fields: [orderId], references: [id])
+
+  @@index([orderId])
+}
+
+/// Articoli del blog
+model Post {
+  id          Int       @id @default(autoincrement())
+  titolo      String
+  slug        String    @unique
+  estratto    String?
+  contenuto   String
+  copertina   String?
+  pubblicato  Boolean   @default(false)
+  publishedAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([pubblicato, publishedAt])
 }

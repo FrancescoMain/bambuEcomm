@@ -1,11 +1,22 @@
 import { Request, Response, NextFunction } from "express";
-import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcryptjs";
-import jwt from "jsonwebtoken";
+import { signToken } from "../lib/jwt";
 import emailService from "../services/emailService";
+import { AuthRequest } from "../middleware/auth.middleware";
 
-const prisma = new PrismaClient();
-const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key"; // Use environment variable in production
+import prisma from "../lib/prisma";
+
+const MIN_PASSWORD = 8;
+
+/** Email confrontate senza distinzione tra maiuscole e minuscole */
+const normalizeEmail = (value: unknown) => String(value ?? "").trim().toLowerCase();
+
+const findUserByEmail = (email: unknown) =>
+  prisma.user.findFirst({
+    where: { email: { equals: normalizeEmail(email), mode: "insensitive" } },
+    orderBy: { id: "asc" },
+  });
+
 
 // Registrazione di un nuovo utente
 export const registerUser = async (
@@ -13,7 +24,8 @@ export const registerUser = async (
   res: Response,
   next: NextFunction
 ): Promise<void> => {
-  const { email, password, name } = req.body;
+  const { password, name } = req.body;
+  const email = normalizeEmail(req.body.email);
 
   if (!email || !password || !name) {
     res
@@ -21,11 +33,17 @@ export const registerUser = async (
       .json({ message: "Email, password e nome sono obbligatori" });
     return;
   }
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) {
+    res.status(400).json({ message: "Inserisci un indirizzo email valido" });
+    return;
+  }
+  if (String(password).length < MIN_PASSWORD) {
+    res.status(400).json({ message: `La password deve avere almeno ${MIN_PASSWORD} caratteri` });
+    return;
+  }
 
   try {
-    const existingUser = await prisma.user.findUnique({
-      where: { email },
-    });
+    const existingUser = await findUserByEmail(email);
     if (existingUser) {
       res.status(400).json({ message: "Utente già esistente" });
       return;
@@ -96,9 +114,7 @@ export const loginUser = async (
   }
 
   try {
-    const user = await prisma.user.findUnique({
-      where: { email },
-    });
+    const user = await findUserByEmail(email);
     if (!user) {
       res.status(400).json({ message: "Credenziali non valide" });
       return;
@@ -109,9 +125,7 @@ export const loginUser = async (
       res.status(400).json({ message: "Credenziali non valide" });
       return;
     }
-    const token = jwt.sign({ userId: user.id, role: user.role }, JWT_SECRET, {
-      expiresIn: "24h",
-    });
+    const token = signToken({ userId: user.id, role: user.role });
 
     // Exclude password from the response
     const { password: _, ...userWithoutPassword } = user;
@@ -145,51 +159,69 @@ export const logoutUser = async (
   }
 };
 
-// Ottenere il profilo dell\\'utente corrente (richiede autenticazione)
+// Ottenere il profilo dell'utente corrente (richiede autenticazione)
+// Risposta leggera: prima includeva tutti gli ordini, il carrello e le notifiche
+// ed era richiesta a ogni caricamento di pagina.
 export const getCurrentUserProfile = async (
   req: Request,
   res: Response,
   next: NextFunction
 ): Promise<void> => {
-  // The user ID should be available from the request object after authentication middleware runs
-  // For now, we\\'ll assume it\\'s passed in a custom property, e.g., req.user
-  // @ts-ignore
-  const userId = req.user?.userId;
-
+  const userId = (req as AuthRequest).user?.userId;
   if (!userId) {
     res.status(401).json({ message: "Non autenticato" });
     return;
   }
-
   try {
     const user = await prisma.user.findUnique({
       where: { id: userId },
-      select: {
-        id: true,
-        email: true,
-        name: true,
-        role: true,
-        addresses: true,
-        cart: true,
-        orders: true,
-        notifications: true,
-        createdAt: true,
-        updatedAt: true,
-      },
+      select: { id: true, email: true, name: true, role: true, createdAt: true, updatedAt: true },
     });
-
     if (!user) {
       res.status(404).json({ message: "Utente non trovato" });
       return;
     }
     res.json(user);
   } catch (error) {
-    console.error("Errore nel recupero dell\\'utente corrente:", error);
-    res.status(500).json({
-      message: "Errore durante il recupero dei dati dell\\'utente",
-      error: (error as Error).message,
-    });
+    console.error("Errore nel recupero dell'utente corrente:", error);
+    res.status(500).json({ message: "Errore durante il recupero dei dati dell'utente" });
   }
+};
+
+// PUT /api/auth/me { name } — aggiorna i dati del profilo
+export const updateProfile = async (req: Request, res: Response): Promise<void> => {
+  const userId = (req as AuthRequest).user!.userId;
+  const name = String(req.body?.name || "").trim();
+  if (name.length < 2) {
+    res.status(400).json({ message: "Inserisci un nome valido." });
+    return;
+  }
+  const user = await prisma.user.update({
+    where: { id: userId },
+    data: { name: name.slice(0, 120) },
+    select: { id: true, email: true, name: true, role: true, createdAt: true, updatedAt: true },
+  });
+  res.json({ message: "Profilo aggiornato", user });
+};
+
+// PUT /api/auth/password { currentPassword, newPassword }
+export const changePassword = async (req: Request, res: Response): Promise<void> => {
+  const userId = (req as AuthRequest).user!.userId;
+  const { currentPassword, newPassword } = req.body || {};
+  if (!newPassword || String(newPassword).length < 8) {
+    res.status(400).json({ message: "La nuova password deve avere almeno 8 caratteri." });
+    return;
+  }
+  const user = await prisma.user.findUnique({ where: { id: userId } });
+  if (!user || !(await bcrypt.compare(String(currentPassword || ""), user.password))) {
+    res.status(400).json({ message: "La password attuale non è corretta." });
+    return;
+  }
+  await prisma.user.update({
+    where: { id: userId },
+    data: { password: await bcrypt.hash(String(newPassword), 10) },
+  });
+  res.json({ message: "Password aggiornata" });
 };
 
 /**
@@ -208,9 +240,7 @@ export const requestPasswordReset = async (
 
   try {
     // Verifica se l'utente esiste
-    const user = await prisma.user.findUnique({
-      where: { email },
-    });
+    const user = await findUserByEmail(email);
 
     if (!user) {
       // Per sicurezza, non rivelare se l'email esiste o meno
@@ -285,10 +315,10 @@ export const resetPassword = async (
     return;
   }
 
-  if (newPassword.length < 6) {
+  if (String(newPassword).length < MIN_PASSWORD) {
     res
       .status(400)
-      .json({ message: "La password deve essere almeno di 6 caratteri" });
+      .json({ message: `La password deve avere almeno ${MIN_PASSWORD} caratteri` });
     return;
   }
 

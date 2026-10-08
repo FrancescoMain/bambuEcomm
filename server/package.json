@@ -6,9 +6,9 @@
     "dev": "nodemon src/server.ts",
     "build": "tsc",
     "start": "node dist/server.js",
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "node --require ts-node/register/transpile-only --test \"src/**/*.test.ts\"",
     "vercel-build": "prisma generate && tsc",
-    "postinstall": "prisma migrate deploy"
+    "postinstall": "node scripts/postinstall.js"
   },
   "keywords": [],
   "author": "",
@@ -17,6 +17,7 @@
   "dependencies": {
     "@prisma/client": "^6.18.0",
     "@types/stripe": "^8.0.416",
+    "@vercel/functions": "^3.9.11",
     "@vercel/node": "^5.2.2",
     "bcryptjs": "^3.0.2",
     "cloudinary": "^2.7.0",

@@ -1,1069 +1,369 @@
-import { Request, Response } from "express";
-import { PrismaClient, Prisma, OrderStatus, Role } from "@prisma/client";
-import { validationResult } from "express-validator";
-import emailService from "../services/emailService";
+import { Response } from "express";
 import Stripe from "stripe";
+import { OrderStatus, Prisma, Role } from "@prisma/client";
+import { validationResult } from "express-validator";
+import prisma from "../lib/prisma";
+import stripe from "../lib/stripe";
+import emailService, { OrderData } from "../services/emailService";
+import { buildOrderEmailData } from "../services/order.service";
+import { AuthRequest } from "../middleware/auth.middleware";
+import { clampInt, parseId } from "../lib/http";
+import { signToken, verifyToken } from "../lib/jwt";
+import { frontendUrl } from "../lib/urls";
 
-const prisma = new PrismaClient();
+const orderInclude = {
+  orderItems: {
+    select: {
+      id: true,
+      productId: true,
+      quantity: true,
+      priceAtPurchase: true,
+      prezzoListino: true,
+      titolo: true,
+      selectedVariants: true,
+      personalizzazione: true,
+      product: { select: { id: true, titolo: true, immagine: true, prezzo: true } },
+    },
+  },
+  shippingAddress: true,
+  billingAddress: true,
+  user: { select: { id: true, name: true, email: true } },
+} satisfies Prisma.OrderInclude;
 
-// Inizializza Stripe
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: "2025-05-28.basil",
-});
+const emailInclude = {
+  orderItems: { include: { product: { select: { titolo: true } } } },
+  user: { select: { id: true, name: true, email: true } },
+} satisfies Prisma.OrderInclude;
 
-interface AuthenticatedRequest extends Request {
-  user?: {
-    userId: number;
-    role: Role;
-  };
-}
-
-// Creare un nuovo ordine dal carrello dell'utente
-export const createOrder = async (
-  req: AuthenticatedRequest,
-  res: Response
-): Promise<void> => {
-  const errors = validationResult(req);
-  if (!errors.isEmpty()) {
-    res.status(400).json({ errors: errors.array() });
-    return;
-  }
-
-  const userId = req.user?.userId;
-  if (!userId) {
-    res.status(401).json({ message: "Utente non autorizzato." });
-    return;
-  }
-
-  const { shippingAddressId, billingAddressId } = req.body;
-
-  if (!shippingAddressId || !billingAddressId) {
-    res.status(400).json({
-      message: "ID indirizzo di spedizione e fatturazione sono obbligatori.",
-    });
-    return;
-  }
-
-  try {
-    const cart = await prisma.cart.findUnique({
-      where: { userId },
-      include: {
-        items: {
-          include: {
-            product: true,
-          },
-        },
-      },
-    });
-
-    if (!cart || cart.items.length === 0) {
-      res.status(400).json({
-        message: "Il carrello è vuoto. Impossibile creare un ordine.",
-      });
-      return;
-    }
-
-    // Verifica indirizzi
-    const shippingAddress = await prisma.address.findFirst({
-      where: { id: shippingAddressId, userId },
-    });
-    const billingAddress = await prisma.address.findFirst({
-      where: { id: billingAddressId, userId },
-    });
-
-    if (!shippingAddress) {
-      res.status(404).json({
-        message: `Indirizzo di spedizione con ID ${shippingAddressId} non trovato o non appartenente all'utente.`,
-      });
-      return;
-    }
-    if (!billingAddress) {
-      res.status(404).json({
-        message: `Indirizzo di fatturazione con ID ${billingAddressId} non trovato o non appartenente all'utente.`,
-      });
-      return;
-    }
-
-    let totalAmount = new Prisma.Decimal(0);
-    const orderItemsData: Prisma.OrderItemCreateManyOrderInput[] = [];
-
-    // Validazione e preparazione dati OrderItem
-    for (const item of cart.items) {
-      // Rimosso controllo stock: il modello non lo prevede più
-      totalAmount = totalAmount.plus(
-        new Prisma.Decimal(item.product.prezzo).times(item.quantity)
-      );
-      orderItemsData.push({
-        productId: item.productId,
-        quantity: item.quantity,
-        priceAtPurchase: item.product.prezzo, // Salva il prezzo al momento dell'acquisto
-        selectedVariants: item.selectedVariants as any, // Cast per compatibilità con InputJsonValue
-      });
-    }
-
-    // Creazione ordine e svuotamento carrello in una transazione
-    const createdOrder = await prisma.$transaction(async (tx) => {
-      const order = await tx.order.create({
-        data: {
-          userId,
-          totalAmount,
-          status: OrderStatus.PENDING,
-          shippingAddressId,
-          billingAddressId,
-          orderItems: {
-            createMany: {
-              data: orderItemsData,
-            },
-          },
-        },
-        include: {
-          orderItems: {
-            include: {
-              product: true,
-            },
-          },
-          shippingAddress: true,
-          billingAddress: true,
-          user: {
-            select: { id: true, name: true, email: true },
-          },
-        },
-      });
-
-      // Rimosso aggiornamento stock prodotti      // Svuotamento carrello
-      await tx.cartItem.deleteMany({
-        where: { cartId: cart.id },
-      });
-      return order;
-    }); // Invio email di conferma ordine (al cliente e all'admin)
-    console.log(
-      "🔧 DEBUG: Iniziando processo invio email per ordine:",
-      createdOrder.id
-    );
-    try {
-      // Verifica che l'utente esista
-      if (!createdOrder.user) {
-        console.error("❌ Utente non trovato per l'ordine:", createdOrder.id);
-      } else {
-        console.log("🔧 DEBUG: Utente trovato:", {
-          id: createdOrder.user.id,
-          name: createdOrder.user.name,
-          email: createdOrder.user.email,
-        });
-
-        // Prepara i dati per l'email
-        const subtotal = createdOrder.orderItems.reduce((sum, item) => {
-          return sum + Number(item.priceAtPurchase) * item.quantity;
-        }, 0);
-        const shippingCost = subtotal >= 50 ? 0 : 4.99;
-
-        const orderData = {
-          orderId: createdOrder.id.toString(),
-          customerName: createdOrder.user.name || "Cliente",
-          customerEmail: createdOrder.user.email,
-          items: createdOrder.orderItems.map((item) => ({
-            name: item.product.titolo,
-            quantity: item.quantity,
-            price: Number(item.priceAtPurchase),
-          })),
-          total: Number(createdOrder.totalAmount),
-          subtotal: subtotal,
-          shippingCost: shippingCost,
-          orderDate: createdOrder.createdAt.toLocaleDateString("it-IT"),
-          shippingAddress: createdOrder.shippingAddress,
-        };
-
-        console.log("🔧 DEBUG: Dati ordine preparati:", orderData);
-
-        // Email al cliente
-        console.log(
-          `📧 Tentativo invio email conferma ordine a: ${orderData.customerEmail}`
-        );
-        const customerEmailSent =
-          await emailService.sendOrderConfirmationEmail(orderData);
-
-        if (customerEmailSent) {
-          console.log(
-            `✅ Email conferma ordine inviata al cliente: ${orderData.customerEmail}`
-          );
-        } else {
-          console.log(
-            `⚠️ Fallimento invio email conferma ordine al cliente: ${orderData.customerEmail}`
-          );
-        }
-
-        // Email all'admin
-        console.log(`📧 Tentativo invio notifica ordine all'admin`);
-        const adminEmailSent =
-          await emailService.sendOrderNotificationToAdmin(orderData);
-
-        if (adminEmailSent) {
-          console.log(`✅ Email notifica ordine inviata all'admin`);
-        } else {
-          console.log(`⚠️ Fallimento invio email notifica ordine all'admin`);
-        }
-      }
-    } catch (emailError) {
-      console.error("❌ Errore durante invio email ordine:", emailError);
-      // Non blocchiamo la creazione dell'ordine se le email falliscono
-    }
-
-    res
-      .status(201)
-      .json({ message: "Ordine creato con successo.", order: createdOrder });
-    return;
-  } catch (error) {
-    console.error("Errore nella creazione dell'ordine:", error);
-    if (error instanceof Prisma.PrismaClientKnownRequestError) {
-      // Gestisci errori specifici di Prisma se necessario
-      if (error.code === "P2025") {
-        res.status(404).json({
-          message:
-            "Uno o più record necessari (es. indirizzo, prodotto) non sono stati trovati.",
-          details: error.meta?.cause,
-        });
-        return;
-      }
-    }
-    res.status(500).json({
-      message: "Errore interno del server durante la creazione dell'ordine.",
-      error: (error as Error).message,
-    });
-    return;
-  }
+const loadEmailData = async (orderId: number): Promise<OrderData | null> => {
+  const order = await prisma.order.findUnique({ where: { id: orderId }, include: emailInclude });
+  return order ? buildOrderEmailData(order) : null;
 };
 
-// Ottenere un ordine specifico per ID (utente proprietario o Admin)
-export const getOrderById = async (
-  req: AuthenticatedRequest,
-  res: Response
-): Promise<void> => {
-  const orderId = parseInt(req.params.id, 10);
-  const userId = req.user?.userId;
-  const userRole = req.user?.role;
-
+// GET /api/orders/:id — proprietario o admin
+export const getOrderById = async (req: AuthRequest, res: Response): Promise<void> => {
+  const orderId = parseId(req.params.id);
   if (isNaN(orderId)) {
     res.status(400).json({ message: "ID ordine non valido." });
     return;
   }
-
-  if (!userId) {
-    res.status(401).json({ message: "Utente non autorizzato." });
-    return;
-  }
-
   try {
-    const order = await prisma.order.findUnique({
-      where: { id: orderId },
-      include: {
-        orderItems: {
-          select: {
-            id: true,
-            quantity: true,
-            priceAtPurchase: true,
-            selectedVariants: true,
-            product: { select: { id: true, titolo: true, immagine: true } },
-          },
-        },
-        shippingAddress: true,
-        billingAddress: true,
-        user: { select: { id: true, name: true, email: true } },
-      },
-    });
-
+    const order = await prisma.order.findUnique({ where: { id: orderId }, include: orderInclude });
     if (!order) {
       res.status(404).json({ message: "Ordine non trovato." });
       return;
     }
-
-    // L'utente può vedere solo i propri ordini, l'admin può vedere tutto
-    if (userRole !== Role.ADMIN && order.userId !== userId) {
-      res.status(403).json({
-        message: "Accesso negato. Non sei il proprietario di questo ordine.",
-      });
+    if (req.user!.role !== Role.ADMIN && order.userId !== req.user!.userId) {
+      res.status(403).json({ message: "Accesso negato. Non sei il proprietario di questo ordine." });
       return;
     }
-
     res.json(order);
-    return;
   } catch (error) {
     console.error(`Errore nel recupero dell'ordine ${orderId}:`, error);
-    res.status(500).json({
-      message: "Errore interno del server durante il recupero dell'ordine.",
-      error: (error as Error).message,
-    });
-    return;
+    res.status(500).json({ message: "Errore interno del server durante il recupero dell'ordine." });
   }
 };
 
-// Ottenere tutti gli ordini per l'utente autenticato
-export const getUserOrders = async (
-  req: AuthenticatedRequest,
-  res: Response
-): Promise<void> => {
-  const userId = req.user?.userId;
-
-  if (!userId) {
-    res.status(401).json({ message: "Utente non autorizzato." });
-    return;
-  }
-
+// GET /api/orders/my-orders — ordini dell'utente.
+// Gli ordini fatti da ospite compaiono solo dopo averli collegati con il link inviato
+// all'email (prima bastava registrarsi con l'email di un altro per vederli).
+export const getUserOrders = async (req: AuthRequest, res: Response): Promise<void> => {
+  const userId = req.user!.userId;
   try {
-    // Prima recuperiamo l'email dell'utente corrente
-    const currentUser = await prisma.user.findUnique({
-      where: { id: userId },
-      select: { email: true },
-    });
-
-    if (!currentUser) {
-      res.status(404).json({ message: "Utente non trovato." });
-      return;
-    }
-
-    // Cerchiamo ordini sia con userId che con guestEmail corrispondente
     const orders = await prisma.order.findMany({
-      where: {
-        OR: [
-          { userId: userId }, // Ordini fatti da loggato
-          {
-            AND: [
-              { userId: null }, // Ordini guest
-              { guestEmail: currentUser.email }, // Con la stessa email
-            ],
-          },
-        ],
-      },
+      where: { userId, status: { not: OrderStatus.AWAITING_PAYMENT } },
       orderBy: { createdAt: "desc" },
-      include: {
-        orderItems: {
-          select: {
-            id: true,
-            quantity: true,
-            priceAtPurchase: true,
-            selectedVariants: true, // Includiamo le varianti per gli ordini utente
-            product: {
-              select: { id: true, titolo: true, immagine: true, prezzo: true },
-            },
-          },
-        },
-        shippingAddress: true,
-        billingAddress: true,
-        user: { select: { id: true, name: true, email: true } },
-      },
+      include: orderInclude,
     });
-
-    console.log(
-      `📦 Recuperati ${orders.length} ordini per utente ${userId} (email: ${currentUser.email})`
-    );
-    console.log(
-      "🔍 Ordini trovati:",
-      orders.map((o) => ({
-        id: o.id,
-        userId: o.userId,
-        guestEmail: o.guestEmail,
-        status: o.status,
-        total: o.totalAmount,
-      }))
-    );
-
     res.json(orders);
-    return;
   } catch (error) {
-    console.error(
-      `Errore nel recupero degli ordini per l'utente ${userId}:`,
-      error
-    );
-    res.status(500).json({
-      message: "Errore interno del server durante il recupero degli ordini.",
-      error: (error as Error).message,
-    });
-    return;
+    console.error(`Errore nel recupero degli ordini per l'utente ${userId}:`, error);
+    res.status(500).json({ message: "Errore interno del server durante il recupero degli ordini." });
   }
 };
 
-// Ottenere tutti gli ordini (Admin only)
-export const getAllOrders = async (
-  req: AuthenticatedRequest,
-  res: Response
-): Promise<void> => {
-  // req.user.role è già verificato dal middleware authorizeRole([Role.ADMIN])
-  const {
-    page = "1",
-    limit = "10",
-    status,
-    userId: queryUserId,
-    sortBy = "createdAt",
-    sortOrder = "desc",
-  } = req.query;
-
-  const pageNum = parseInt(page as string, 10);
-  const limitNum = parseInt(limit as string, 10);
-  const offset = (pageNum - 1) * limitNum;
+// GET /api/orders — tutti gli ordini (admin) con filtri e ricerca
+export const getAllOrders = async (req: AuthRequest, res: Response): Promise<void> => {
+  const page = clampInt(req.query.page, 1, 1, 10_000);
+  const limit = clampInt(req.query.limit, 20, 1, 100);
+  const status = String(req.query.status || "");
+  const q = String(req.query.q || "").trim();
 
   const where: Prisma.OrderWhereInput = {};
-  if (status) {
+  if (status && status !== "all" && (Object.values(OrderStatus) as string[]).includes(status)) {
     where.status = status as OrderStatus;
+  } else if (status !== "all") {
+    // Di default non mostriamo i checkout abbandonati prima del pagamento
+    where.status = { not: OrderStatus.AWAITING_PAYMENT };
   }
-  if (queryUserId) {
-    where.userId = parseInt(queryUserId as string, 10);
+  if (req.query.userId) where.userId = parseId(req.query.userId);
+  if (q) {
+    const id = /^#?\d+$/.test(q) ? parseInt(q.replace("#", ""), 10) : NaN;
+    where.OR = [
+      ...(isNaN(id) ? [] : [{ id }]),
+      { guestEmail: { contains: q, mode: "insensitive" } },
+      { user: { email: { contains: q, mode: "insensitive" } } },
+      { nome: { contains: q, mode: "insensitive" } },
+      { cognome: { contains: q, mode: "insensitive" } },
+      { telefono: { contains: q } },
+    ];
   }
 
-  const orderBy: Prisma.OrderOrderByWithRelationInput = {};
-  if (
-    sortBy &&
-    (sortBy === "createdAt" || sortBy === "totalAmount" || sortBy === "status")
-  ) {
-    orderBy[sortBy as keyof Prisma.OrderOrderByWithRelationInput] =
-      sortOrder === "asc" ? "asc" : "desc";
-  } else {
-    orderBy.createdAt = "desc";
-  }
+  const sortBy = String(req.query.sortBy || "createdAt");
+  const orderBy: Prisma.OrderOrderByWithRelationInput = {
+    [["createdAt", "totalAmount", "status"].includes(sortBy) ? sortBy : "createdAt"]:
+      req.query.sortOrder === "asc" ? "asc" : "desc",
+  };
 
   try {
-    const orders = await prisma.order.findMany({
-      skip: offset,
-      take: limitNum,
-      where,
-      orderBy,
-      include: {
-        user: { select: { id: true, name: true, email: true } },
-        orderItems: {
-          select: {
-            id: true,
-            quantity: true,
-            priceAtPurchase: true,
-            selectedVariants: true,
-            product: { select: { id: true, titolo: true } },
-          },
-        },
-        shippingAddress: true, // Potrebbe essere utile per l'admin
-      },
-    });
-
-    const totalOrders = await prisma.order.count({ where });
-
+    const [orders, totalOrders, counts] = await Promise.all([
+      prisma.order.findMany({ skip: (page - 1) * limit, take: limit, where, orderBy, include: orderInclude }),
+      prisma.order.count({ where }),
+      prisma.order.groupBy({ by: ["status"], _count: { _all: true } }),
+    ]);
     res.json({
       data: orders,
-      totalPages: Math.ceil(totalOrders / limitNum),
-      currentPage: pageNum,
+      totalPages: Math.ceil(totalOrders / limit),
+      currentPage: page,
       totalOrders,
+      countsByStatus: Object.fromEntries(counts.map((c) => [c.status, c._count._all])),
     });
-    return;
   } catch (error) {
     console.error("Errore nel recupero di tutti gli ordini:", error);
-    res.status(500).json({
-      message: "Errore interno del server durante il recupero degli ordini.",
-      error: (error as Error).message,
-    });
-    return;
+    res.status(500).json({ message: "Errore interno del server durante il recupero degli ordini." });
   }
 };
 
-// Aggiornare lo stato di un ordine (Admin only)
-export const updateOrderStatus = async (
-  req: AuthenticatedRequest,
-  res: Response
-): Promise<void> => {
+const notifyStatusChange = async (orderId: number, status: OrderStatus) => {
+  try {
+    const data = await loadEmailData(orderId);
+    if (!data?.customerEmail) return;
+    if (status === OrderStatus.SHIPPED) {
+      const order = await prisma.order.findUnique({ where: { id: orderId }, select: { trackingNumber: true } });
+      await emailService.sendOrderShippedEmail({ ...data, trackingNumber: order?.trackingNumber || undefined });
+    } else if (status === OrderStatus.CANCELLED) {
+      await emailService.sendOrderCancelledEmail(data);
+      await emailService.sendOrderCancelledNotificationToAdmin(data);
+    }
+  } catch (error) {
+    console.error("Errore invio email aggiornamento ordine:", error);
+  }
+};
+
+// PATCH /api/orders/:id/status (admin)
+export const updateOrderStatus = async (req: AuthRequest, res: Response): Promise<void> => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     res.status(400).json({ errors: errors.array() });
     return;
   }
+  const orderId = parseId(req.params.id);
+  const status = req.body.status as OrderStatus;
+  if (isNaN(orderId) || !Object.values(OrderStatus).includes(status)) {
+    res.status(400).json({ message: "Ordine o stato non valido." });
+    return;
+  }
+  try {
+    const current = await prisma.order.findUnique({ where: { id: orderId }, select: { status: true } });
+    if (!current) {
+      res.status(404).json({ message: "Ordine non trovato." });
+      return;
+    }
+    const updatedOrder = await prisma.order.update({
+      where: { id: orderId },
+      data: { status },
+      include: orderInclude,
+    });
+    if (current.status !== status) await notifyStatusChange(orderId, status);
+    res.json({ message: "Stato dell'ordine aggiornato con successo.", order: updatedOrder });
+  } catch (error) {
+    console.error(`Errore nell'aggiornamento dello stato dell'ordine ${orderId}:`, error);
+    res.status(500).json({ message: "Errore interno del server durante l'aggiornamento dello stato." });
+  }
+};
 
-  const orderId = parseInt(req.params.id, 10);
-  const { status } = req.body;
+// PATCH /api/orders/:id/tracking (admin)
+export const updateOrderTracking = async (req: AuthRequest, res: Response): Promise<void> => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    res.status(400).json({ errors: errors.array() });
+    return;
+  }
+  const orderId = parseId(req.params.id);
+  // Stringa vuota = rimuove il tracking (es. inserito per errore)
+  const trackingNumber = String(req.body.trackingNumber || "").trim() || null;
+  if (isNaN(orderId)) {
+    res.status(400).json({ message: "Ordine non valido." });
+    return;
+  }
+  try {
+    const updatedOrder = await prisma.order.update({
+      where: { id: orderId },
+      data: { trackingNumber },
+      include: orderInclude,
+    });
+    // Se l'ordine è già spedito, il cliente riceve subito il tracking
+    if (trackingNumber && updatedOrder.status === OrderStatus.SHIPPED) {
+      const data = await loadEmailData(orderId);
+      if (data?.customerEmail) await emailService.sendOrderShippedEmail({ ...data, trackingNumber });
+    }
+    res.json({
+      message: trackingNumber ? "Tracking number aggiornato con successo." : "Tracking number rimosso.",
+      order: updatedOrder,
+    });
+  } catch (error) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2025") {
+      res.status(404).json({ message: "Ordine non trovato per l'aggiornamento." });
+      return;
+    }
+    console.error(`Errore tracking ordine ${orderId}:`, error);
+    res.status(500).json({ message: "Errore interno del server durante l'aggiornamento del tracking." });
+  }
+};
 
+// PATCH /api/orders/:id/cancel — proprietario (entro 24h, non spedito) o admin; rimborso Stripe
+export const cancelOrder = async (req: AuthRequest, res: Response): Promise<void> => {
+  const orderId = parseId(req.params.id);
+  const { userId, role } = req.user!;
   if (isNaN(orderId)) {
     res.status(400).json({ message: "ID ordine non valido." });
     return;
   }
-
-  if (!status || !Object.values(OrderStatus).includes(status as OrderStatus)) {
-    res
-      .status(400)
-      .json({ message: "Stato dell'ordine non valido o mancante." });
-    return;
-  }
-
   try {
     const order = await prisma.order.findUnique({ where: { id: orderId } });
     if (!order) {
       res.status(404).json({ message: "Ordine non trovato." });
       return;
     }
-
-    // Aggiorna solo lo stato dell'ordine.
-    const updatedOrder = await prisma.order.update({
-      where: { id: orderId },
-      data: { status: status as OrderStatus },
-      include: {
-        user: { select: { id: true, name: true, email: true } },
-        orderItems: {
-          include: {
-            product: { select: { titolo: true } },
-          },
-        },
-      },
-    });
-
-    console.log("🔧 DEBUG: Order status update - Ordine aggiornato:", {
-      orderId: updatedOrder.id,
-      newStatus: status,
-      hasUser: !!updatedOrder.user,
-      guestEmail: updatedOrder.guestEmail,
-      userEmail: updatedOrder.user?.email,
-    });
-
-    // Invio email di notifica in base al nuovo stato
-    try {
-      // Determina email e nome cliente (utente registrato o guest)
-      const customerEmail = updatedOrder.user?.email || updatedOrder.guestEmail;
-      const customerName =
-        updatedOrder.user?.name ||
-        `${updatedOrder.nome || ""} ${updatedOrder.cognome || ""}`.trim() ||
-        "Cliente";
-
-      if (customerEmail) {
-        console.log("🔧 DEBUG: Preparazione email per aggiornamento ordine:", {
-          customerEmail,
-          customerName,
-          orderId: updatedOrder.id,
-          isGuest: !updatedOrder.user,
-        });
-        const orderData = {
-          orderId: updatedOrder.id.toString(),
-          customerName,
-          customerEmail: customerEmail as string, // Safe cast perché abbiamo il check sopra
-          items: updatedOrder.orderItems.map((item) => ({
-            name: item.product.titolo,
-            quantity: item.quantity,
-            price: Number(item.priceAtPurchase),
-          })),
-          total: Number(updatedOrder.totalAmount),
-          orderDate: updatedOrder.createdAt.toLocaleDateString("it-IT"),
-        };
-
-        if (status === OrderStatus.SHIPPED) {
-          const orderDataWithTracking = {
-            ...orderData,
-            trackingNumber: updatedOrder.trackingNumber || undefined,
-          };
-
-          const logPrefix = updatedOrder.user ? "" : "[GUEST] ";
-          console.log(
-            `📧 ${logPrefix}Tentativo invio email ordine spedito a: ${orderData.customerEmail}`
-          );
-          const emailSent = await emailService.sendOrderShippedEmail(
-            orderDataWithTracking
-          );
-
-          if (emailSent) {
-            console.log(
-              `✅ ${logPrefix}Email ordine spedito inviata al cliente: ${orderData.customerEmail}`
-            );
-          } else {
-            console.log(
-              `⚠️ ${logPrefix}Fallimento invio email ordine spedito al cliente: ${orderData.customerEmail}`
-            );
-          }
-        } else if (status === OrderStatus.CANCELLED) {
-          const logPrefix = updatedOrder.user ? "" : "[GUEST] ";
-          console.log(
-            `📧 ${logPrefix}Tentativo invio email ordine cancellato a: ${orderData.customerEmail}`
-          );
-          const emailSent =
-            await emailService.sendOrderCancelledEmail(orderData);
-
-          if (emailSent) {
-            console.log(
-              `✅ ${logPrefix}Email ordine cancellato inviata al cliente: ${orderData.customerEmail}`
-            );
-          } else {
-            console.log(
-              `⚠️ ${logPrefix}Fallimento invio email ordine cancellato al cliente: ${orderData.customerEmail}`
-            );
-          }
-
-          // Invia anche notifica all'admin
-          console.log(`📧 Tentativo invio notifica cancellazione all'admin`);
-          const adminEmailSent =
-            await emailService.sendOrderCancelledNotificationToAdmin(orderData);
-
-          if (adminEmailSent) {
-            console.log(`✅ Email notifica cancellazione inviata all'admin`);
-          } else {
-            console.log(
-              `⚠️ Fallimento invio email notifica cancellazione all'admin`
-            );
-          }
-        }
-      } else {
-        console.error(
-          "❌ Nessuna email trovata per l'ordine:",
-          updatedOrder.id,
-          "- User email:",
-          updatedOrder.user?.email,
-          "- Guest email:",
-          updatedOrder.guestEmail
-        );
-      }
-    } catch (emailError) {
-      console.error(
-        "❌ Errore durante invio email aggiornamento ordine:",
-        emailError
-      );
-      // Non blocchiamo l'aggiornamento dell'ordine se le email falliscono
-    }
-
-    res.json({
-      message: "Stato dell'ordine aggiornato con successo.",
-      order: updatedOrder,
-    });
-    return;
-  } catch (error) {
-    console.error(
-      `Errore nell'aggiornamento dello stato dell'ordine ${orderId}:`,
-      error
-    );
-    if (
-      error instanceof Prisma.PrismaClientKnownRequestError &&
-      error.code === "P2025"
-    ) {
-      res
-        .status(404)
-        .json({ message: "Ordine non trovato per l'aggiornamento." });
+    if (role !== Role.ADMIN && order.userId !== userId) {
+      res.status(403).json({ message: "Accesso negato. Non puoi cancellare questo ordine." });
       return;
     }
-    res.status(500).json({
-      message:
-        "Errore interno del server durante l'aggiornamento dello stato dell'ordine.",
-      error: (error as Error).message,
-    });
-    return;
-  }
-};
-
-// Cancellare un ordine (Utente proprietario o Admin)
-// Nota: la cancellazione effettiva potrebbe essere solo un cambio di stato a CANCELLED
-export const cancelOrder = async (
-  req: AuthenticatedRequest,
-  res: Response
-): Promise<void> => {
-  const orderId = parseInt(req.params.id, 10);
-  const userId = req.user?.userId;
-  const userRole = req.user?.role;
-
-  if (isNaN(orderId)) {
-    res.status(400).json({ message: "ID ordine non valido." });
-    return;
-  }
-
-  if (!userId) {
-    res.status(401).json({ message: "Utente non autorizzato." });
-    return;
-  }
-
-  try {
-    const order = await prisma.order.findUnique({
-      where: { id: orderId },
-      include: { orderItems: true, user: true },
-    });
-
-    if (!order) {
-      res.status(404).json({ message: "Ordine non trovato." });
-      return;
-    }
-
-    // L'utente può cancellare solo i propri ordini, l'admin può cancellare qualsiasi ordine
-    if (userRole !== Role.ADMIN && order.userId !== userId) {
-      res.status(403).json({
-        message: "Accesso negato. Non puoi cancellare questo ordine.",
-      });
-      return;
-    }
-
-    // Logica di cancellazione: solitamente si imposta lo stato a CANCELLED
-    // e si ripristina lo stock dei prodotti.
-    if (order.status === OrderStatus.CANCELLED) {
+    if (order.status === OrderStatus.CANCELLED || order.status === OrderStatus.REFUNDED) {
       res.status(400).json({ message: "L'ordine è già stato cancellato." });
       return;
     }
-
-    // Check time limit for cancellation (24 hours for non-admin users)
-    if (userRole !== Role.ADMIN) {
-      const orderDate = new Date(order.createdAt);
-      const cancelDeadline = new Date(
-        orderDate.getTime() + 24 * 60 * 60 * 1000
-      );
-      const now = new Date();
-
-      if (now > cancelDeadline) {
+    if (role !== Role.ADMIN) {
+      if (Date.now() > order.createdAt.getTime() + 24 * 60 * 60 * 1000) {
         res.status(400).json({
           message:
-            "Il periodo di cancellazione gratuita (24 ore) è scaduto. Contatta l'assistenza clienti per richiedere la cancellazione.",
+            "Il periodo di cancellazione (24 ore) è scaduto. Puoi usare il modulo di recesso online o contattarci.",
         });
         return;
       }
-
-      // Non permettere la cancellazione se l'ordine è già stato spedito o consegnato
-      if (
-        order.status === OrderStatus.SHIPPED ||
-        order.status === OrderStatus.DELIVERED
-      ) {
-        res.status(400).json({
-          message: `Non è possibile cancellare un ordine che è già ${order.status.toLowerCase()}.`,
-        });
+      if (order.status === OrderStatus.SHIPPED || order.status === OrderStatus.DELIVERED) {
+        res.status(400).json({ message: "Non è possibile cancellare un ordine già spedito." });
         return;
       }
     }
 
-    let refundResult: Stripe.Refund | null = null;
-
-    await prisma.$transaction(async (tx) => {
-      // Aggiorna lo stato dell'ordine a CANCELLED
-      await tx.order.update({
-        where: { id: orderId },
-        data: { status: OrderStatus.CANCELLED },
-      });
-
-      // Processare il rimborso Stripe se presente paymentIntentId
-      if (order.paymentIntentId) {
-        try {
-          console.log(
-            `💳 Processando rimborso Stripe per ordine ${orderId}, PaymentIntent: ${order.paymentIntentId}`
-          );
-
-          refundResult = await stripe.refunds.create({
-            payment_intent: order.paymentIntentId,
-            reason: "requested_by_customer",
-            metadata: {
-              orderId: orderId.toString(),
-              cancelledBy: userRole === Role.ADMIN ? "admin" : "customer",
-              userId: userId.toString(),
-            },
-          });
-
-          console.log(
-            `✅ Rimborso Stripe creato con successo: ${refundResult.id}`
-          );
-
-          // Aggiorna lo stato a REFUNDED se il rimborso è stato processato con successo
-          await tx.order.update({
-            where: { id: orderId },
-            data: { status: OrderStatus.REFUNDED },
-          });
-        } catch (stripeError: any) {
-          console.error(
-            `❌ Errore durante il rimborso Stripe per ordine ${orderId}:`,
-            stripeError
-          );
-
-          // Se il rimborso fallisce, lasciamo lo stato come CANCELLED
-          // e informiamo l'utente che il rimborso sarà processato manualmente
-          console.log(`⚠️ Rimborso manuale richiesto per ordine ${orderId}`);
-        }
+    let refund: Stripe.Refund | null = null;
+    if (order.paymentIntentId) {
+      try {
+        refund = await stripe.refunds.create({
+          payment_intent: order.paymentIntentId,
+          reason: "requested_by_customer",
+          metadata: { orderId: String(orderId), cancelledBy: role === Role.ADMIN ? "admin" : "customer" },
+        });
+      } catch (stripeError) {
+        console.error(`Errore rimborso Stripe ordine ${orderId}:`, stripeError);
       }
+    }
+    await prisma.order.update({
+      where: { id: orderId },
+      data: { status: refund ? OrderStatus.REFUNDED : OrderStatus.CANCELLED },
     });
 
-    // Inviare notifica email all'utente
     try {
-      const customerEmail = order.user?.email || order.guestEmail;
-      const customerName =
-        order.user?.name ||
-        `${order.nome || ""} ${order.cognome || ""}`.trim() ||
-        "Cliente";
-
-      if (customerEmail) {
-        const orderData = {
-          orderId: order.id.toString(),
-          customerName,
-          customerEmail,
-          items: order.orderItems.map((item: any) => ({
-            name: item.product?.titolo || "Prodotto",
-            quantity: item.quantity,
-            price: Number(item.priceAtPurchase),
-          })),
-          total: Number(order.totalAmount),
-          orderDate: new Date(order.createdAt).toLocaleDateString("it-IT"),
-          cancelReason:
-            userRole === Role.ADMIN
-              ? "Cancellato dall'amministratore"
-              : "Richiesto dal cliente",
+      const data = await loadEmailData(orderId);
+      if (data?.customerEmail) {
+        const payload = {
+          ...data,
+          cancelReason: role === Role.ADMIN ? "Cancellato dal negozio" : "Richiesto dal cliente",
         };
-
-        const logPrefix = order.user ? "" : "[GUEST] ";
-        console.log(
-          `📧 ${logPrefix}Tentativo invio email ordine cancellato a: ${customerEmail}`
-        );
-
-        const emailSent = await emailService.sendOrderCancelledEmail(orderData);
-
-        if (emailSent) {
-          console.log(
-            `✅ ${logPrefix}Email ordine cancellato inviata al cliente: ${customerEmail}`
-          );
-        } else {
-          console.log(
-            `⚠️ ${logPrefix}Fallimento invio email ordine cancellato al cliente: ${customerEmail}`
-          );
-        }
-
-        // Invia anche notifica all'admin (se non è l'admin stesso a cancellare)
-        if (userRole !== Role.ADMIN) {
-          console.log(`📧 Tentativo invio notifica cancellazione all'admin`);
-          const adminEmailSent =
-            await emailService.sendOrderCancelledNotificationToAdmin(orderData);
-
-          if (adminEmailSent) {
-            console.log(`✅ Email notifica cancellazione inviata all'admin`);
-          } else {
-            console.log(
-              `⚠️ Fallimento invio email notifica cancellazione all'admin`
-            );
-          }
-        }
+        await emailService.sendOrderCancelledEmail(payload);
+        if (role !== Role.ADMIN) await emailService.sendOrderCancelledNotificationToAdmin(payload);
       }
     } catch (emailError) {
-      console.error(
-        "❌ Errore durante invio email cancellazione ordine:",
-        emailError
-      );
+      console.error("Errore invio email cancellazione ordine:", emailError);
     }
 
-    const message = refundResult
-      ? "Ordine cancellato con successo. Il rimborso è stato processato e sarà visibile sulla tua carta entro 5-10 giorni lavorativi."
-      : order.paymentIntentId
-        ? "Ordine cancellato con successo. Il rimborso sarà processato manualmente entro 5-10 giorni lavorativi."
-        : "Ordine cancellato con successo.";
-
-    const response: any = { message };
-
-    if (refundResult) {
-      response.refund = {
-        id: (refundResult as any).id,
-        amount: (refundResult as any).amount,
-        status: (refundResult as any).status,
-      };
-    }
-
-    res.json(response);
-    return;
+    res.json({
+      message: refund
+        ? "Ordine cancellato. Il rimborso è stato avviato e sarà visibile entro 5-10 giorni lavorativi."
+        : order.paymentIntentId
+          ? "Ordine cancellato. Il rimborso sarà effettuato manualmente entro 5-10 giorni lavorativi."
+          : "Ordine cancellato con successo.",
+      refund: refund ? { id: refund.id, amount: refund.amount, status: refund.status } : undefined,
+    });
   } catch (error) {
     console.error(`Errore nella cancellazione dell'ordine ${orderId}:`, error);
-    if (
-      error instanceof Prisma.PrismaClientKnownRequestError &&
-      error.code === "P2025"
-    ) {
-      res.status(404).json({
-        message: "Ordine o prodotto non trovato durante la cancellazione.",
-      });
-      return;
-    }
-    res.status(500).json({
-      message:
-        "Errore interno del server durante la cancellazione dell'ordine.",
-      error: (error as Error).message,
-    });
-    return;
+    res.status(500).json({ message: "Errore interno del server durante la cancellazione dell'ordine." });
   }
 };
 
-// Funzione per reclamare ordini guest con la propria email (quando un utente si registra)
-export const claimGuestOrders = async (
-  req: AuthenticatedRequest,
-  res: Response
-): Promise<void> => {
-  const userId = req.user?.userId;
+type ClaimToken = { purpose: string; userId: number; email: string };
 
-  if (!userId) {
-    res.status(401).json({ message: "Utente non autorizzato." });
-    return;
-  }
-
+// POST /api/orders/claim-guest-orders/request — invia all'email dell'account il link
+// per collegare gli ordini fatti da ospite (dimostra che l'email è davvero sua)
+export const requestGuestOrdersClaim = async (req: AuthRequest, res: Response): Promise<void> => {
+  const userId = req.user!.userId;
+  const generic = {
+    message:
+      "Se ci sono ordini fatti come ospite con la tua email, ti abbiamo inviato un link per collegarli al profilo.",
+  };
   try {
-    // Recupera l'email dell'utente corrente
-    const currentUser = await prisma.user.findUnique({
-      where: { id: userId },
-      select: { email: true },
-    });
-
-    if (!currentUser) {
+    const user = await prisma.user.findUnique({ where: { id: userId }, select: { email: true, name: true } });
+    if (!user) {
       res.status(404).json({ message: "Utente non trovato." });
       return;
     }
-
-    // Trova tutti gli ordini guest con la stessa email
-    const guestOrders = await prisma.order.findMany({
-      where: {
-        AND: [{ userId: null }, { guestEmail: currentUser.email }],
-      },
+    const count = await prisma.order.count({
+      where: { userId: null, guestEmail: { equals: user.email, mode: "insensitive" } },
     });
-
-    console.log(
-      `🔄 Trovati ${guestOrders.length} ordini guest per email ${currentUser.email}`
-    );
-
-    if (guestOrders.length === 0) {
-      res.json({
-        message: "Nessun ordine guest trovato da reclamare.",
-        claimedOrders: 0,
+    if (count > 0) {
+      const token = signToken({ purpose: "claim", userId, email: user.email.toLowerCase() }, "2h");
+      await emailService.sendClaimOrdersEmail({
+        email: user.email,
+        name: user.name || "",
+        count,
+        link: `${frontendUrl()}/account/ordini?collega=${encodeURIComponent(token)}`,
       });
-      return;
     }
-
-    // Aggiorna gli ordini guest per associarli all'utente
-    const updateResult = await prisma.order.updateMany({
-      where: {
-        AND: [{ userId: null }, { guestEmail: currentUser.email }],
-      },
-      data: {
-        userId: userId,
-        // Manteniamo guestEmail per riferimento storico
-      },
-    });
-
-    console.log(
-      `✅ Reclamati ${updateResult.count} ordini per utente ${userId}`
-    );
-
-    res.json({
-      message: `Successo! ${updateResult.count} ordini guest sono stati associati al tuo account.`,
-      claimedOrders: updateResult.count,
-    });
-    return;
+    res.json(generic);
   } catch (error) {
-    console.error(
-      `Errore nel reclamare ordini guest per utente ${userId}:`,
-      error
-    );
-    res.status(500).json({
-      message: "Errore interno del server durante il reclamo degli ordini.",
-      error: (error as Error).message,
-    });
-    return;
+    console.error("Errore richiesta collegamento ordini:", error);
+    res.status(500).json({ message: "Errore nell'invio dell'email, riprova." });
   }
 };
 
-// Aggiornare il tracking number di un ordine (Admin only)
-export const updateOrderTracking = async (
-  req: AuthenticatedRequest,
-  res: Response
-): Promise<void> => {
-  const errors = validationResult(req);
-  if (!errors.isEmpty()) {
-    res.status(400).json({ errors: errors.array() });
-    return;
-  }
-
-  const orderId = parseInt(req.params.id, 10);
-  const { trackingNumber } = req.body;
-
-  if (isNaN(orderId)) {
-    res.status(400).json({ message: "ID ordine non valido." });
-    return;
-  }
-
-  if (
-    !trackingNumber ||
-    typeof trackingNumber !== "string" ||
-    trackingNumber.trim().length === 0
-  ) {
-    res
-      .status(400)
-      .json({ message: "Numero di tracking non valido o mancante." });
-    return;
-  }
-
+// POST /api/orders/claim-guest-orders { token } — collega gli ordini dopo il clic sul link
+export const claimGuestOrders = async (req: AuthRequest, res: Response): Promise<void> => {
+  const userId = req.user!.userId;
+  let payload: ClaimToken;
   try {
-    const order = await prisma.order.findUnique({ where: { id: orderId } });
-    if (!order) {
-      res.status(404).json({ message: "Ordine non trovato." });
-      return;
-    }
-
-    // Aggiorna il tracking number dell'ordine
-    const updatedOrder = await prisma.order.update({
-      where: { id: orderId },
-      data: { trackingNumber: trackingNumber.trim() },
-      include: {
-        user: { select: { id: true, name: true, email: true } },
-        orderItems: {
-          include: {
-            product: { select: { titolo: true } },
-          },
-        },
-      },
+    payload = verifyToken<ClaimToken>(String(req.body?.token || ""));
+  } catch {
+    res.status(400).json({ message: "Il link non è valido o è scaduto: richiedine uno nuovo." });
+    return;
+  }
+  if (payload.purpose !== "claim" || payload.userId !== userId) {
+    res.status(403).json({ message: "Questo link appartiene a un altro account." });
+    return;
+  }
+  try {
+    const result = await prisma.order.updateMany({
+      where: { userId: null, guestEmail: { equals: payload.email, mode: "insensitive" } },
+      data: { userId },
     });
-
-    console.log("🚚 DEBUG: Tracking number update - Ordine aggiornato:", {
-      orderId: updatedOrder.id,
-      trackingNumber: updatedOrder.trackingNumber,
-      hasUser: !!updatedOrder.user,
-      guestEmail: updatedOrder.guestEmail,
-    });
-
-    // Se l'ordine è già stato spedito, invia email con tracking number
-    if (updatedOrder.status === OrderStatus.SHIPPED) {
-      const customerEmail = updatedOrder.user?.email || updatedOrder.guestEmail;
-
-      if (customerEmail) {
-        const orderData = {
-          orderId: updatedOrder.id.toString(),
-          customerName: updatedOrder.user?.name || "Cliente",
-          customerEmail: customerEmail,
-          items: updatedOrder.orderItems.map((item) => ({
-            name: item.product.titolo,
-            quantity: item.quantity,
-            price: item.priceAtPurchase.toNumber(),
-          })),
-          total: updatedOrder.totalAmount.toNumber(),
-          orderDate: updatedOrder.createdAt.toLocaleDateString("it-IT"),
-          trackingNumber: updatedOrder.trackingNumber || undefined,
-        };
-
-        const logPrefix = updatedOrder.user ? "" : "[GUEST] ";
-        console.log(
-          `📧 ${logPrefix}Tentativo invio email tracking number a: ${customerEmail}`
-        );
-
-        const emailSent = await emailService.sendOrderShippedEmail(orderData);
-
-        if (emailSent) {
-          console.log(
-            `✅ ${logPrefix}Email tracking number inviata al cliente: ${customerEmail}`
-          );
-        } else {
-          console.log(
-            `⚠️ ${logPrefix}Fallimento invio email tracking number al cliente: ${customerEmail}`
-          );
-        }
-      }
-    }
-
     res.json({
-      message: "Tracking number aggiornato con successo.",
-      order: updatedOrder,
+      message: result.count
+        ? `${result.count} ${result.count === 1 ? "ordine collegato" : "ordini collegati"} al tuo account.`
+        : "Nessun ordine da collegare.",
+      claimedOrders: result.count,
     });
-    return;
   } catch (error) {
-    console.error(
-      `Errore nell'aggiornamento del tracking number dell'ordine ${orderId}:`,
-      error
-    );
-    if (
-      error instanceof Prisma.PrismaClientKnownRequestError &&
-      error.code === "P2025"
-    ) {
-      res
-        .status(404)
-        .json({ message: "Ordine non trovato per l'aggiornamento." });
-      return;
-    }
-    res.status(500).json({
-      message:
-        "Errore interno del server durante l'aggiornamento del tracking number.",
-      error: (error as Error).message,
-    });
-    return;
+    console.error(`Errore nel collegare ordini guest per utente ${userId}:`, error);
+    res.status(500).json({ message: "Errore interno del server durante il collegamento degli ordini." });
   }
 };

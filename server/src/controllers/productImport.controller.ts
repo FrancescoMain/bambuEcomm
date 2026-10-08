@@ -1,11 +1,21 @@
 import { Request, Response } from "express";
 import { PrismaClient } from "@prisma/client";
 import * as XLSX from "xlsx";
-import fs from "fs";
 import { parse } from "csv-parse/sync";
 import { v4 as uuidv4 } from "uuid";
 
-const prisma = new PrismaClient();
+import prisma from "../lib/prisma";
+import { runInBackground, revalidateStorefront } from "../lib/http";
+import { invalidateCategoryCache } from "../lib/catalog";
+
+/** Prezzo da CSV/Excel: accetta "12,50", "1.234,50", "12.5", "€ 9,90" */
+const parsePrezzo = (value: unknown): number => {
+  if (typeof value === "number") return Number.isFinite(value) && value > 0 ? Math.round(value * 100) / 100 : NaN;
+  const s = String(value ?? "").trim().replace(/[€\s]/g, "");
+  const normalized = s.includes(",") ? s.replace(/\./g, "").replace(",", ".") : s;
+  const n = parseFloat(normalized);
+  return Number.isFinite(n) && n > 0 ? Math.round(n * 100) / 100 : NaN;
+};
 
 // Stato in memoria dei job di importazione
 const importJobStatus: Record<
@@ -46,7 +56,8 @@ export const importProducts = async (
   res.json({ jobId });
 
   // Esegui l'import in background
-  (async () => {
+  // waitUntil: su Vercel la funzione resta attiva finché l'import non termina
+  runInBackground((async () => {
     try {
       const file = req.file!;
       importJobStatus[jobId].status = "processing";
@@ -59,6 +70,7 @@ export const importProducts = async (
         let fileContent = file.buffer.toString("utf8");
         const delimiter = fileContent.includes(";") ? ";" : ",";
         let rowsRaw = parse(fileContent, {
+          bom: true,
           columns: true,
           skip_empty_lines: true,
           delimiter,
@@ -124,10 +136,10 @@ export const importProducts = async (
           const categoryToConnect = subcategoryIdNum || categoriaIdNum;
           const missingFields = [];
           if (!titolo) missingFields.push("titolo");
-          if (!prezzo) missingFields.push("prezzo");
+          if (!prezzo || isNaN(parsePrezzo(prezzo))) missingFields.push("prezzo");
           if (!categoryToConnect) missingFields.push("categoriaId");
           if (missingFields.length > 0) {
-            errors.push({
+            errors.push({ riga: i + 2,
               error: `Campi obbligatori mancanti o non validi: ${missingFields.join(
                 ", "
               )}`,
@@ -149,7 +161,7 @@ export const importProducts = async (
                   titolo,
                   immagine,
                   descrizione,
-                  prezzo: Number(prezzo),
+                  prezzo: parsePrezzo(prezzo),
                   categoria: { set: [{ id: categoryToConnect }] },
                 },
               });
@@ -160,14 +172,14 @@ export const importProducts = async (
                   titolo,
                   immagine,
                   descrizione,
-                  prezzo: Number(prezzo),
+                  prezzo: parsePrezzo(prezzo),
                   categoria: { connect: [{ id: categoryToConnect }] },
                 } as any, // workaround for lingering type error from old generated types
               });
               created++;
             }
           } catch (err) {
-            errors.push({ error: (err as Error).message });
+            errors.push({ riga: i + 2, error: (err as Error).message });
           }
           importJobStatus[jobId].progress = Math.round(
             ((i + 1) / totalRows) * 100
@@ -260,10 +272,10 @@ export const importProducts = async (
           const categoryToConnect = subcategoryIdNum || categoriaIdNum;
           const missingFields = [];
           if (!titolo) missingFields.push("titolo");
-          if (!prezzo) missingFields.push("prezzo");
+          if (!prezzo || isNaN(parsePrezzo(prezzo))) missingFields.push("prezzo");
           if (!categoryToConnect) missingFields.push("categoriaId");
           if (missingFields.length > 0) {
-            errors.push({
+            errors.push({ riga: rowNum + 1,
               error: `Campi obbligatori mancanti o non validi: ${missingFields.join(
                 ", "
               )}`,
@@ -285,7 +297,7 @@ export const importProducts = async (
                   titolo,
                   immagine,
                   descrizione,
-                  prezzo: Number(prezzo),
+                  prezzo: parsePrezzo(prezzo),
                   categoria: { set: [{ id: categoryToConnect }] },
                 },
               });
@@ -296,14 +308,14 @@ export const importProducts = async (
                   titolo,
                   immagine,
                   descrizione,
-                  prezzo: Number(prezzo),
+                  prezzo: parsePrezzo(prezzo),
                   categoria: { connect: [{ id: categoryToConnect }] },
                 } as any, // workaround for lingering type error from old generated types
               });
               created++;
             }
           } catch (err) {
-            errors.push({ error: (err as Error).message });
+            errors.push({ riga: rowNum + 1, error: (err as Error).message });
           }
           importJobStatus[jobId].progress = Math.round(
             ((rowNum - range.s.r) / totalRows) * 100
@@ -315,7 +327,6 @@ export const importProducts = async (
           importJobStatus[jobId].errors = errors;
         }
       }
-      fs.unlinkSync(file.path);
       if ((importJobStatus[jobId].status as string) === "cancelled") {
         importJobStatus[jobId] = {
           progress: importJobStatus[jobId].progress,
@@ -334,6 +345,8 @@ export const importProducts = async (
           errors,
         };
       }
+      invalidateCategoryCache();
+      revalidateStorefront(["products", "categories"]);
     } catch (error) {
       importJobStatus[jobId] = {
         progress: 100,
@@ -341,7 +354,7 @@ export const importProducts = async (
         message: (error as Error).message,
       };
     }
-  })();
+  })());
 };
 
 // Endpoint: GET /api/products/import/status?jobId=...

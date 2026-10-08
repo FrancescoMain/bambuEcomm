@@ -2,20 +2,100 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Custom utilities */
-.line-clamp-2 {
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  min-height: 2.5rem; /* Garantisce altezza per 2 righe */
+@layer base {
+  :root {
+    color-scheme: light;
+  }
+  html {
+    -webkit-tap-highlight-color: transparent;
+    scroll-behavior: smooth;
+  }
+  body {
+    @apply bg-paper text-ink antialiased;
+    font-feature-settings: "ss01", "cv11";
+  }
+  h1,
+  h2,
+  h3,
+  h4 {
+    @apply font-display tracking-tight text-ink;
+  }
+  ::selection {
+    @apply bg-brand-200 text-ink;
+  }
+  :focus-visible {
+    @apply outline-none ring-2 ring-brand-500 ring-offset-2 ring-offset-paper;
+  }
+  [hidden] {
+    display: none !important;
+  }
 }
 
-/* Utility per mantenere proporzioni immagine */
-.aspect-card-image {
-  aspect-ratio: 1;
-  min-height: 160px;
-  max-height: 200px;
+@layer components {
+  /* Campi form coerenti in tutto il sito */
+  .field {
+    @apply block w-full rounded-xl border border-paper-line bg-white px-3.5 py-2.5 text-[15px] text-ink placeholder:text-ink-faint shadow-sm transition focus:border-brand-500 focus:outline-none focus:ring-4 focus:ring-brand-500/15 disabled:bg-paper-warm disabled:text-ink-muted;
+  }
+  .field-label {
+    @apply mb-1.5 block text-sm font-semibold text-ink-soft;
+  }
+  .card {
+    @apply rounded-2xl border border-paper-line bg-white shadow-card;
+  }
+  .prose-bambu {
+    @apply text-[16px] leading-relaxed text-ink-soft;
+  }
+  .prose-bambu h2 {
+    @apply mb-3 mt-8 text-2xl font-bold text-ink;
+  }
+  .prose-bambu h3 {
+    @apply mb-2 mt-6 text-xl font-bold text-ink;
+  }
+  .prose-bambu p {
+    @apply my-4;
+  }
+  .prose-bambu ul {
+    @apply my-4 list-disc space-y-1 pl-6;
+  }
+  .prose-bambu ol {
+    @apply my-4 list-decimal space-y-1 pl-6;
+  }
+  .prose-bambu a {
+    @apply font-semibold text-brand-600 underline decoration-brand-300 underline-offset-2 hover:decoration-brand-600;
+  }
+  .prose-bambu strong {
+    @apply font-bold text-ink;
+  }
+  .prose-bambu img {
+    @apply my-6 rounded-2xl;
+  }
+  .prose-bambu blockquote {
+    @apply my-6 border-l-4 border-brand-300 pl-4 italic;
+  }
+}
+
+@layer utilities {
+  .scrollbar-none {
+    scrollbar-width: none;
+  }
+  .scrollbar-none::-webkit-scrollbar {
+    display: none;
+  }
+  .snap-row {
+    @apply flex snap-x snap-mandatory gap-4 overflow-x-auto scroll-smooth pb-2 scrollbar-none;
+  }
+  .text-balance {
+    text-wrap: balance;
+  }
+  .bg-confetti {
+    background-image: radial-gradient(circle at 12% 20%, rgba(240, 138, 36, 0.14) 0 9px, transparent 10px),
+      radial-gradient(circle at 82% 30%, rgba(214, 25, 124, 0.12) 0 7px, transparent 8px),
+      radial-gradient(circle at 70% 80%, rgba(26, 143, 214, 0.12) 0 11px, transparent 12px),
+      radial-gradient(circle at 25% 75%, rgba(91, 185, 71, 0.14) 0 8px, transparent 9px);
+  }
+}
+
+/* Iubenda: il bottone flottante non deve coprire il pulsante WhatsApp */
+#iubenda-cs-banner {
+  z-index: 60 !important;
 }

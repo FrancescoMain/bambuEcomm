@@ -3,62 +3,56 @@ import { body, param } from "express-validator";
 import {
   getCart,
   addItemToCart,
+  mergeCart,
   updateCartItemQuantity,
   removeItemFromCart,
   clearCart,
+  quoteCart,
   cleanupOldCarts,
 } from "../controllers/cart.controller";
-import { authenticateToken } from "../middleware/auth.middleware";
+import { authenticateToken, authorizeRole } from "../middleware/auth.middleware";
+import { noStore, rateLimit } from "../lib/http";
 
 const router = Router();
+router.use(noStore);
 
-// Tutte le rotte del carrello richiedono l'autenticazione
+// Pubblico: ricalcolo prezzi/sconti/spedizione di un carrello (anche ospite)
+router.post("/quote", rateLimit(120, 60 * 1000), quoteCart);
+
+// Pulizia carrelli inattivi (admin; il cron usa /api/cleanup-carts)
+router.post("/cleanup", authenticateToken, authorizeRole(["ADMIN"]), cleanupOldCarts);
+
+// Da qui in poi serve l'autenticazione
 router.use(authenticateToken);
 
-// GET /api/cart - Ottiene il carrello dell'utente corrente
 router.get("/", getCart);
 
-// POST /api/cart/items - Aggiunge un prodotto al carrello
 router.post(
   "/items",
   [
     body("productId").isInt({ gt: 0 }).withMessage("ID prodotto non valido."),
-    body("quantity")
-      .isInt({ gt: 0 })
-      .withMessage("La quantità deve essere maggiore di zero."),
+    body("quantity").isInt({ gt: 0, lt: 100 }).withMessage("Quantità non valida."),
   ],
   addItemToCart
 );
 
-// PUT /api/cart/items/:cartItemId - Aggiorna la quantità di un articolo nel carrello
+router.post("/merge", mergeCart);
+
 router.put(
   "/items/:cartItemId",
   [
-    param("cartItemId")
-      .isInt({ gt: 0 })
-      .withMessage("ID articolo carrello non valido."),
-    body("quantity")
-      .isInt()
-      .withMessage("La quantità deve essere un numero intero."), // Permette quantità 0 per la rimozione
+    param("cartItemId").isInt({ gt: 0 }).withMessage("ID articolo carrello non valido."),
+    body("quantity").isInt({ min: 0, lt: 100 }).withMessage("Quantità non valida."),
   ],
   updateCartItemQuantity
 );
 
-// DELETE /api/cart/items/:cartItemId - Rimuove un articolo dal carrello
 router.delete(
   "/items/:cartItemId",
-  [
-    param("cartItemId")
-      .isInt({ gt: 0 })
-      .withMessage("ID articolo carrello non valido."),
-  ],
+  [param("cartItemId").isInt({ gt: 0 }).withMessage("ID articolo carrello non valido.")],
   removeItemFromCart
 );
 
-// DELETE /api/cart - Svuota il carrello dell'utente corrente
 router.delete("/", clearCart);
-
-// Endpoint pubblico per la pulizia dei carrelli vecchi (da chiamare da Vercel cron)
-router.post("/cleanup", cleanupOldCarts);
 
 export default router;

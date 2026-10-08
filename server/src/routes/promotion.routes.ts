@@ -85,12 +85,14 @@ router.post(
   createPromotion
 );
 
-// GET /api/promotions - Ottiene tutte le promozioni (Pubblico)
-router.get("/", getAllPromotions);
+// GET /api/promotions - Elenco promozioni (solo admin: contiene i codici sconto)
+router.get("/", authenticateToken, authorizeRole([Role.ADMIN]), getAllPromotions);
 
-// GET /api/promotions/:promotionId - Ottiene una promozione specifica (Pubblico)
+// GET /api/promotions/:promotionId - Dettaglio promozione (solo admin)
 router.get(
   "/:promotionId",
+  authenticateToken,
+  authorizeRole([Role.ADMIN]),
   param("promotionId")
     .isInt({ gt: 0 })
     .withMessage("ID promozione non valido."),
