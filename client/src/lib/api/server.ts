@@ -171,6 +171,15 @@ export const DEFAULT_SETTINGS_FALLBACK: StoreSettings = {
   faq: [],
   resi: { giorni: 14, testo: "" },
   newsletterPopup: { attivo: false, titolo: "", testo: "", ritardoSecondi: 20 },
+  temaStagionale: {
+    attivo: false,
+    tema: "halloween",
+    inizio: null,
+    fine: null,
+    categoriaId: null,
+    titolo: "",
+    sottotitolo: "",
+  },
 };
 
 const euroShort = (n: number) =>

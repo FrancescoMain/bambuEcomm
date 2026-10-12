@@ -143,7 +143,19 @@ export interface StoreSettings {
   faq: { domanda: string; risposta: string }[];
   resi: { giorni: number; testo: string };
   newsletterPopup: { attivo: boolean; titolo: string; testo: string; ritardoSecondi: number };
+  temaStagionale: {
+    attivo: boolean;
+    tema: SeasonalTheme;
+    /** AAAA-MM-GG, estremi inclusi (null = nessun limite) */
+    inizio: string | null;
+    fine: string | null;
+    categoriaId: number | null;
+    titolo: string;
+    sottotitolo: string;
+  };
 }
+
+export type SeasonalTheme = "halloween";
 
 export type SelectedVariants = Record<string, { id: number; nome: string; immagine?: string | null }>;
 export type ShippingMethod = "spedizione" | "ritiro" | "giornata";

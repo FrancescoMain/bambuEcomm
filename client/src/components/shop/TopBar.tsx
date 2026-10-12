@@ -5,9 +5,10 @@ import { Phone } from "lucide-react";
 import type { StoreSettings } from "@/lib/types";
 import { FacebookIcon, InstagramIcon, TikTokIcon } from "./icons";
 import { withThreshold } from "@/lib/format";
+import { cn } from "@/lib/cn";
 
 /** Barra messaggi in alto: i testi si modificano da Pannello → Impostazioni */
-export function TopBar({ settings }: { settings: StoreSettings }) {
+export function TopBar({ settings, halloween = false }: { settings: StoreSettings; halloween?: boolean }) {
   const messages = settings.topBar.attivo ? settings.topBar.messaggi : [];
   const [index, setIndex] = useState(0);
 
@@ -21,7 +22,12 @@ export function TopBar({ settings }: { settings: StoreSettings }) {
   const { social, contatti } = settings;
 
   return (
-    <div className="bg-ink text-[13px] text-white">
+    <div
+      className={cn(
+        "text-[13px] text-white",
+        halloween ? "bg-gradient-to-r from-[#1b0f2e] via-[#3b1760] to-[#1b0f2e]" : "bg-ink"
+      )}
+    >
       <div className="container flex h-9 items-center justify-between gap-4">
         <div className="hidden items-center gap-3 sm:flex">
           {social.instagram && (

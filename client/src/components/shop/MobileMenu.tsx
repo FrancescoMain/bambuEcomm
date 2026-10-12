@@ -11,6 +11,7 @@ import type { CategoryNode, StoreSettings } from "@/lib/types";
 import { categoryPath, whatsappUrl } from "@/lib/urls";
 import { Logo } from "./Logo";
 import { WhatsAppIcon } from "./icons";
+import { Pumpkin } from "./halloween/art";
 
 function Branch({ node, depth = 0 }: { node: CategoryNode; depth?: number }) {
   const [open, setOpen] = useState(false);
@@ -48,7 +49,15 @@ function Branch({ node, depth = 0 }: { node: CategoryNode; depth?: number }) {
   );
 }
 
-export function MobileMenu({ tree, settings }: { tree: CategoryNode[]; settings: StoreSettings }) {
+export function MobileMenu({
+  tree,
+  settings,
+  highlight = null,
+}: {
+  tree: CategoryNode[];
+  settings: StoreSettings;
+  highlight?: CategoryNode | null;
+}) {
   const open = useUI((s) => s.menuOpen);
   const close = useUI((s) => s.closeMenu);
   const user = useAuth((s) => s.user);
@@ -59,6 +68,15 @@ export function MobileMenu({ tree, settings }: { tree: CategoryNode[]; settings:
   return (
     <Drawer open={open} onClose={close} side="left" title={<Logo />}>
       <div className="px-5 py-4">
+        {highlight && (
+          <Link
+            href={categoryPath(highlight)}
+            className="mb-2 flex items-center justify-center gap-2 rounded-2xl bg-[#1b0f2e] p-3 text-sm font-bold text-orange"
+          >
+            <Pumpkin className="h-6 w-6" />
+            {highlight.name}
+          </Link>
+        )}
         <div className="mb-4 grid grid-cols-2 gap-2">
           <Link href="/offerte" className="rounded-2xl bg-magenta-soft p-3 text-center text-sm font-bold text-magenta-ink">
             Offerte

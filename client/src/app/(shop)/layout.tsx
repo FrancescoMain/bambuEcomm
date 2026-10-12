@@ -2,11 +2,19 @@ import { Header } from "@/components/shop/Header";
 import { Footer } from "@/components/shop/Footer";
 import { WhatsAppButton } from "@/components/shop/WhatsAppButton";
 import { NewsletterPopup } from "@/components/shop/NewsletterPopup";
+import { HalloweenBats } from "@/components/shop/halloween/HalloweenBats";
 import { getCategoryTree, getSettings } from "@/lib/api/server";
+import { activeSeasonalTheme } from "@/lib/seasonal";
+import type { CategoryNode } from "@/lib/types";
 import { SITE_URL } from "@/lib/urls";
 
 export default async function ShopLayout({ children }: { children: React.ReactNode }) {
   const [tree, settings] = await Promise.all([getCategoryTree(), getSettings()]);
+  // Il periodo si ricontrolla a ogni rigenerazione della pagina (al massimo ogni 5 minuti)
+  const tema = activeSeasonalTheme(settings.temaStagionale);
+  const seasonal = tema
+    ? { tema, category: findCategory(tree, settings.temaStagionale.categoriaId) }
+    : null;
 
   // Dati strutturati del negozio (LocalBusiness) e ricerca interna per Google
   const jsonLd = [
@@ -46,7 +54,7 @@ export default async function ShopLayout({ children }: { children: React.ReactNo
   ];
 
   return (
-    <>
+    <div className={tema ? `tema-${tema} min-h-screen` : undefined}>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
       <a
         href="#contenuto"
@@ -54,11 +62,12 @@ export default async function ShopLayout({ children }: { children: React.ReactNo
       >
         Vai al contenuto
       </a>
-      <Header tree={tree} settings={settings} />
+      <Header tree={tree} settings={settings} seasonal={seasonal} />
       <main id="contenuto" className="min-h-[60vh]">
         {children}
       </main>
       <Footer tree={tree} settings={settings} />
+      {tema === "halloween" && <HalloweenBats />}
       <WhatsAppButton number={settings.contatti.whatsapp} />
       {settings.newsletterPopup.attivo && (
         <NewsletterPopup
@@ -67,6 +76,16 @@ export default async function ShopLayout({ children }: { children: React.ReactNo
           ritardo={settings.newsletterPopup.ritardoSecondi}
         />
       )}
-    </>
+    </div>
   );
 }
+
+const findCategory = (nodes: CategoryNode[], id: number | null): CategoryNode | null => {
+  if (!id) return null;
+  for (const node of nodes) {
+    if (node.id === id) return node;
+    const found = findCategory(node.children, id);
+    if (found) return found;
+  }
+  return null;
+};

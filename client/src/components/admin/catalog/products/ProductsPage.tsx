@@ -17,6 +17,7 @@ import { DiscountModal } from "../DiscountModal";
 import type { AdminListProduct, DiscountTarget } from "../types";
 import { mergePricing, pluralize } from "../utils";
 import { BulkBar, type BulkAction } from "./BulkBar";
+import { BulkCategoryModal } from "./BulkCategoryModal";
 import { DiscountTip, ListSkeleton } from "./ListParts";
 import { LIST_QUERY_KEY, PAGE_SIZE, readFilters, toApiQuery, writeFilters, type ListFilters } from "./filters";
 import { Pagination } from "./Pagination";
@@ -27,7 +28,7 @@ import { SelectBox, type RowHandlers } from "./RowParts";
 import { StockAlertsPanel } from "./StockAlertsPanel";
 import { useProductActions } from "./useProductActions";
 
-const BULK_SUCCESS: Record<Exclude<BulkAction, "discount" | "removeDiscount">, (n: number) => string> = {
+const BULK_SUCCESS: Record<Exclude<BulkAction, "discount" | "removeDiscount" | "category">, (n: number) => string> = {
   available: (n) => `${pluralize(n, "prodotto è", "prodotti sono")} di nuovo in vendita.`,
   unavailable: (n) => (n === 1 ? "1 prodotto segnato come esaurito." : `${n.toLocaleString("it-IT")} prodotti segnati come esauriti.`),
   feature: (n) => `${pluralize(n, "prodotto messo", "prodotti messi")} in evidenza nella home.`,
@@ -56,6 +57,7 @@ export function ProductsPage() {
   const [discountFor, setDiscountFor] = useState<DiscountTarget | null>(null);
   const [bulkTarget, setBulkTarget] = useState<BulkDiscountTarget | null>(null);
   const [bulkBusy, setBulkBusy] = useState<BulkAction | null>(null);
+  const [categoryFor, setCategoryFor] = useState<number[] | null>(null);
 
   const reload = useCallback(() => setReloadKey((k) => k + 1), []);
 
@@ -197,6 +199,10 @@ export function ProductsPage() {
     if (!ids.length) return;
     if (action === "discount") {
       setBulkTarget({ kind: "products", ids });
+      return;
+    }
+    if (action === "category") {
+      setCategoryFor(ids);
       return;
     }
     if (action === "removeDiscount") {
@@ -384,6 +390,7 @@ export function ProductsPage() {
         onClose={() => setBulkTarget(null)}
         onDone={reload}
       />
+      <BulkCategoryModal ids={categoryFor} categories={categories} onClose={() => setCategoryFor(null)} onDone={reload} />
       {confirmDialog}
     </div>
   );

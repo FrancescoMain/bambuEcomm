@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { CircleHelp, CreditCard, Gift, LayoutTemplate, Mail, RotateCcw, Store, Truck } from "lucide-react";
+import { CircleHelp, CreditCard, Ghost, Gift, LayoutTemplate, Mail, RotateCcw, Store, Truck } from "lucide-react";
 import type { StoreSettings } from "@/lib/types";
 import { api } from "@/lib/api/client";
 import { Skeleton } from "@/components/ui/Spinner";
@@ -16,6 +16,7 @@ import { HomeSection } from "./sections/HomeSection";
 import { PaymentsSection } from "./sections/PaymentsSection";
 import { PopupSection } from "./sections/PopupSection";
 import { ReturnsSection } from "./sections/ReturnsSection";
+import { SeasonalSection } from "./sections/SeasonalSection";
 import { ShippingSection } from "./sections/ShippingSection";
 import { StoreSection } from "./sections/StoreSection";
 import { DirtyContext, SavedSettingsContext } from "./useSettingsForm";
@@ -25,6 +26,7 @@ const SECTIONS = [
   { key: "pagamenti", label: "Pagamenti", icon: CreditCard, Component: PaymentsSection },
   { key: "omaggio", label: "Omaggio", icon: Gift, Component: GiftSection },
   { key: "home", label: "Home page", icon: LayoutTemplate, Component: HomeSection },
+  { key: "halloween", label: "Tema Halloween", icon: Ghost, Component: SeasonalSection },
   { key: "faq", label: "Domande frequenti", icon: CircleHelp, Component: FaqSection },
   { key: "resi", label: "Resi e recesso", icon: RotateCcw, Component: ReturnsSection },
   { key: "popup", label: "Popup newsletter", icon: Mail, Component: PopupSection },

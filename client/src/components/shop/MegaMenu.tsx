@@ -7,11 +7,12 @@ import { ChevronDown } from "lucide-react";
 import type { CategoryNode } from "@/lib/types";
 import { categoryPath } from "@/lib/urls";
 import { cn } from "@/lib/cn";
+import { Pumpkin } from "./halloween/art";
 
 const ACCENTS = ["bg-orange", "bg-magenta", "bg-leaf", "bg-sky"];
 
 /** Menu principale desktop: categorie con pannello a tendina su 3 livelli */
-export function MegaMenu({ tree }: { tree: CategoryNode[] }) {
+export function MegaMenu({ tree, highlight = null }: { tree: CategoryNode[]; highlight?: CategoryNode | null }) {
   const [openId, setOpenId] = useState<number | null>(null);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pathname = usePathname();
@@ -30,7 +31,18 @@ export function MegaMenu({ tree }: { tree: CategoryNode[] }) {
   return (
     <nav aria-label="Categorie" className="hidden lg:block" onMouseLeave={close}>
       <ul className="flex items-center gap-1">
-        {tree.map((cat, i) => {
+        {highlight && (
+          <li onMouseEnter={close}>
+            <Link
+              href={categoryPath(highlight)}
+              className="flex items-center gap-1.5 rounded-full bg-[#1b0f2e] py-1.5 pl-2 pr-3.5 text-[15px] font-bold text-orange transition hover:bg-[#2c1248]"
+            >
+              <Pumpkin className="h-6 w-6" />
+              {highlight.name}
+            </Link>
+          </li>
+        )}
+        {tree.filter((cat) => cat.id !== highlight?.id).map((cat, i) => {
           const hasChildren = cat.children.length > 0;
           const isOpen = openId === cat.id;
           return (

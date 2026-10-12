@@ -667,15 +667,37 @@ export const bulkUpdate = async (req: Request, res: Response): Promise<void> => 
   const data: Prisma.ProductUpdateManyMutationInput = {};
   if (typeof req.body.available === "boolean") data.available = req.body.available;
   if (typeof req.body.inEvidenza === "boolean") data.inEvidenza = req.body.inEvidenza;
-  if (Object.keys(data).length === 0) {
+  // Aggiunge/toglie una categoria a tutti i prodotti selezionati (es. "Halloween")
+  const addCategoryId = parseId(req.body.addCategoryId);
+  const removeCategoryId = parseId(req.body.removeCategoryId);
+  const categoryChange = !isNaN(addCategoryId) || !isNaN(removeCategoryId);
+  if (Object.keys(data).length === 0 && !categoryChange) {
     res.status(400).json({ message: "Nessuna modifica indicata." });
     return;
   }
   try {
-    const result = await prisma.product.updateMany({ where: { id: { in: productIds } }, data });
+    let updated = 0;
+    if (Object.keys(data).length) {
+      updated = (await prisma.product.updateMany({ where: { id: { in: productIds } }, data })).count;
+    }
+    if (categoryChange) {
+      const categoryId = isNaN(addCategoryId) ? removeCategoryId : addCategoryId;
+      if (!(await prisma.category.findUnique({ where: { id: categoryId }, select: { id: true } }))) {
+        res.status(404).json({ message: "Categoria non trovata." });
+        return;
+      }
+      const existing = await prisma.product.findMany({ where: { id: { in: productIds } }, select: { id: true } });
+      const relation = isNaN(addCategoryId)
+        ? { disconnect: { id: removeCategoryId } }
+        : { connect: { id: addCategoryId } };
+      await prisma.$transaction(
+        existing.map(({ id }) => prisma.product.update({ where: { id }, data: { categoria: relation }, select: { id: true } }))
+      );
+      updated = Math.max(updated, existing.length);
+    }
     if (data.available === true) productIds.forEach((id) => notifyBackInStock(id));
-    revalidateStorefront(["products"]);
-    res.json({ message: `${result.count} prodotti aggiornati`, updated: result.count });
+    revalidateStorefront(categoryChange ? ["products", "categories"] : ["products"]);
+    res.json({ message: `${updated} prodotti aggiornati`, updated });
   } catch (error) {
     prismaErrorResponse(error, res, "Errore nell'aggiornamento dei prodotti");
   }

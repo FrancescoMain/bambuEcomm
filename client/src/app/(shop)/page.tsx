@@ -6,9 +6,11 @@ import { StoreSection } from "@/components/home/StoreSection";
 import { ProductCarousel } from "@/components/shop/ProductCarousel";
 import { PostCard } from "@/components/shop/PostCard";
 import { SectionHeading } from "@/components/ui/SectionHeading";
-import { getPosts, getProducts, getSettings } from "@/lib/api/server";
+import { HalloweenHero } from "@/components/shop/halloween/HalloweenHero";
+import { getCategories, getPosts, getProducts, getSettings } from "@/lib/api/server";
+import { activeSeasonalTheme } from "@/lib/seasonal";
 import { toCardProduct } from "@/lib/types";
-import { SITE_URL } from "@/lib/urls";
+import { SITE_URL, categoryPath } from "@/lib/urls";
 
 // La home si rigenera da sola ogni minuto (o subito dopo una modifica admin)
 export const revalidate = 60;
@@ -19,17 +21,42 @@ export const metadata: Metadata = {
 };
 
 export default async function HomePage() {
-  const [settings, offerte, selezione, bestseller, novita, posts] = await Promise.all([
-    getSettings(),
+  const settings = await getSettings();
+  const stagione = settings.temaStagionale;
+  const halloween = activeSeasonalTheme(stagione) === "halloween";
+  const [offerte, selezione, bestseller, novita, posts, categories, halloweenProducts] = await Promise.all([
     getProducts({ onSale: true, available: true, sort: "discount", limit: 12 }),
     getProducts({ featured: true, available: true, limit: 12 }),
     getProducts({ sort: "bestseller", available: true, limit: 12 }),
     getProducts({ sort: "newest", available: true, limit: 12 }),
     getPosts(3),
+    halloween && stagione.categoriaId ? getCategories() : Promise.resolve([]),
+    halloween && stagione.categoriaId
+      ? getProducts({ categoryId: stagione.categoriaId, available: true, sort: "featured", limit: 12 })
+      : null,
   ]);
+  const halloweenCategory = categories.find((c) => c.id === stagione.categoriaId);
+  const halloweenHref = halloweenCategory ? categoryPath(halloweenCategory) : null;
 
   return (
     <div className="container space-y-14 pt-5 sm:space-y-20 sm:pt-8">
+      {halloween && (
+        <div className="space-y-8">
+          <HalloweenHero titolo={stagione.titolo} sottotitolo={stagione.sottotitolo} href={halloweenHref} />
+          {halloweenProducts && halloweenProducts.data.length > 0 && (
+            <section>
+              <SectionHeading
+                title="Idee per Halloween"
+                subtitle="Dolcetto o scherzetto? Scegli da qui"
+                href={halloweenHref ?? undefined}
+                linkLabel="Tutta la collezione"
+                accent="halloween-stripe"
+              />
+              <ProductCarousel products={halloweenProducts.data.map(toCardProduct)} />
+            </section>
+          )}
+        </div>
+      )}
       <HeroSlider banners={settings.banner} />
       <ServiceBar servizi={settings.servizi} soglia={settings.spedizione.sogliaGratuita} />
       <ShowcaseTiles tiles={settings.vetrine} />

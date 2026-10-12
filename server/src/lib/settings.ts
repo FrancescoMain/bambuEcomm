@@ -56,7 +56,24 @@ export interface StoreSettings {
   faq: { domanda: string; risposta: string }[];
   resi: { giorni: number; testo: string };
   newsletterPopup: { attivo: boolean; titolo: string; testo: string; ritardoSecondi: number };
+  /**
+   * Tema stagionale (per ora solo Halloween): con l'interruttore acceso il sito cambia
+   * grafica tra le date indicate (estremi inclusi, ora di Roma) e mette in vetrina la categoria.
+   */
+  temaStagionale: {
+    attivo: boolean;
+    tema: SeasonalTheme;
+    /** Date nel formato AAAA-MM-GG; null = nessun limite */
+    inizio: string | null;
+    fine: string | null;
+    categoriaId: number | null;
+    titolo: string;
+    sottotitolo: string;
+  };
 }
+
+export const SEASONAL_THEMES = ["halloween"] as const;
+export type SeasonalTheme = (typeof SEASONAL_THEMES)[number];
 
 export const DEFAULT_SETTINGS: StoreSettings = {
   azienda: { ragioneSociale: "Cartoleria Bambù", partitaIva: "" },
@@ -182,6 +199,15 @@ export const DEFAULT_SETTINGS: StoreSettings = {
     testo: "Novità, offerte e idee per la scuola direttamente nella tua email.",
     ritardoSecondi: 20,
   },
+  temaStagionale: {
+    attivo: false,
+    tema: "halloween",
+    inizio: null,
+    fine: null,
+    categoriaId: null,
+    titolo: "Halloween da Bambù",
+    sottotitolo: "Costumi, trucchi, decorazioni e dolcetti per una notte da brividi",
+  },
 };
 
 const KEY = "store";
@@ -225,6 +251,14 @@ const strings = (v: unknown, max: number) =>
     .filter(Boolean)
     .slice(0, max);
 
+/** "AAAA-MM-GG" valida oppure null */
+const isoDate = (v: unknown): string | null => {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(v ?? "").trim());
+  if (!m) return null;
+  const date = new Date(Date.UTC(+m[1], +m[2] - 1, +m[3]));
+  return date.toISOString().slice(0, 10) === m[0] ? m[0] : null;
+};
+
 /** Normalizza e salva le impostazioni (merge con quelle esistenti). */
 export const saveSettings = async (patch: unknown): Promise<StoreSettings> => {
   const current = await getSettings(0);
@@ -265,6 +299,16 @@ export const saveSettings = async (patch: unknown): Promise<StoreSettings> => {
   s.newsletterPopup.attivo = !!s.newsletterPopup.attivo;
   s.newsletterPopup.ritardoSecondi = int(s.newsletterPopup.ritardoSecondi, 20, 0, 600);
   s.countdown.attivo = !!s.countdown.attivo && !!s.countdown.data;
+  const t = s.temaStagionale;
+  t.attivo = !!t.attivo;
+  if (!SEASONAL_THEMES.includes(t.tema)) t.tema = d.temaStagionale.tema;
+  t.inizio = isoDate(t.inizio);
+  t.fine = isoDate(t.fine);
+  if (t.inizio && t.fine && t.fine < t.inizio) [t.inizio, t.fine] = [t.fine, t.inizio];
+  const themeCat = parseInt(String(t.categoriaId ?? ""), 10);
+  t.categoriaId = Number.isFinite(themeCat) && themeCat > 0 ? themeCat : null;
+  t.titolo = String(t.titolo ?? "").trim().slice(0, 80) || d.temaStagionale.titolo;
+  t.sottotitolo = String(t.sottotitolo ?? "").trim().slice(0, 200);
 
   await prisma.setting.upsert({
     where: { key: KEY },
