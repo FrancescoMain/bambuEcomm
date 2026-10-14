@@ -76,6 +76,18 @@ model Product {
   @@index([marca])
 }
 
+/// Scheda di una marca (logo e descrizione). I prodotti restano legati col campo testo
+/// `Product.marca`: la scheda si abbina tramite lo slug del nome.
+model Brand {
+  id          Int      @id @default(autoincrement())
+  slug        String   @unique
+  nome        String
+  logo        String?
+  descrizione String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
 model Category {
   id          Int         @id @default(autoincrement())
   name        String      @unique

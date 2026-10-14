@@ -19,6 +19,7 @@ import {
   ShoppingBag,
   Star,
   Store,
+  Tags,
   Upload,
   X,
 } from "lucide-react";
@@ -31,6 +32,7 @@ export const ADMIN_NAV = [
   { href: "/dashboard/ordini", label: "Ordini", icon: ShoppingBag },
   { href: "/dashboard/prodotti", label: "Prodotti", icon: Package },
   { href: "/dashboard/categorie", label: "Categorie", icon: FolderTree },
+  { href: "/dashboard/marche", label: "Marche", icon: Tags },
   { href: "/dashboard/promozioni", label: "Sconti e coupon", icon: BadgePercent },
   { href: "/dashboard/messaggi", label: "Messaggi", icon: Inbox },
   { href: "/dashboard/recensioni", label: "Recensioni", icon: Star },

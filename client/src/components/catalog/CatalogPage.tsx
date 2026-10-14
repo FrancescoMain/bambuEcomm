@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import { SearchX } from "lucide-react";
 import { getFacets, getProducts, type ProductQuery } from "@/lib/api/server";
@@ -31,6 +32,7 @@ export async function CatalogPage({
   allowRelevance,
   accent = "bg-brand-400",
   fixedBrand,
+  titleImage,
 }: {
   title: string;
   subtitle?: React.ReactNode;
@@ -47,6 +49,8 @@ export async function CatalogPage({
   accent?: string;
   /** Pagina di una marca: filtra tutto per quella marca e nasconde il filtro Marca */
   fixedBrand?: string;
+  /** Immagine accanto al titolo (es. logo della marca) */
+  titleImage?: string | null;
 }) {
   const categoryId = baseQuery.categoryId;
   const query: ProductQuery = {
@@ -108,7 +112,14 @@ export async function CatalogPage({
         <div className="mb-2 flex items-center gap-2">
           <span className={`h-2 w-8 rounded-full ${accent}`} />
         </div>
-        <h1 className="text-balance text-3xl font-extrabold sm:text-4xl">{title}</h1>
+        <div className="flex items-center gap-4">
+          {titleImage && (
+            <span className="relative h-16 w-16 shrink-0 overflow-hidden rounded-2xl border border-paper-line bg-white sm:h-20 sm:w-20">
+              <Image src={titleImage} alt="" fill sizes="80px" className="object-contain p-1.5" priority />
+            </span>
+          )}
+          <h1 className="text-balance text-3xl font-extrabold sm:text-4xl">{title}</h1>
+        </div>
         {subtitle && <p className="mt-2 max-w-2xl text-ink-muted">{subtitle}</p>}
         {subcategories.length > 0 && (
           <div className="-mx-4 mt-5 flex gap-2 overflow-x-auto px-4 pb-1 scrollbar-none sm:mx-0 sm:flex-wrap sm:px-0 lg:hidden">

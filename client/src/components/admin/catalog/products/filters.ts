@@ -1,5 +1,5 @@
 // Stato dei filtri della lista prodotti, sincronizzato con l'URL
-// (?q=&categoria=&disponibilita=&offerta=1&evidenza=1&ordine=&pagina=)
+// (?q=&categoria=&disponibilita=&offerta=1&evidenza=1&senza-marca=1&ordine=&pagina=)
 
 export const PAGE_SIZE = 20;
 
@@ -23,6 +23,7 @@ export interface ListFilters {
   disponibilita: Availability;
   offerta: boolean;
   evidenza: boolean;
+  senzaMarca: boolean;
   ordine: SortKey;
   pagina: number;
 }
@@ -42,6 +43,7 @@ export const readFilters = (params: Params): ListFilters => {
     disponibilita: disp === "disponibili" || disp === "esauriti" ? disp : "",
     offerta: params.get("offerta") === "1",
     evidenza: params.get("evidenza") === "1",
+    senzaMarca: params.get("senza-marca") === "1",
     ordine: isSort(ordine) ? ordine : "newest",
     pagina: Number.isInteger(pagina) && pagina > 1 ? pagina : 1,
   };
@@ -59,6 +61,7 @@ export const writeFilters = (current: URLSearchParams, f: ListFilters): string =
   set("disponibilita", f.disponibilita || null);
   set("offerta", f.offerta ? "1" : null);
   set("evidenza", f.evidenza ? "1" : null);
+  set("senza-marca", f.senzaMarca ? "1" : null);
   set("ordine", f.ordine !== "newest" ? f.ordine : null);
   set("pagina", f.pagina > 1 ? String(f.pagina) : null);
   return params.toString();
@@ -73,11 +76,12 @@ export const toApiQuery = (f: ListFilters) => ({
   available: f.disponibilita === "disponibili" ? "true" : f.disponibilita === "esauriti" ? "false" : undefined,
   onSale: f.offerta ? "true" : undefined,
   featured: f.evidenza ? "true" : undefined,
+  noBrand: f.senzaMarca ? "true" : undefined,
   sort: f.ordine,
 });
 
 export const activeFilterCount = (f: ListFilters) =>
-  [f.categoria, f.disponibilita, f.offerta, f.evidenza].filter(Boolean).length;
+  [f.categoria, f.disponibilita, f.offerta, f.evidenza, f.senzaMarca].filter(Boolean).length;
 
 /** Dove tornare dall'editor: la lista con gli stessi filtri */
 export const LIST_QUERY_KEY = "bambu-admin:prodotti-query";

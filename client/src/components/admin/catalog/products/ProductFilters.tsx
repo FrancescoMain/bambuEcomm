@@ -1,7 +1,7 @@
 "use client";
 
 import { forwardRef, useState } from "react";
-import { BadgePercent, Search, SlidersHorizontal, Star, X } from "lucide-react";
+import { BadgePercent, Search, SlidersHorizontal, Star, Tag, X } from "lucide-react";
 import { cn } from "@/lib/cn";
 import { indentLabel, type FlatCategory } from "../categories";
 import { Segmented } from "../Segmented";
@@ -129,6 +129,14 @@ export const ProductFilters = forwardRef<
           className={chip(filters.evidenza, "brand")}
         >
           <Star className={cn("h-4 w-4", filters.evidenza && "fill-orange text-orange")} /> Solo in evidenza
+        </button>
+        <button
+          type="button"
+          aria-pressed={filters.senzaMarca}
+          onClick={() => onChange({ senzaMarca: !filters.senzaMarca })}
+          className={chip(filters.senzaMarca, "brand")}
+        >
+          <Tag className="h-4 w-4" /> Senza marca
         </button>
         {(count > 0 || filters.q) && (
           <button

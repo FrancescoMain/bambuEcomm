@@ -140,7 +140,13 @@ export const buildCategoryTree = (categories: Category[]): CategoryNode[] => {
 export const getCategoryTree = async () => buildCategoryTree(await getCategories());
 
 export const getBrands = async () =>
-  (await safeGet<{ name: string; count: number }[]>("/products/brands", [], { revalidate: 600, tags: ["products"] })).map(
+  (
+    await safeGet<{ name: string; count: number; logo?: string | null; descrizione?: string | null }[]>(
+      "/products/brands",
+      [],
+      { revalidate: 600, tags: ["products"] }
+    )
+  ).map(
     (b) => ({ ...b, slug: slugify(b.name) })
   );
 

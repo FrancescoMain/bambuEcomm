@@ -1,15 +1,16 @@
 "use client";
 
-import { BadgePercent, Eraser, Eye, EyeOff, FolderPlus, Star, StarOff, X } from "lucide-react";
+import { BadgePercent, Eraser, Eye, EyeOff, FolderPlus, Star, StarOff, Tag, X } from "lucide-react";
 import { cn } from "@/lib/cn";
 import { Spinner } from "@/components/ui/Spinner";
 
-export type BulkAction = "discount" | "removeDiscount" | "category" | "available" | "unavailable" | "feature" | "unfeature";
+export type BulkAction = "discount" | "removeDiscount" | "category" | "brand" | "available" | "unavailable" | "feature" | "unfeature";
 
 const ACTIONS: { id: BulkAction; label: string; icon: React.ComponentType<{ className?: string }>; sale?: boolean }[] = [
   { id: "discount", label: "Sconto %", icon: BadgePercent, sale: true },
   { id: "removeDiscount", label: "Rimuovi sconto", icon: Eraser },
   { id: "category", label: "Aggiungi a categoria", icon: FolderPlus },
+  { id: "brand", label: "Imposta marca", icon: Tag },
   { id: "available", label: "Rendi disponibili", icon: Eye },
   { id: "unavailable", label: "Rendi non disponibili", icon: EyeOff },
   { id: "feature", label: "In evidenza", icon: Star },

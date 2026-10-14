@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { BadgePercent, PackageSearch, Plus, Upload } from "lucide-react";
+import { BadgePercent, PackageSearch, Plus, Tags, Upload } from "lucide-react";
 import { toast } from "sonner";
 import { PageTitle } from "@/components/admin/PageTitle";
 import { useConfirm } from "@/components/admin/useConfirm";
@@ -17,9 +17,10 @@ import { DiscountModal } from "../DiscountModal";
 import type { AdminListProduct, DiscountTarget } from "../types";
 import { mergePricing, pluralize } from "../utils";
 import { BulkBar, type BulkAction } from "./BulkBar";
+import { BulkBrandModal } from "./BulkBrandModal";
 import { BulkCategoryModal } from "./BulkCategoryModal";
 import { DiscountTip, ListSkeleton } from "./ListParts";
-import { LIST_QUERY_KEY, PAGE_SIZE, readFilters, toApiQuery, writeFilters, type ListFilters } from "./filters";
+import { activeFilterCount, LIST_QUERY_KEY, PAGE_SIZE, readFilters, toApiQuery, writeFilters, type ListFilters } from "./filters";
 import { Pagination } from "./Pagination";
 import { ProductCards } from "./ProductCards";
 import { ProductFilters } from "./ProductFilters";
@@ -28,7 +29,7 @@ import { SelectBox, type RowHandlers } from "./RowParts";
 import { StockAlertsPanel } from "./StockAlertsPanel";
 import { useProductActions } from "./useProductActions";
 
-const BULK_SUCCESS: Record<Exclude<BulkAction, "discount" | "removeDiscount" | "category">, (n: number) => string> = {
+const BULK_SUCCESS: Record<Exclude<BulkAction, "discount" | "removeDiscount" | "category" | "brand">, (n: number) => string> = {
   available: (n) => `${pluralize(n, "prodotto è", "prodotti sono")} di nuovo in vendita.`,
   unavailable: (n) => (n === 1 ? "1 prodotto segnato come esaurito." : `${n.toLocaleString("it-IT")} prodotti segnati come esauriti.`),
   feature: (n) => `${pluralize(n, "prodotto messo", "prodotti messi")} in evidenza nella home.`,
@@ -58,6 +59,7 @@ export function ProductsPage() {
   const [bulkTarget, setBulkTarget] = useState<BulkDiscountTarget | null>(null);
   const [bulkBusy, setBulkBusy] = useState<BulkAction | null>(null);
   const [categoryFor, setCategoryFor] = useState<number[] | null>(null);
+  const [brandFor, setBrandFor] = useState<number[] | null>(null);
 
   const reload = useCallback(() => setReloadKey((k) => k + 1), []);
 
@@ -205,6 +207,10 @@ export function ProductsPage() {
       setCategoryFor(ids);
       return;
     }
+    if (action === "brand") {
+      setBrandFor(ids);
+      return;
+    }
     if (action === "removeDiscount") {
       const ok = await confirm({
         title: "Togliere lo sconto?",
@@ -243,11 +249,11 @@ export function ProductsPage() {
     }
   };
 
-  const hasFilters = !!(filters.q || filters.categoria || filters.disponibilita || filters.offerta || filters.evidenza);
+  const hasFilters = !!filters.q || activeFilterCount(filters) > 0;
   const resetFilters = () => {
     lastQ.current = "";
     setSearch("");
-    update({ q: "", categoria: null, disponibilita: "", offerta: false, evidenza: false });
+    update({ q: "", categoria: null, disponibilita: "", offerta: false, evidenza: false, senzaMarca: false });
   };
 
   return (
@@ -300,7 +306,18 @@ export function ProductsPage() {
         <ListSkeleton />
       ) : products.length === 0 ? (
         <div className="card">
-          {hasFilters ? (
+          {filters.senzaMarca && !filters.q && activeFilterCount(filters) === 1 ? (
+            <EmptyState
+              icon={<Tags className="h-7 w-7" />}
+              title="Tutti i prodotti hanno una marca"
+              text="Nessun prodotto resta fuori dalle pagine marca del negozio."
+              action={
+                <Button variant="outline" onClick={resetFilters}>
+                  Vedi tutti i prodotti
+                </Button>
+              }
+            />
+          ) : hasFilters ? (
             <EmptyState
               icon={<PackageSearch className="h-7 w-7" />}
               title="Nessun prodotto trovato"
@@ -391,6 +408,15 @@ export function ProductsPage() {
         onDone={reload}
       />
       <BulkCategoryModal ids={categoryFor} categories={categories} onClose={() => setCategoryFor(null)} onDone={reload} />
+      <BulkBrandModal
+        ids={brandFor}
+        onClose={() => setBrandFor(null)}
+        onDone={() => {
+          // Con il filtro "Senza marca" i prodotti aggiornati spariscono dalla lista
+          setSelected(new Set());
+          reload();
+        }}
+      />
       {confirmDialog}
     </div>
   );

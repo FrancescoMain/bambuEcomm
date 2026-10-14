@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import Link from "next/link";
 import { Tags } from "lucide-react";
 import { getBrands } from "@/lib/api/server";
@@ -31,12 +32,18 @@ function BrandGrid({ brands }: { brands: Brand[] }) {
             href={brandPath(b.name)}
             className="card flex items-center gap-4 p-4 transition hover:-translate-y-0.5 hover:border-brand-500"
           >
-            <span
-              aria-hidden
-              className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-brand-50 text-lg font-extrabold text-brand-700"
-            >
-              {b.name.charAt(0).toUpperCase()}
-            </span>
+            {b.logo ? (
+              <span className="relative h-12 w-12 shrink-0 overflow-hidden rounded-xl border border-paper-line bg-white">
+                <Image src={b.logo} alt="" fill sizes="48px" className="object-contain p-1" />
+              </span>
+            ) : (
+              <span
+                aria-hidden
+                className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-brand-50 text-lg font-extrabold text-brand-700"
+              >
+                {b.name.charAt(0).toUpperCase()}
+              </span>
+            )}
             <span className="min-w-0">
               <span className="block truncate font-bold text-ink">{b.name}</span>
               <span className="text-sm text-ink-muted">{plural(b.count, "prodotto", "prodotti")} →</span>

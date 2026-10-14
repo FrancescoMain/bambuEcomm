@@ -32,6 +32,13 @@ va al pagamento; se poi non paga, entro 24 ore l'utilizzo torna disponibile.
 - **Importa prodotti**: carica un file Excel o CSV (c'è un file di esempio da scaricare). I prezzi possono
   essere scritti con la virgola (12,50).
 
+## Marche
+- La marca si scrive nella scheda del prodotto. Per assegnarla a tanti prodotti insieme: nella lista
+  **Prodotti** premi **Senza marca**, seleziona gli articoli e usa **Imposta marca** (da lì si può anche togliere).
+  Maiuscole e spazi non contano: "legami" finisce nella marca "Legami" già esistente.
+- **Marche** (menu a sinistra): per ogni marca carichi il logo e scrivi una descrizione. Compaiono nella
+  pagina **Marche** del negozio e in cima alla pagina della marca. Una marca senza logo mostra la sua iniziale.
+
 ## Ordini
 **Ordini** → apri l'ordine: prodotti con colore/personalizzazione, dati del cliente (email, telefono,
 WhatsApp), indirizzo o "Ritiro in negozio", note e dati per la fattura.

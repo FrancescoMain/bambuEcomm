@@ -9,6 +9,8 @@ export interface ProductFilters {
   minPrice?: number;
   maxPrice?: number;
   brands?: string[];
+  /** Solo prodotti senza marca (pannello: per completarli) */
+  withoutBrand?: boolean;
   onSale?: boolean;
   featured?: boolean;
   available?: boolean;
@@ -136,6 +138,7 @@ const buildWhere = (f: ProductFilters): Prisma.Sql => {
   if (f.brands && f.brands.length) {
     parts.push(Prisma.sql`${BRAND_KEY} IN (${Prisma.join(f.brands.map((b) => b.trim().toLowerCase()))})`);
   }
+  if (f.withoutBrand) parts.push(Prisma.sql`NOT (${HAS_BRAND})`);
   if (f.onSale) parts.push(Prisma.sql`${EFFECTIVE_PRICE} < p."prezzo"`);
   if (f.featured) parts.push(Prisma.sql`p."inEvidenza" = TRUE`);
   if (f.available !== undefined) parts.push(Prisma.sql`p."available" = ${f.available}`);
@@ -286,12 +289,27 @@ export const queryFacets = async (filters: ProductFilters) => {
   };
 };
 
-/** Elenco marche in ordine alfabetico, con il numero di prodotti (filtrabile per testo). */
+/**
+ * Elenco marche in ordine alfabetico, con il numero di prodotti (filtrabile per testo)
+ * e, se la marca ha una scheda, logo e descrizione.
+ */
 export const queryBrands = async (search?: string, limit?: number) => {
   const rows = await prisma.$queryRaw<{ name: string; count: bigint }[]>`
     SELECT ${BRAND_NAME} AS name, COUNT(*)::bigint AS count FROM "Product" p
     WHERE ${HAS_BRAND} ${search ? Prisma.sql`AND p."marca" ILIKE ${escapeLike(search.trim())}` : Prisma.empty}
     GROUP BY ${BRAND_KEY} ORDER BY ${BRAND_KEY}
     ${limit ? Prisma.sql`LIMIT ${limit}` : Prisma.empty}`;
-  return rows.map((r) => ({ name: r.name, count: Number(r.count) }));
+  const list = rows.map((r) => ({ name: r.name, slug: slugify(r.name), count: Number(r.count) }));
+  const cards = list.length
+    ? await prisma.brand.findMany({
+        where: { slug: { in: list.map((b) => b.slug) } },
+        select: { slug: true, logo: true, descrizione: true },
+      })
+    : [];
+  const bySlug = new Map(cards.map((c) => [c.slug, c]));
+  return list.map((b) => ({
+    ...b,
+    logo: bySlug.get(b.slug)?.logo ?? null,
+    descrizione: bySlug.get(b.slug)?.descrizione ?? null,
+  }));
 };

@@ -72,6 +72,7 @@ const buildFilters = async (query: Request["query"]): Promise<ProductFilters> =>
     minPrice: parsePrice(query.minPrice),
     maxPrice: parsePrice(query.maxPrice),
     brands: parseBrands(query.brand),
+    withoutBrand: parseBool(query.noBrand),
     onSale: parseBool(query.onSale),
     featured: parseBool(query.featured),
     available: parseBool(query.available),
@@ -653,7 +654,7 @@ export const bulkDiscount = async (req: Request, res: Response): Promise<void> =
   }
 };
 
-// PATCH /api/products/bulk — azioni rapide su più prodotti (disponibilità, evidenza)
+// PATCH /api/products/bulk — azioni rapide su più prodotti (disponibilità, evidenza, marca, categoria)
 export const bulkUpdate = async (req: Request, res: Response): Promise<void> => {
   const productIds = parseIdList(req.body?.productIds);
   if (!productIds.length) {
@@ -663,6 +664,15 @@ export const bulkUpdate = async (req: Request, res: Response): Promise<void> => 
   const data: Prisma.ProductUpdateManyMutationInput = {};
   if (typeof req.body.available === "boolean") data.available = req.body.available;
   if (typeof req.body.inEvidenza === "boolean") data.inEvidenza = req.body.inEvidenza;
+  // Stessa marca su tutti i selezionati (null o "" la toglie)
+  if (req.body.marca === null || typeof req.body.marca === "string") {
+    const marca = (req.body.marca || "").trim();
+    if (marca.length > 80) {
+      res.status(400).json({ message: "Il nome della marca è troppo lungo." });
+      return;
+    }
+    data.marca = marca || null;
+  }
   // Aggiunge/toglie una categoria a tutti i prodotti selezionati (es. "Halloween")
   const addCategoryId = parseId(req.body.addCategoryId);
   const removeCategoryId = parseId(req.body.removeCategoryId);
