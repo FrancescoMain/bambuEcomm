@@ -11,7 +11,7 @@ export const productPath = (p: { id: number; titolo: string }) => `/product/${p.
 
 export const categoryPath = (c: { name: string; slug?: string }) => `/categoria/${c.slug || slugify(c.name)}`;
 
-export const brandPath = (name: string) => `/prodotti?brand=${encodeURIComponent(name)}`;
+export const brandPath = (name: string) => `/marche/${slugify(name)}`;
 
 export const absoluteUrl = (path: string) => (path.startsWith("http") ? path : `${SITE_URL}${path}`);
 

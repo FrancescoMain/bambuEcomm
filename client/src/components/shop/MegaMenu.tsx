@@ -132,6 +132,14 @@ export function MegaMenu({ tree, highlight = null }: { tree: CategoryNode[]; hig
             Novità
           </Link>
         </li>
+        <li>
+          <Link
+            href="/marche"
+            className="rounded-full px-3.5 py-2 text-[15px] font-semibold text-ink-soft hover:text-ink"
+          >
+            Marche
+          </Link>
+        </li>
       </ul>
     </nav>
   );

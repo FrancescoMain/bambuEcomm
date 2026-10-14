@@ -95,6 +95,11 @@ export function MobileMenu({
               Tutti i prodotti
             </Link>
           </li>
+          <li>
+            <Link href="/marche" className="block py-3 text-[15px] font-semibold">
+              Marche
+            </Link>
+          </li>
         </ul>
 
         <div className="mt-6 space-y-1 border-t border-paper-line pt-4 text-[15px]">

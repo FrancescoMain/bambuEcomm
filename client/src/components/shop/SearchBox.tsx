@@ -7,7 +7,7 @@ import { useEffect, useId, useRef, useState } from "react";
 import { Loader2, Search, X } from "lucide-react";
 import { api } from "@/lib/api/client";
 import { formatPrice } from "@/lib/format";
-import { categoryPath, productPath } from "@/lib/urls";
+import { brandPath, categoryPath, productPath } from "@/lib/urls";
 import { cn } from "@/lib/cn";
 
 type Suggestion = {
@@ -21,11 +21,12 @@ type Suggestion = {
     available: boolean;
   }[];
   categories: { id: number; name: string; parentId: number | null }[];
+  brands?: { name: string; count: number }[];
 };
 
 const POPULAR = ["Zaini", "Astucci", "Quaderni", "Penne", "Diari", "Evidenziatori"];
 
-/** Ricerca con suggerimenti istantanei (prodotti, categorie) e navigazione da tastiera */
+/** Ricerca con suggerimenti istantanei (prodotti, categorie, marche) e navigazione da tastiera */
 export function SearchBox({ className, autoFocus }: { className?: string; autoFocus?: boolean }) {
   const router = useRouter();
   const listId = useId();
@@ -76,6 +77,7 @@ export function SearchBox({ className, autoFocus }: { className?: string; autoFo
   const items: { href: string; label: string }[] = [
     ...(data?.products || []).map((p) => ({ href: productPath(p), label: p.titolo })),
     ...(data?.categories || []).map((c) => ({ href: categoryPath(c), label: c.name })),
+    ...(data?.brands || []).map((b) => ({ href: brandPath(b.name), label: b.name })),
   ];
 
   const go = (href: string) => {
@@ -169,7 +171,7 @@ export function SearchBox({ className, autoFocus }: { className?: string; autoFo
             </div>
           ) : (
             <>
-              {data && data.products.length === 0 && data.categories.length === 0 && !loading && (
+              {data && items.length === 0 && !loading && (
                 <p className="p-4 text-sm text-ink-muted">Nessun risultato per “{q}”.</p>
               )}
               {data?.products.map((p, i) => (
@@ -216,6 +218,29 @@ export function SearchBox({ className, autoFocus }: { className?: string; autoFo
                           )}
                         >
                           {c.name}
+                        </Link>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+              {!!data?.brands?.length && (
+                <div className="mt-1 border-t border-paper-line px-2 pb-1 pt-3">
+                  <p className="mb-2 text-xs font-bold uppercase tracking-wider text-ink-muted">Marche</p>
+                  <div className="flex flex-wrap gap-2">
+                    {data.brands.map((b, i) => {
+                      const idx = data.products.length + data.categories.length + i;
+                      return (
+                        <Link
+                          key={b.name}
+                          href={brandPath(b.name)}
+                          onClick={() => setOpen(false)}
+                          className={cn(
+                            "rounded-full px-3 py-1.5 text-sm font-semibold",
+                            active === idx ? "bg-ink text-white" : "bg-paper-warm text-ink-soft hover:bg-brand-50 hover:text-brand-700"
+                          )}
+                        >
+                          {b.name} <span className="font-normal opacity-70">· {b.count}</span>
                         </Link>
                       );
                     })}

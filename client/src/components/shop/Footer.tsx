@@ -115,6 +115,7 @@ export function Footer({ tree, settings }: { tree: CategoryNode[]; settings: Sto
             <FLink href="/offerte">Offerte</FLink>
             <FLink href="/novita">Novità</FLink>
             <FLink href="/prodotti">Tutti i prodotti</FLink>
+            <FLink href="/marche">Marche</FLink>
           </Column>
 
           <Column title="Assistenza">

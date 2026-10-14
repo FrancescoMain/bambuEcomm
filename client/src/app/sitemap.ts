@@ -1,6 +1,6 @@
 import type { MetadataRoute } from "next";
-import { getCategories, getPosts, getProducts } from "@/lib/api/server";
-import { SITE_URL, productPath } from "@/lib/urls";
+import { getBrands, getCategories, getPosts, getProducts } from "@/lib/api/server";
+import { SITE_URL, brandPath, productPath } from "@/lib/urls";
 
 export const revalidate = 3600;
 
@@ -12,6 +12,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     ["/prodotti", 0.9, "daily"],
     ["/offerte", 0.9, "daily"],
     ["/novita", 0.8, "daily"],
+    ["/marche", 0.6, "weekly"],
     ["/chi-siamo", 0.6, "monthly"],
     ["/contatti", 0.6, "monthly"],
     ["/faq", 0.5, "monthly"],
@@ -23,7 +24,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     ["/mappa-del-sito", 0.3, "monthly"],
   ] as const;
 
-  const [categories, posts] = await Promise.all([getCategories(), getPosts(50)]);
+  const [categories, posts, brands] = await Promise.all([getCategories(), getPosts(50), getBrands()]);
 
   // Tutti i prodotti, a pagine da 100
   const first = await getProducts({ limit: 100, page: 1, sort: "newest" }, 3600);
@@ -46,6 +47,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       lastModified: c.updatedAt ? new Date(c.updatedAt) : now,
       changeFrequency: "weekly" as const,
       priority: c.parentId ? 0.7 : 0.8,
+    })),
+    ...brands.map((b) => ({
+      url: `${SITE_URL}${brandPath(b.name)}`,
+      lastModified: now,
+      changeFrequency: "weekly" as const,
+      priority: 0.6,
     })),
     ...products.map((p) => ({
       url: `${SITE_URL}${productPath(p)}`,

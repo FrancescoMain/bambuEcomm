@@ -20,6 +20,7 @@ const SHOP: PageLink[] = [
   { href: "/prodotti", label: "Tutti i prodotti" },
   { href: "/offerte", label: "Offerte" },
   { href: "/novita", label: "Novità" },
+  { href: "/marche", label: "Marche" },
   { href: "/preferiti", label: "Preferiti" },
   { href: "/carrello", label: "Carrello" },
 ];

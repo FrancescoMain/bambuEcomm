@@ -119,6 +119,7 @@ const STATIC_LINKS = [
   { value: "/offerte", label: "Offerte" },
   { value: "/novita", label: "Novità" },
   { value: "/prodotti", label: "Tutti i prodotti" },
+  { value: "/marche", label: "Marche" },
   { value: "/blog", label: "Blog" },
 ];
 

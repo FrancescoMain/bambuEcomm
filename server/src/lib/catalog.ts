@@ -53,6 +53,14 @@ const EFFECTIVE_PRICE = Prisma.sql`(CASE WHEN p."prezzoScontato" IS NOT NULL
   AND (p."scontoFine" IS NULL OR p."scontoFine" >= now())
   THEN p."prezzoScontato" ELSE p."prezzo" END)`;
 
+// Le marche si confrontano senza maiuscole e spazi ("Legami", "legami ") e si mostrano
+// con la grafia più usata
+const BRAND_KEY = Prisma.sql`lower(btrim(p."marca"))`;
+const BRAND_NAME = Prisma.sql`mode() WITHIN GROUP (ORDER BY btrim(p."marca"))`;
+const HAS_BRAND = Prisma.sql`p."marca" IS NOT NULL AND btrim(p."marca") <> ''`;
+
+const escapeLike = (term: string) => `%${term.replace(/[\\%_]/g, (m) => `\\${m}`)}%`;
+
 // ---------------------------------------------------------------------------
 // Albero categorie (piccolo: lo teniamo in memoria per qualche secondo)
 // ---------------------------------------------------------------------------
@@ -119,14 +127,14 @@ const buildWhere = (f: ProductFilters): Prisma.Sql => {
       WHERE pc."B" = p.id AND pc."A" IN (${Prisma.join(f.categoryIds)}))`);
   }
   for (const term of searchTerms(f.search)) {
-    const like = `%${term.replace(/[\\%_]/g, (m) => `\\${m}`)}%`;
+    const like = escapeLike(term);
     parts.push(Prisma.sql`(p."titolo" ILIKE ${like} OR p."descrizione" ILIKE ${like}
       OR p."marca" ILIKE ${like} OR p."codice" ILIKE ${like})`);
   }
   if (f.minPrice !== undefined) parts.push(Prisma.sql`${EFFECTIVE_PRICE} >= ${f.minPrice}`);
   if (f.maxPrice !== undefined) parts.push(Prisma.sql`${EFFECTIVE_PRICE} <= ${f.maxPrice}`);
   if (f.brands && f.brands.length) {
-    parts.push(Prisma.sql`p."marca" IN (${Prisma.join(f.brands)})`);
+    parts.push(Prisma.sql`${BRAND_KEY} IN (${Prisma.join(f.brands.map((b) => b.trim().toLowerCase()))})`);
   }
   if (f.onSale) parts.push(Prisma.sql`${EFFECTIVE_PRICE} < p."prezzo"`);
   if (f.featured) parts.push(Prisma.sql`p."inEvidenza" = TRUE`);
@@ -256,9 +264,9 @@ export const queryFacets = async (filters: ProductFilters) => {
     prisma.$queryRaw<{ min: Prisma.Decimal | null; max: Prisma.Decimal | null }[]>`
       SELECT MIN(${EFFECTIVE_PRICE}) AS min, MAX(${EFFECTIVE_PRICE}) AS max FROM "Product" p WHERE ${where}`,
     prisma.$queryRaw<{ marca: string; count: bigint }[]>`
-      SELECT p."marca" AS marca, COUNT(*)::bigint AS count FROM "Product" p
-      WHERE ${where} AND p."marca" IS NOT NULL AND p."marca" <> ''
-      GROUP BY p."marca" ORDER BY count DESC, marca ASC LIMIT 40`,
+      SELECT ${BRAND_NAME} AS marca, COUNT(*)::bigint AS count FROM "Product" p
+      WHERE ${where} AND ${HAS_BRAND}
+      GROUP BY ${BRAND_KEY} ORDER BY count DESC, marca ASC LIMIT 40`,
     prisma.$queryRaw<{ id: number; count: bigint }[]>`
       SELECT pc."A" AS id, COUNT(*)::bigint AS count FROM "Product" p
       JOIN "_ProductCategories" pc ON pc."B" = p.id
@@ -276,4 +284,14 @@ export const queryFacets = async (filters: ProductFilters) => {
     onSaleCount: Number(flags[0]?.onsale ?? 0),
     availableCount: Number(flags[0]?.available ?? 0),
   };
+};
+
+/** Elenco marche in ordine alfabetico, con il numero di prodotti (filtrabile per testo). */
+export const queryBrands = async (search?: string, limit?: number) => {
+  const rows = await prisma.$queryRaw<{ name: string; count: bigint }[]>`
+    SELECT ${BRAND_NAME} AS name, COUNT(*)::bigint AS count FROM "Product" p
+    WHERE ${HAS_BRAND} ${search ? Prisma.sql`AND p."marca" ILIKE ${escapeLike(search.trim())}` : Prisma.empty}
+    GROUP BY ${BRAND_KEY} ORDER BY ${BRAND_KEY}
+    ${limit ? Prisma.sql`LIMIT ${limit}` : Prisma.empty}`;
+  return rows.map((r) => ({ name: r.name, count: Number(r.count) }));
 };

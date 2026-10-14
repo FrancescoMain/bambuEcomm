@@ -30,6 +30,7 @@ export async function CatalogPage({
   defaultSort,
   allowRelevance,
   accent = "bg-brand-400",
+  fixedBrand,
 }: {
   title: string;
   subtitle?: React.ReactNode;
@@ -44,6 +45,8 @@ export async function CatalogPage({
   defaultSort: string;
   allowRelevance?: boolean;
   accent?: string;
+  /** Pagina di una marca: filtra tutto per quella marca e nasconde il filtro Marca */
+  fixedBrand?: string;
 }) {
   const categoryId = baseQuery.categoryId;
   const query: ProductQuery = {
@@ -52,7 +55,7 @@ export async function CatalogPage({
     sort: params.sort,
     page: params.page,
     limit: PAGE_SIZE,
-    brand: params.brands.length ? params.brands : undefined,
+    brand: fixedBrand ?? (params.brands.length ? params.brands : undefined),
     minPrice: params.minPrice,
     maxPrice: params.maxPrice,
     available: params.onlyAvailable ? true : baseQuery.available,
@@ -64,9 +67,11 @@ export async function CatalogPage({
     categoryId,
     available: query.available,
     onSale: query.onSale,
+    scopeBrand: fixedBrand,
   };
 
-  const [result, facets] = await Promise.all([getProducts(query), getFacets(facetQuery)]);
+  const [result, allFacets] = await Promise.all([getProducts(query), getFacets(facetQuery)]);
+  const facets = fixedBrand ? { ...allFacets, brands: [] } : allFacets;
   const counts = new Map(facets.categories.map((c) => [c.id, c.count]));
   const subs = subcategories
     .map((s) => ({ id: s.id, name: s.name, slug: s.slug, count: counts.get(s.id) ?? s.productCount }))

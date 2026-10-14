@@ -7,6 +7,7 @@ import {
   ProductSort,
   SORTS,
   hydrateList,
+  queryBrands,
   queryFacets,
   queryProductIds,
   withDescendants,
@@ -50,24 +51,27 @@ const resolveSort = (query: Request["query"]): ProductSort => {
   return asc ? "oldest" : "newest";
 };
 
+/** ?brand=A,B (o ripetuto) → ["A", "B"] */
+const parseBrands = (value: unknown): string[] | undefined => {
+  if (!value) return undefined;
+  const list = (Array.isArray(value) ? value : String(value).split(","))
+    .map((b) => String(b).trim())
+    .filter(Boolean);
+  return list.length ? list : undefined;
+};
+
 const buildFilters = async (query: Request["query"]): Promise<ProductFilters> => {
   let categoryIds = parseIdList(query.categoryId);
   if (firstString(query.category)) {
     const cat = await findCategoryBySlug(firstString(query.category)!);
     categoryIds = cat ? [...categoryIds, cat.id] : [-1];
   }
-  const brands = query.brand
-    ? (Array.isArray(query.brand) ? query.brand : String(query.brand).split(","))
-        .map((b) => String(b).trim())
-        .filter(Boolean)
-    : undefined;
-
   return {
     categoryIds: categoryIds.length ? await withDescendants(categoryIds) : undefined,
     search: firstString(query.q) || firstString(query.search),
     minPrice: parsePrice(query.minPrice),
     maxPrice: parsePrice(query.maxPrice),
-    brands,
+    brands: parseBrands(query.brand),
     onSale: parseBool(query.onSale),
     featured: parseBool(query.featured),
     available: parseBool(query.available),
@@ -109,9 +113,10 @@ export const getAllProducts = async (req: Request, res: Response): Promise<void>
 export const getProductFacets = async (req: Request, res: Response): Promise<void> => {
   try {
     const filters = await buildFilters(req.query);
-    // Le facette di prezzo/marca si calcolano senza i filtri di prezzo/marca stessi
+    // Le facette di prezzo/marca si calcolano senza i filtri di prezzo/marca stessi;
+    // `scopeBrand` invece fa parte della pagina (es. /marche/legami) e restringe tutto
     const { minPrice, maxPrice, brands, ...base } = filters;
-    res.json(await queryFacets(base));
+    res.json(await queryFacets({ ...base, brands: parseBrands(req.query.scopeBrand) }));
   } catch (error) {
     console.error("Errore nel calcolo dei filtri:", error);
     res.status(500).json({ message: "Errore nel calcolo dei filtri" });
@@ -122,17 +127,18 @@ export const getProductFacets = async (req: Request, res: Response): Promise<voi
 export const suggestProducts = async (req: Request, res: Response): Promise<void> => {
   const q = (firstString(req.query.q) || "").trim();
   if (q.length < 2) {
-    res.json({ products: [], categories: [] });
+    res.json({ products: [], categories: [], brands: [] });
     return;
   }
   try {
-    const [{ ids }, categories] = await Promise.all([
+    const [{ ids }, categories, brands] = await Promise.all([
       queryProductIds({ search: q }, { sort: "relevance", page: 1, limit: 6, inStockFirst: true }),
       prisma.category.findMany({
         where: { name: { contains: q, mode: "insensitive" } },
         select: { id: true, name: true, parentId: true },
         take: 4,
       }),
+      queryBrands(q, 3),
     ]);
     const products = (await hydrateList(ids)).map((p) => ({
       id: p.id,
@@ -143,7 +149,7 @@ export const suggestProducts = async (req: Request, res: Response): Promise<void
       inOfferta: p.inOfferta,
       available: p.available,
     }));
-    res.json({ products, categories });
+    res.json({ products, categories, brands });
   } catch (error) {
     console.error("Errore autocompletamento:", error);
     res.status(500).json({ message: "Errore nella ricerca" });
@@ -153,17 +159,7 @@ export const suggestProducts = async (req: Request, res: Response): Promise<void
 // GET /api/products/brands — elenco marche (per menu e filtri)
 export const getBrands = async (req: Request, res: Response): Promise<void> => {
   try {
-    const rows = await prisma.product.groupBy({
-      by: ["marca"],
-      where: { marca: { not: null } },
-      _count: { _all: true },
-      orderBy: { marca: "asc" },
-    });
-    res.json(
-      rows
-        .filter((r) => r.marca && r.marca.trim())
-        .map((r) => ({ name: r.marca, count: r._count._all }))
-    );
+    res.json(await queryBrands());
   } catch (error) {
     console.error("Errore marche:", error);
     res.status(500).json({ message: "Errore nel recupero delle marche" });

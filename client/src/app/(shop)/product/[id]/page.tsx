@@ -5,7 +5,7 @@ import { Lock, RotateCcw, ShieldCheck, Store, Truck } from "lucide-react";
 import { getProduct, getProducts, getRelated, getReviews, getSettings } from "@/lib/api/server";
 import { toCardProduct } from "@/lib/types";
 import { formatDate, formatPrice } from "@/lib/format";
-import { absoluteUrl, categoryPath, productPath, whatsappUrl } from "@/lib/urls";
+import { absoluteUrl, brandPath, categoryPath, productPath, whatsappUrl } from "@/lib/urls";
 import { Breadcrumbs } from "@/components/shop/Breadcrumbs";
 import { Price } from "@/components/ui/Price";
 import { Stars } from "@/components/ui/Stars";
@@ -139,7 +139,7 @@ export default async function ProductPage({ params }: Props) {
       <div className="space-y-2">
         {product.marca && (
           <Link
-            href={`/prodotti?brand=${encodeURIComponent(product.marca)}`}
+            href={brandPath(product.marca)}
             className="text-sm font-bold uppercase tracking-wide text-ink-muted hover:text-brand-600"
           >
             {product.marca}

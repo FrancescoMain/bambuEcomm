@@ -9,6 +9,7 @@ import type {
   Product,
   StoreSettings,
 } from "../types";
+import { slugify } from "../format";
 
 /**
  * Accesso all'API dal server Next.js (Server Components).
@@ -60,6 +61,8 @@ export type ProductQuery = {
   categoryId?: number | number[];
   category?: string;
   brand?: string | string[];
+  /** Solo per le facette: marca fissa della pagina (es. /marche/legami) */
+  scopeBrand?: string;
   minPrice?: number | string;
   maxPrice?: number | string;
   onSale?: boolean;
@@ -136,8 +139,12 @@ export const buildCategoryTree = (categories: Category[]): CategoryNode[] => {
 
 export const getCategoryTree = async () => buildCategoryTree(await getCategories());
 
-export const getBrands = () =>
-  safeGet<{ name: string; count: number }[]>("/products/brands", [], { revalidate: 600, tags: ["products"] });
+export const getBrands = async () =>
+  (await safeGet<{ name: string; count: number }[]>("/products/brands", [], { revalidate: 600, tags: ["products"] })).map(
+    (b) => ({ ...b, slug: slugify(b.name) })
+  );
+
+export const findBrandBySlug = async (slug: string) => (await getBrands()).find((b) => b.slug === slug) || null;
 
 export const DEFAULT_SETTINGS_FALLBACK: StoreSettings = {
   azienda: { ragioneSociale: "Cartoleria Bambù", partitaIva: "" },
