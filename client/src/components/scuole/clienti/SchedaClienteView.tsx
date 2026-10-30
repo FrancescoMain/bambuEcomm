@@ -15,7 +15,7 @@ import { api } from "@/lib/api/scuole";
 import { cn } from "@/lib/cn";
 import { formatDateTime, formatPrice } from "@/lib/format";
 import { LibroModal } from "../LibroModal";
-import { STATI, type AzioneLibro, type LibroCliente, type SchedaCliente } from "../types";
+import { STATI, type AzioneLibro, type ClienteCopia, type LibroCliente, type SchedaCliente } from "../types";
 import { SchedaClienteModal } from "./SchedaClienteModal";
 import { StampaScheda, type TipoStampa } from "./StampaScheda";
 
@@ -44,7 +44,15 @@ export function SchedaClienteView({
   const [appunti, setAppunti] = useState("");
   const [stampa, setStampa] = useState<TipoStampa | null>(null);
   const [nascosti, setNascosti] = useState<ReadonlySet<number>>(new Set());
+  const [daAnnullare, setDaAnnullare] = useState<number | null>(null);
   const [confirm, dialog] = useConfirm();
+
+  // La richiesta di conferma sul pulsante «Annulla ordine» sparisce da sola dopo qualche secondo
+  useEffect(() => {
+    if (daAnnullare === null) return;
+    const t = setTimeout(() => setDaAnnullare(null), 4000);
+    return () => clearTimeout(t);
+  }, [daAnnullare]);
 
   useEffect(() => setAggiornata(null), [caricata.data]);
   useEffect(() => {
@@ -74,6 +82,35 @@ export function SchedaClienteView({
     setLavoro(true);
     try {
       applica(await api<SchedaCliente>(`/libri/clienti/${schedaId}/stato`, { method: "POST", body: { azione, libri: libri.map((l) => l.id) } }));
+    } catch (e) {
+      toast.error(errorMessage(e));
+    } finally {
+      setLavoro(false);
+    }
+  };
+
+  // Il cliente non vuole più un libro già ordinato: la copia passa al primo che aspetta lo stesso libro.
+  // Al primo clic il pulsante chiede conferma sul posto (niente finestra), al secondo annulla.
+  const annullaOrdine = async (l: LibroCliente) => {
+    if (daAnnullare !== l.id) {
+      setDaAnnullare(l.id);
+      return;
+    }
+    setDaAnnullare(null);
+    setLavoro(true);
+    try {
+      const esito = await api<{ passatoA: ClienteCopia | null; ordine: { numero: number } | null }>("/libri/ordini/annulla-libro", {
+        method: "POST",
+        body: { libroId: l.id },
+      });
+      toast.success(
+        esito.passatoA
+          ? `«${l.titolo}» annullato. La copia va a ${esito.passatoA.cognome} ${esito.passatoA.nome} (scheda n. ${esito.passatoA.numero}).`
+          : `«${l.titolo}» annullato. La copia resta libera nell'ordine n. ${esito.ordine?.numero}: andrà al prossimo che lo prenota.`,
+        { duration: 8000 }
+      );
+      caricata.reload();
+      onChanged();
     } catch (e) {
       toast.error(errorMessage(e));
     } finally {
@@ -339,6 +376,16 @@ export function SchedaClienteView({
                           <span className={cn("rounded-full px-3 py-1 text-sm font-bold", STATI[l.stato].classe)}>{STATI[l.stato].label}</span>
                         </td>
                         <td className="whitespace-nowrap py-2 pl-2 pr-5 text-right">
+                          {l.stato === "CONFERMATO" && (
+                            <Button
+                              size="sm"
+                              variant={daAnnullare === l.id ? "danger" : "ghost"}
+                              onClick={() => annullaOrdine(l)}
+                              disabled={lavoro}
+                            >
+                              {daAnnullare === l.id ? "Sì, annulla" : "Annulla ordine"}
+                            </Button>
+                          )}
                           {l.stato === "ASSEGNATO" && (
                             <Button size="sm" onClick={() => cambiaStato("ritira", [l])} disabled={lavoro}>
                               Ritira

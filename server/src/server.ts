@@ -29,6 +29,7 @@ import postRoutes from "./routes/post.routes";
 import brandRoutes from "./routes/brand.routes";
 import libriRoutes from "./routes/libri.routes";
 import libriClientiRoutes from "./routes/libriClienti.routes";
+import libriOrdiniRoutes from "./routes/libriOrdini.routes";
 import { testCleanupCarts } from "./controllers/test.controller";
 import {
   authenticateToken,
@@ -99,6 +100,7 @@ app.use("/api/recesso", recessoRoutes);
 app.use("/api/posts", postRoutes);
 app.use("/api/brands", brandRoutes);
 app.use("/api/libri/clienti", libriClientiRoutes);
+app.use("/api/libri/ordini", libriOrdiniRoutes);
 app.use("/api/libri", libriRoutes);
 
 // Endpoint di debug: cancella carrelli, quindi solo per admin

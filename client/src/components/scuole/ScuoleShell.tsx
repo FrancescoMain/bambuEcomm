@@ -14,6 +14,7 @@ import { useScuoleAuth } from "@/store/scuoleAuth";
 const SEZIONI = [
   { href: "/scuole", label: "Scuole" },
   { href: "/scuole/clienti", label: "Clienti" },
+  { href: "/scuole/ordini", label: "Ordini" },
 ] as const;
 
 function Accesso() {

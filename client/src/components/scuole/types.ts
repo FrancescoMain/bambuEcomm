@@ -96,3 +96,52 @@ export type SchedaCliente = Omit<SchedaClienteRiepilogo, "conteggi" | "scuola"> 
   libri: LibroCliente[];
   importazione?: { classeTrovata: boolean; libriAggiunti: number };
 };
+
+// ── Ordini al fornitore ──
+
+/** Il cliente a cui è destinata una copia ordinata */
+export type ClienteCopia = { id: number; anno: number; numero: number; cognome: string; nome: string };
+
+export type DaOrdinare = {
+  isbn: string;
+  titolo: string;
+  autori: string;
+  editore: string;
+  volume: string;
+  prezzo: number;
+  /** Copie prenotate dai clienti e non ancora ordinate */
+  prenotati: number;
+  /** Di queste, quante trovano già una copia libera in un ordine */
+  giaInOrdine: number;
+  daOrdinare: number;
+};
+
+export type OrdineRiepilogo = {
+  id: number;
+  anno: number;
+  numero: number;
+  barcode: string;
+  data: string;
+  note: string;
+  copie: number;
+  arrivate: number;
+  libere: number;
+  totale: number;
+};
+
+export type RigaOrdine = {
+  id: number;
+  isbn: string;
+  materia: string;
+  autori: string;
+  titolo: string;
+  volume: string;
+  editore: string;
+  prezzo: string | number;
+  arrivatoAt: string | null;
+  libro: { id: number; stato?: StatoLibro; scheda: ClienteCopia } | null;
+};
+
+export type Ordine = Omit<OrdineRiepilogo, "copie" | "arrivate" | "libere"> & { righe: RigaOrdine[] };
+
+export type RigaInOrdine = RigaOrdine & { ordine: { id: number; anno: number; numero: number; data: string } };

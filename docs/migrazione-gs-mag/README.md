@@ -92,7 +92,12 @@ Arrivate per scritto, con 5 vocali (trascritti con Whisper) e un foglio a mano.
 4. **Una riga = una copia** resta così. Se una famiglia vuole due copie dello stesso libro, il negozio crea un'altra scheda.
 5. **Assegnazione all'arrivo**: sempre al primo che ha confermato.
 6. **Fornitori**: un solo fornitore. Il negozio genera il CSV dei libri da ordinare. Dopo un mese deve poter **stampare e ri-esportare tutti i libri ancora in ordine**, sia per controllare che i conti tornino sia per ordinarli altrove. Non serve un'anagrafica fornitori.
-7. **Magazzino**: *senza risposta*.
+7. **Magazzino** (risposta del 30 ott 2026):
+   - Negli ordini si aggiungono a mano libri senza cliente, **sempre una copia per riga**.
+   - Un libro prenotato è ordinato per quel cliente, punto.
+   - La giacenza va legata alla scheda del cliente quando si prenota: **se il libro è in negozio glielo si dà subito**.
+   - Serve una **cartella dei libri già disponibili**, caricata in anticipo, da tenere sotto controllo e correggere a mano.
+   - Su vendite al banco, rese e inventari *non ha detto nulla*.
 8. **Postazioni**: 3 computer, a volte usati tutti insieme, **tutti con lo stesso account**. Non serve sapere chi ha fatto cosa: niente utenti separati né registro per persona.
 9. **Codice fiscale**: non obbligatorio, non lo mettono mai. Su come distinguono due fratelli *non hanno risposto*: basta il nome dell'alunno sulla scheda.
 10. **Import dal Ministero**: sì, ogni anno con «Importa OnLine», solo Campania e solo scuole statali.
@@ -108,7 +113,7 @@ Arrivate per scritto, con 5 vocali (trascritti con Whisper) e un foglio a mano.
 
 ### Ancora aperto
 
-- Domanda 7 sul magazzino (prenotato/locale, vendite al banco, rese, inventari).
+- Magazzino: vendite al banco, rese e inventari (il resto della domanda 7 ha risposta).
 - Quante persone usano il programma e se serve sapere chi ha fatto cosa.
 - Che cosa intendono per fattura.
 - Le stampe d'esempio dei 6 report e il formato CSV del distributore.
@@ -193,7 +198,18 @@ Dalla chat WhatsApp con Alessandro (committente), 30 ott 2026: vuole lavorare **
   - Stampe dal browser su A4: «Stampa scheda» (solo i prenotati, come `Mike_Cliente.rpt`) e «Lista intera» (tutti i libri della classe). Layout provvisorio finché non arriva una stampa d'esempio.
   - Vocali del 30 ott (dopo il video): terza stampa **«Da acquistare»** con i soli libri che hanno «Acquistare» = Sì e il loro totale («a volte vogliono solo sapere quanto costano i libri che devono prendere»), quindi la colonna Acq. adesso serve. **Acconto anche alla fine**: si scrive nella scheda quando si vuole. **Appunti** sul cliente (prima si usava la casella del codice fiscale): casella nella scheda e nel modulo, non vanno in stampa.
   - Alessandro (WhatsApp, 30 ott): **la colonna Vol. deve restare**, perché da lì vede quale libro devono comprare. Ora è una colonna a sé, in grassetto, nella scheda e in tutte e tre le stampe.
-  - Non ancora: «Consegna da magazzino» (aspetta la domanda 7 sul magazzino) e «annulla libro in ordine» (con Ordini).
+  - Non ancora: «Consegna da magazzino» (aspetta la domanda 7 sul magazzino). «Annulla libro in ordine» è arrivato con Ordini.
+
+- **Ordini: fatta** (30 ott 2026, non committata). Modelli `OrdineFornitore` e `OrdineRiga` (migrazione `gestionale_libri_ordini`), rotte `/api/libri/ordini`, pagina `/scuole/ordini` con tre viste.
+  - **Da ordinare**: i libri prenotati non ancora ordinati, per codice, con la quantità. Sono tutti spuntati; si toglie la spunta a quelli da non ordinare adesso. «Crea l'ordine» = inoltro: i libri diventano **Confermato**. Un solo fornitore, quindi niente anagrafica: c'è una casella di appunti sull'ordine.
+  - **Una riga = una copia**, legata al libro del cliente che la aspetta (in GS_MAG era `key_key_cliente_dettaglio`). Nell'ordine si vede per chi è ogni copia, con il link alla scheda.
+  - **CSV** `codice;quantità` senza intestazione, come in GS_MAG. Ma si genera dalle righe **dell'ordine** e non dalla lista dei da ordinare, e il nome del file ha l'anno (`ordine-2026-002.csv`): in GS_MAG l'ordine 5 di un anno sovrascriveva l'ordine 5 dell'anno prima.
+  - **Ancora in ordine**: tutte le copie ordinate e non arrivate, di tutti gli ordini, con stampa e CSV da rimandare (risposta 6).
+  - **Annulla libro in ordine** (dalla scheda cliente, sul libro Confermato; il pulsante chiede «Sì, annulla» sul posto): il libro torna in lista e la copia va subito al primo cliente che ha prenotato lo stesso libro, che diventa Confermato. Se non c'è nessuno resta **libera** nell'ordine; il prossimo «Crea l'ordine» la assegna prima di ordinarne altre.
+  - Togliere una copia dall'ordine (prima che arrivi) rimette il libro Prenotato, con «Annulla» per 5 secondi. Un ordine si elimina solo se non è arrivato niente.
+  - Ordini e abbinamenti passano uno alla volta (lock di Postgres): due postazioni non mettono lo stesso libro in due ordini.
+  - Non fatte, di GS_MAG: le righe aggiunte a mano senza cliente (scorte per il negozio), che aspettano la domanda 7 sul magazzino.
+  - Le Bolle segneranno `arrivatoAt` sulla copia e il libro come Assegnato.
 
 ## Prossimi passi
 

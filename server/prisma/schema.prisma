@@ -538,7 +538,45 @@ model SchedaClienteLibro {
   ritiratoAt    DateTime?
   createdAt     DateTime          @default(now())
   updatedAt     DateTime          @updatedAt
+  rigaOrdine    OrdineRiga?
 
   @@unique([schedaId, isbn])
   @@index([isbn, stato])
+}
+
+/// Ordine al fornitore (ex Ordine_Testata). Un solo fornitore: niente anagrafica, solo appunti.
+model OrdineFornitore {
+  id        Int          @id @default(autoincrement())
+  anno      Int
+  numero    Int
+  data      DateTime     @default(now())
+  note      String       @default("")
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+  righe     OrdineRiga[]
+
+  @@unique([anno, numero])
+}
+
+/// Una copia ordinata (ex Ordine_Dettaglio). È del cliente che l'ha prenotata; senza cliente è «libera»
+/// (il cliente l'ha annullata e nessun altro la aspettava) e va al prossimo che prenota lo stesso libro.
+model OrdineRiga {
+  id         Int                 @id @default(autoincrement())
+  ordineId   Int
+  ordine     OrdineFornitore     @relation(fields: [ordineId], references: [id], onDelete: Cascade)
+  isbn       String
+  materia    String
+  autori     String
+  titolo     String
+  volume     String
+  editore    String
+  prezzo     Decimal             @db.Decimal(10, 2)
+  libroId    Int?                @unique
+  libro      SchedaClienteLibro? @relation(fields: [libroId], references: [id], onDelete: SetNull)
+  /// Lo scrive la sezione Bolle all'arrivo della merce
+  arrivatoAt DateTime?
+  createdAt  DateTime            @default(now())
+
+  @@index([ordineId])
+  @@index([isbn, arrivatoAt])
 }
