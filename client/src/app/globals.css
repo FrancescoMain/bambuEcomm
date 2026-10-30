@@ -164,3 +164,13 @@
 .halloween-stripe {
   background: repeating-linear-gradient(-45deg, #f68b1f 0 14px, #1b0f2e 14px 28px);
 }
+
+/* In stampa (es. schede del gestionale /scuole) non escono messaggi a comparsa né i pulsanti dei cookie */
+@media print {
+  body > section[aria-label^="Notifications"],
+  .iub__us-widget,
+  /* classe ripetuta: la regola di iubenda ha specificità (0,3,0) */
+  .iubenda-tp-btn.iubenda-tp-btn.iubenda-tp-btn.iubenda-tp-btn {
+    display: none !important;
+  }
+}

@@ -216,7 +216,7 @@ export function SchedaClasse({
 
       <LibroModal
         open={libroAperto !== undefined}
-        schedaId={schedaId}
+        percorso={`/libri/schede/${schedaId}/libri`}
         libro={libroAperto ?? null}
         onClose={() => setLibroAperto(undefined)}
         onSaved={aggiorna}

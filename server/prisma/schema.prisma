@@ -438,6 +438,7 @@ model Scuola {
   createdAt DateTime       @default(now())
   updatedAt DateTime       @updatedAt
   schede    SchedaScuola[]
+  clienti   SchedaCliente[]
 }
 
 /// Libri adottati da una classe in un anno (ex Schede_Testata). L'anno è quello solare, come in GS_MAG.
@@ -478,4 +479,66 @@ model SchedaScuolaLibro {
 
   @@unique([schedaId, isbn])
   @@index([isbn])
+}
+
+/// Stato di un libro nella scheda del cliente, con i nomi del negozio (in GS_MAG: non confermato,
+/// confermato, ordinato, arrivato, consegnato)
+enum StatoLibroCliente {
+  IN_LISTA
+  PRENOTATO
+  CONFERMATO
+  ASSEGNATO
+  RITIRATO
+}
+
+/// Scheda di prenotazione dei libri di un alunno (ex Cliente_Testata). Numero progressivo per anno solare.
+model SchedaCliente {
+  id        Int                  @id @default(autoincrement())
+  anno      Int
+  numero    Int
+  cognome   String
+  nome      String
+  telefono  String               @default("")
+  scuolaId  Int
+  scuola    Scuola               @relation(fields: [scuolaId], references: [id], onDelete: Restrict)
+  /// Come nelle schede della scuola: «1A», «3ASA»
+  classe    String
+  corso     String               @default("")
+  acconto   Decimal              @default(0) @db.Decimal(10, 2)
+  note      String               @default("")
+  data      DateTime             @default(now())
+  createdAt DateTime             @default(now())
+  updatedAt DateTime             @updatedAt
+  libri     SchedaClienteLibro[]
+
+  @@unique([anno, numero])
+  @@index([scuolaId, anno, classe])
+  @@index([cognome])
+}
+
+/// Un libro (una copia) nella scheda del cliente (ex Cliente_Dettaglio)
+model SchedaClienteLibro {
+  id            Int               @id @default(autoincrement())
+  schedaId      Int
+  scheda        SchedaCliente     @relation(fields: [schedaId], references: [id], onDelete: Cascade)
+  isbn          String
+  materia       String
+  autori        String
+  titolo        String
+  volume        String
+  editore       String
+  prezzo        Decimal           @db.Decimal(10, 2)
+  nuovaAdozione Boolean           @default(false)
+  daAcquistare  Boolean           @default(false)
+  consigliato   Boolean           @default(false)
+  stato         StatoLibroCliente @default(IN_LISTA)
+  prenotatoAt   DateTime?
+  confermatoAt  DateTime?
+  assegnatoAt   DateTime?
+  ritiratoAt    DateTime?
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+
+  @@unique([schedaId, isbn])
+  @@index([isbn, stato])
 }

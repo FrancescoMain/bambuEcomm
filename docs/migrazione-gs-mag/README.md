@@ -130,16 +130,17 @@ Due vocali dopo la prova di Scuole (trascritti con Whisper) più un messaggio a 
 
 > Il libro dopo averlo prenotato lo vado a confermare quando inoltro l'ordine; quando arrivano i libri il libro viene Assegnato e poi, con il cliente davanti al bancone, Ritirato.
 
-Quattro stati con i nomi del negozio, che sostituiscono i cinque di GS_MAG:
+I nomi del negozio corrispondono uno a uno ai cinque stati di GS_MAG. L'«Importa» porta nella scheda tutti i libri della classe, e la «lista intera dell'alunno» li stampa anche se non sono stati ordinati: per questo serve anche uno stato «in lista».
 
 | Stato in Bambù | Quando | GS_MAG |
 |---|---|---|
-| **Prenotato** | il libro entra nella scheda del cliente | non confermato |
-| **Confermato** | si inoltra l'ordine al fornitore (la sezione Ordini lo imposta da sola) | confermato + ordinato |
-| **Assegnato** | arriva con la bolla e va al primo cliente in attesa | arrivato |
+| *in lista* | il libro è nella lista della classe ma il cliente non l'ha prenotato | non confermato |
+| **Prenotato** | il cliente lo vuole (risposta 3: «confermato = il cliente l'ha ordinato») | confermato |
+| **Confermato** | si inoltra l'ordine al fornitore (lo imposta la sezione Ordini) | ordinato |
+| **Assegnato** | arriva con la bolla e va al primo cliente in attesa (lo imposta la sezione Bolle) | arrivato |
 | **Ritirato** | il cliente lo ritira al bancone | consegnato |
 
-Confermato e ordinato diventano un solo passaggio, coerente con la risposta 3 («confermato = il cliente l'ha ordinato»). La sezione Ordini quindi prende i libri **Prenotati**, non i «confermati non ordinati» come faceva GS_MAG. Va annullabile ogni passaggio (richiesta «annullare facilmente un libro in ordine»).
+La sezione Ordini prende i libri **Prenotati**. «Da pagare» = prenotati e successivi − acconto. «Annullare un libro in ordine» (Confermato → non più voluto) si fa insieme alla sezione Ordini, perché il libro ordinato deve liberarsi per il cliente successivo.
 
 ### Gift card con lo scanner: analisi
 
@@ -164,6 +165,8 @@ Confermato e ordinato diventano un solo passaggio, coerente con la risposta 3 (�
 - Lo scontrino è una **ricevuta non fiscale**.
 - Il lettore di codici a barre forse non c'è: se manca si compra, basta che funzioni col sito.
 
+Dalla chat WhatsApp con Alessandro (committente), 30 ott 2026: vuole lavorare **sempre dal computer**, con una **stampante termica piccola** che stampi **quanto resta sulla scheda** (il saldo). **I lettori di codici a barre USB li ha già: 3.**
+
 ### Acquisti consigliati
 
 - **Lettore**: USB, *emulazione tastiera (HID)*, **2D**, così legge codici a barre e QR, anche dallo schermo di un telefono. Costa 30–60 €; un modello professionale (es. Zebra DS2208) costa sui 100 €. Non servono driver né app.
@@ -181,6 +184,16 @@ Confermato e ordinato diventano un solo passaggio, coerente con la risposta 3 (�
 
 - **Scuole: fatta** (29 ott 2026, non committata; dal 30 ott su `/scuole` con account a parte, tutta larghezza e meno conferme). Modelli `Scuola`, `SchedaScuola`, `SchedaScuolaLibro` (migrazione `gestionale_libri_scuole`), rotte `/api/libri`, pagina `/scuole` con le tendine anno → scuola → classe. «Importa OnLine» prende l'anagrafica (`SCUANAGRAFESTAT`) e i libri (`ALTCAMPANIA`) di una classe o di **tutta la scuola in un colpo solo**; le classi mancanti si creano con il corso uguale all'indirizzo del Ministero.
 - Cosa è cambiato rispetto a GS_MAG: le sezioni possono essere di più lettere («3ASA»), quindi la classe si divide in anno di corso + resto e non in anno + una lettera. Oggi l'anno di corso arriva come numero e i flag come «Si»/«No» (qualche volta sporchi, es. «Mo»). L'anagrafica della scuola sta in una tabella sola invece di essere ripetuta su ogni scheda.
+
+- **Clienti: fatta** (30 ott 2026, non committata). Modelli `SchedaCliente` e `SchedaClienteLibro` con lo stato del libro (migrazione `gestionale_libri_clienti`), rotte `/api/libri/clienti`, pagina `/scuole/clienti`.
+  - Nuova scheda: cognome, nome, telefono, scuola e classe dalle tendine, acconto. I libri della classe arrivano da soli, «in lista»; si spuntano quelli prenotati oppure «Prenota tutti». Un libro aggiunto a mano entra già prenotato.
+  - Numero per anno solare assegnato al salvataggio con un lock di Postgres: tre postazioni insieme non prendono lo stesso numero (provato con 10 creazioni in parallelo). Barcode anno + numero su 9 cifre: scritto o letto con lo scanner nella ricerca, apre la scheda.
+  - L'acconto si aggiorna direttamente nella scheda. Totali: lista della classe, prenotati, acconto, da pagare.
+  - «Ritira» libro per libro o «Ritira gli assegnati», con «Annulla ritiro». Si modificano ed eliminano solo i libri non ancora ordinati; la scheda si elimina solo se nessun libro è ordinato.
+  - Stampe dal browser su A4: «Stampa scheda» (solo i prenotati, come `Mike_Cliente.rpt`) e «Lista intera» (tutti i libri della classe). Layout provvisorio finché non arriva una stampa d'esempio.
+  - Vocali del 30 ott (dopo il video): terza stampa **«Da acquistare»** con i soli libri che hanno «Acquistare» = Sì e il loro totale («a volte vogliono solo sapere quanto costano i libri che devono prendere»), quindi la colonna Acq. adesso serve. **Acconto anche alla fine**: si scrive nella scheda quando si vuole. **Appunti** sul cliente (prima si usava la casella del codice fiscale): casella nella scheda e nel modulo, non vanno in stampa.
+  - Alessandro (WhatsApp, 30 ott): **la colonna Vol. deve restare**, perché da lì vede quale libro devono comprare. Ora è una colonna a sé, in grassetto, nella scheda e in tutte e tre le stampe.
+  - Non ancora: «Consegna da magazzino» (aspetta la domanda 7 sul magazzino) e «annulla libro in ordine» (con Ordini).
 
 ## Prossimi passi
 

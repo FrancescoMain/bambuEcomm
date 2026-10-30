@@ -41,18 +41,19 @@ const daLibro = (l: Omit<LibroScheda, "id">): Campi => ({
 });
 
 /**
- * Aggiunge o modifica un libro della classe. Uscendo dal codice, se il libro è già stato
+ * Aggiunge o modifica un libro della classe o della scheda di un cliente. Uscendo dal codice, se il libro è già stato
  * inserito in un'altra classe i campi si compilano da soli (come in GS_MAG).
  */
 export function LibroModal({
   open,
-  schedaId,
+  percorso,
   libro,
   onClose,
   onSaved,
 }: {
   open: boolean;
-  schedaId: number;
+  /** Rotta dei libri, es. «/libri/schede/3/libri» (classe) o «/libri/clienti/7/libri» (scheda cliente) */
+  percorso: string;
   /** null = nuovo libro */
   libro: LibroScheda | null;
   onClose: () => void;
@@ -83,7 +84,7 @@ export function LibroModal({
     e.preventDefault();
     setSalvando(true);
     try {
-      await api(libro ? `/libri/schede/${schedaId}/libri/${libro.id}` : `/libri/schede/${schedaId}/libri`, {
+      await api(libro ? `${percorso}/${libro.id}` : percorso, {
         method: libro ? "PUT" : "POST",
         body: campi,
       });

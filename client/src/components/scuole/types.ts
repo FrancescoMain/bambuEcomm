@@ -53,3 +53,46 @@ export type EsitoImport = { schedeCreate: number; libriAggiunti: number; libriGi
 
 /** Anni proposti nella tendina: l'anno è quello solare, come in GS_MAG. */
 export const anniDisponibili = (corrente = new Date().getFullYear()) => [corrente + 1, corrente, corrente - 1, corrente - 2];
+
+// ── Clienti (schede di prenotazione) ──
+
+export type StatoLibro = "IN_LISTA" | "PRENOTATO" | "CONFERMATO" | "ASSEGNATO" | "RITIRATO";
+export type AzioneLibro = "prenota" | "togli" | "ritira" | "annullaRitiro";
+
+/** Nomi e colori degli stati, con le parole del negozio */
+export const STATI: Record<StatoLibro, { label: string; classe: string }> = {
+  IN_LISTA: { label: "In lista", classe: "bg-paper-warm text-ink-muted" },
+  PRENOTATO: { label: "Prenotato", classe: "bg-orange-soft text-orange-ink" },
+  CONFERMATO: { label: "Confermato", classe: "bg-sky-soft text-sky-ink" },
+  ASSEGNATO: { label: "Assegnato", classe: "bg-brand-100 text-brand-800" },
+  RITIRATO: { label: "Ritirato", classe: "bg-ink/80 text-white" },
+};
+
+export type TotaliCliente = { lista: number; prenotati: number; acconto: number; daPagare: number };
+
+export type SchedaClienteRiepilogo = {
+  id: number;
+  anno: number;
+  numero: number;
+  barcode: string;
+  cognome: string;
+  nome: string;
+  telefono: string;
+  scuolaId: number;
+  scuola: { nome: string };
+  classe: string;
+  corso: string;
+  data: string;
+  conteggi: Record<StatoLibro, number>;
+  totali: TotaliCliente;
+};
+
+export type LibroCliente = LibroScheda & { stato: StatoLibro };
+
+export type SchedaCliente = Omit<SchedaClienteRiepilogo, "conteggi" | "scuola"> & {
+  scuola: { id: number; codice: string; nome: string; citta: string | null };
+  acconto: string | number;
+  note: string;
+  libri: LibroCliente[];
+  importazione?: { classeTrovata: boolean; libriAggiunti: number };
+};

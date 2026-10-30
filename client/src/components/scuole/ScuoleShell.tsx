@@ -1,12 +1,20 @@
 "use client";
 
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { LogOut, School } from "lucide-react";
+import { cn } from "@/lib/cn";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Field";
 import { Spinner } from "@/components/ui/Spinner";
 import { errorMessage } from "@/lib/api/client";
 import { useScuoleAuth } from "@/store/scuoleAuth";
+
+const SEZIONI = [
+  { href: "/scuole", label: "Scuole" },
+  { href: "/scuole/clienti", label: "Clienti" },
+] as const;
 
 function Accesso() {
   const login = useScuoleAuth((s) => s.login);
@@ -61,6 +69,7 @@ function Accesso() {
 /** Gestionale libri su /scuole: un account a parte, solo questo strumento, a tutta larghezza. */
 export function ScuoleShell({ children }: { children: React.ReactNode }) {
   const { user, ready, init, logout } = useScuoleAuth();
+  const pathname = usePathname();
 
   useEffect(() => {
     init();
@@ -78,12 +87,31 @@ export function ScuoleShell({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-screen bg-paper text-base">
       <header className="sticky top-0 z-30 flex h-14 items-center justify-between border-b border-paper-line bg-white px-4 sm:px-6 print:hidden">
-        <span className="flex items-center gap-2.5">
-          <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-brand-600 text-white">
-            <School className="h-5 w-5" />
+        <div className="flex items-center gap-4 sm:gap-8">
+          <span className="flex items-center gap-2.5">
+            <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-brand-600 text-white">
+              <School className="h-5 w-5" />
+            </span>
+            <span className="hidden text-lg font-extrabold sm:inline">Libri scolastici</span>
           </span>
-          <span className="text-lg font-extrabold">Libri scolastici</span>
-        </span>
+          <nav className="flex gap-1">
+            {SEZIONI.map((s) => {
+              const attiva = s.href === "/scuole" ? pathname === s.href : pathname.startsWith(s.href);
+              return (
+                <Link
+                  key={s.href}
+                  href={s.href}
+                  className={cn(
+                    "rounded-xl px-4 py-2 text-[15px] font-bold transition",
+                    attiva ? "bg-brand-600 text-white" : "text-ink-soft hover:bg-paper-warm"
+                  )}
+                >
+                  {s.label}
+                </Link>
+              );
+            })}
+          </nav>
+        </div>
         <button
           type="button"
           onClick={logout}

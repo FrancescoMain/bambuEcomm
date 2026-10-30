@@ -116,6 +116,10 @@ router.delete("/scuole/:id", async (req: Request, res: Response) => {
       res.status(409).json({ message: "Prima elimina le classi di questa scuola, di tutti gli anni." });
       return;
     }
+    if (await prisma.schedaCliente.count({ where: { scuolaId } })) {
+      res.status(409).json({ message: "Ci sono schede di clienti per questa scuola: la scuola non si può eliminare." });
+      return;
+    }
     await prisma.scuola.delete({ where: { id: scuolaId } });
     res.status(204).end();
   } catch (e) {
