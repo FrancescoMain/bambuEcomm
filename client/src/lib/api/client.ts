@@ -33,6 +33,8 @@ export const getToken = (): string | null => {
 type Options = Omit<RequestInit, "body"> & {
   body?: unknown;
   auth?: boolean;
+  /** Token da usare al posto di quello del negozio (es. gestionale /scuole); un 401 non fa logout dal negozio */
+  token?: string | null;
   /** query string */
   query?: Record<string, unknown>;
 };
@@ -55,8 +57,8 @@ export const setUnauthorizedHandler = (fn: () => void) => {
 };
 
 export async function api<T = any>(path: string, opts: Options = {}): Promise<T> {
-  const { body, auth = true, query, headers, ...rest } = opts;
-  const token = auth ? getToken() : null;
+  const { body, auth = true, token: tokenProprio, query, headers, ...rest } = opts;
+  const token = tokenProprio !== undefined ? tokenProprio : auth ? getToken() : null;
   const isForm = typeof FormData !== "undefined" && body instanceof FormData;
   const res = await fetch(`${API_URL}${path}${buildQuery(query)}`, {
     ...rest,
@@ -77,7 +79,7 @@ export async function api<T = any>(path: string, opts: Options = {}): Promise<T>
     data = text;
   }
   if (!res.ok) {
-    if (res.status === 401 && token && onUnauthorized) onUnauthorized();
+    if (res.status === 401 && token && tokenProprio === undefined && onUnauthorized) onUnauthorized();
     const message =
       (data && (data.message || data.error || data.errors?.[0]?.msg)) ||
       (res.status >= 500 ? "Si è verificato un errore, riprova tra poco." : "Richiesta non valida.");

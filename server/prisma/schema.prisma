@@ -358,6 +358,8 @@ model ContactMessage {
 enum Role {
   USER
   ADMIN
+  /// Solo il gestionale libri su /scuole, niente pannello del negozio
+  SCUOLE
 }
 
 enum OrderStatus {
@@ -419,4 +421,61 @@ model Post {
   updatedAt   DateTime  @updatedAt
 
   @@index([pubblicato, publishedAt])
+}
+
+// ── Gestionale libri scolastici (ex GS_MAG) ──────────────────────────────
+
+/// Scuola dall'anagrafe del Ministero (codice meccanografico)
+model Scuola {
+  id        Int            @id @default(autoincrement())
+  codice    String         @unique
+  nome      String
+  tipo      String?
+  indirizzo String?
+  cap       String?
+  citta     String?
+  provincia String?
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+  schede    SchedaScuola[]
+}
+
+/// Libri adottati da una classe in un anno (ex Schede_Testata). L'anno è quello solare, come in GS_MAG.
+model SchedaScuola {
+  id        Int                 @id @default(autoincrement())
+  scuolaId  Int
+  scuola    Scuola              @relation(fields: [scuolaId], references: [id], onDelete: Restrict)
+  anno      Int
+  /// Anno di corso e sezione attaccati, come li scrive il Ministero («1A», «3ASA»)
+  classe    String
+  corso     String              @default("")
+  data      DateTime            @default(now())
+  createdAt DateTime            @default(now())
+  updatedAt DateTime            @updatedAt
+  libri     SchedaScuolaLibro[]
+
+  @@unique([scuolaId, anno, classe, corso])
+  @@index([anno])
+}
+
+/// Un libro adottato nella classe (ex Schede_Dettaglio)
+model SchedaScuolaLibro {
+  id            Int          @id @default(autoincrement())
+  schedaId      Int
+  scheda        SchedaScuola @relation(fields: [schedaId], references: [id], onDelete: Cascade)
+  isbn          String
+  materia       String
+  autori        String
+  titolo        String
+  volume        String
+  editore       String
+  prezzo        Decimal      @db.Decimal(10, 2)
+  nuovaAdozione Boolean      @default(false)
+  daAcquistare  Boolean      @default(false)
+  consigliato   Boolean      @default(false)
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  @@unique([schedaId, isbn])
+  @@index([isbn])
 }
