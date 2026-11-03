@@ -36,13 +36,27 @@ async function leggiGiacenza(isbn: string) {
     include: { movimenti: { orderBy: { id: "desc" }, take: 100 } },
   });
   if (!giacenza) return null;
-  // Per «dato al cliente» e «rientro» si mostra a chi
-  const libri = await prisma.schedaClienteLibro.findMany({
-    where: { id: { in: giacenza.movimenti.flatMap((m) => (m.libroId ? [m.libroId] : [])) } },
-    select: { id: true, ...CLIENTE },
-  });
+  // Per «dato al cliente» e «rientro» si mostra a chi, per gli arrivi con quale bolla
+  const [libri, bolle] = await Promise.all([
+    prisma.schedaClienteLibro.findMany({
+      where: { id: { in: giacenza.movimenti.flatMap((m) => (m.libroId ? [m.libroId] : [])) } },
+      select: { id: true, ...CLIENTE },
+    }),
+    prisma.bollaArrivo.findMany({
+      where: { id: { in: giacenza.movimenti.flatMap((m) => (m.bollaId ? [m.bollaId] : [])) } },
+      select: { id: true, anno: true, numero: true },
+    }),
+  ]);
   const cliente = new Map(libri.map((l) => [l.id, l.scheda]));
-  return { ...giacenza, movimenti: giacenza.movimenti.map((m) => ({ ...m, cliente: m.libroId ? cliente.get(m.libroId) ?? null : null })) };
+  const bolla = new Map(bolle.map((b) => [b.id, b]));
+  return {
+    ...giacenza,
+    movimenti: giacenza.movimenti.map((m) => ({
+      ...m,
+      cliente: m.libroId ? cliente.get(m.libroId) ?? null : null,
+      bolla: m.bollaId ? bolla.get(m.bollaId) ?? null : null,
+    })),
+  };
 }
 
 // GET /api/libri/magazzino?q= — giacenze per codice, con prenotati, in ordine e da ritirare dello stesso libro

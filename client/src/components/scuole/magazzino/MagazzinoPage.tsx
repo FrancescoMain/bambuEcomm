@@ -111,7 +111,7 @@ export function MagazzinoPage() {
               inputMode="numeric"
               autoFocus
               autoComplete="off"
-              disabled={caricando}
+              readOnly={caricando}
               className="w-full rounded-xl border-2 border-brand-200 bg-white py-2.5 pl-10 pr-3 text-base font-mono focus:border-brand-500 focus:outline-none"
             />
           </div>

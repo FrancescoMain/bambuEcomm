@@ -104,7 +104,7 @@ export function PerIlNegozio({ copie, onChange }: { copie: CopiaNegozio[]; onCha
             aria-label="Codice del libro per il negozio"
             inputMode="numeric"
             autoComplete="off"
-            disabled={cercando}
+            readOnly={cercando}
             className="w-full rounded-xl border-2 border-brand-200 bg-white py-2.5 pl-10 pr-3 font-mono text-base focus:border-brand-500 focus:outline-none"
           />
         </form>

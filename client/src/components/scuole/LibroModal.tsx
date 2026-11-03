@@ -48,6 +48,7 @@ export function LibroModal({
   open,
   percorso,
   libro,
+  isbnIniziale = "",
   onClose,
   onSaved,
 }: {
@@ -56,15 +57,18 @@ export function LibroModal({
   percorso: string;
   /** null = nuovo libro */
   libro: LibroScheda | null;
+  /** Codice già letto (es. col lettore in una bolla) per un libro nuovo */
+  isbnIniziale?: string;
   onClose: () => void;
-  onSaved: () => void;
+  /** Riceve la risposta del server */
+  onSaved: (risposta: unknown) => void;
 }) {
   const [campi, setCampi] = useState<Campi>(VUOTO);
   const [salvando, setSalvando] = useState(false);
 
   useEffect(() => {
-    if (open) setCampi(libro ? daLibro(libro) : VUOTO);
-  }, [open, libro]);
+    if (open) setCampi(libro ? daLibro(libro) : { ...VUOTO, isbn: isbnIniziale });
+  }, [open, libro, isbnIniziale]);
 
   const set = (k: keyof Campi) => (e: React.ChangeEvent<HTMLInputElement>) =>
     setCampi((c) => ({ ...c, [k]: e.target.type === "checkbox" ? e.target.checked : e.target.value }));
@@ -84,12 +88,12 @@ export function LibroModal({
     e.preventDefault();
     setSalvando(true);
     try {
-      await api(libro ? `${percorso}/${libro.id}` : percorso, {
+      const risposta = await api(libro ? `${percorso}/${libro.id}` : percorso, {
         method: libro ? "PUT" : "POST",
         body: campi,
       });
       toast.success(libro ? "Libro salvato." : "Libro aggiunto.");
-      onSaved();
+      onSaved(risposta);
       if (libro) onClose();
       else setCampi(VUOTO);
     } catch (err) {

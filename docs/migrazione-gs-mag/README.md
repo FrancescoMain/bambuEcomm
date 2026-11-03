@@ -205,13 +205,13 @@ Dalla chat WhatsApp con Alessandro (committente), 30 ott 2026: vuole lavorare **
   - **Una riga = una copia**, legata al libro del cliente che la aspetta (in GS_MAG era `key_key_cliente_dettaglio`). Nell'ordine si vede per chi è ogni copia, con il link alla scheda.
   - **CSV** `codice;quantità` senza intestazione, come in GS_MAG. Ma si genera dalle righe **dell'ordine** e non dalla lista dei da ordinare, e il nome del file ha l'anno (`ordine-2026-002.csv`): in GS_MAG l'ordine 5 di un anno sovrascriveva l'ordine 5 dell'anno prima.
   - **Ancora in ordine**: tutte le copie ordinate e non arrivate, di tutti gli ordini, con stampa e CSV da rimandare (risposta 6).
-  - **Annulla libro in ordine** (dalla scheda cliente, sul libro Confermato; il pulsante chiede «Sì, annulla» sul posto): il libro torna in lista e la copia va subito al primo cliente che ha prenotato lo stesso libro, che diventa Confermato. Se non c'è nessuno resta **libera** nell'ordine; il prossimo «Crea l'ordine» la assegna prima di ordinarne altre.
+  - **Annulla libro in ordine** (dalla scheda cliente, sul libro Confermato; dal 3 nov 2026 chiede conferma in una finestra, su richiesta del negozio: un clic per sbaglio non annulla niente): il libro torna in lista e la copia va subito al primo cliente che ha prenotato lo stesso libro, che diventa Confermato. Se non c'è nessuno resta **libera** nell'ordine; il prossimo «Crea l'ordine» la assegna prima di ordinarne altre.
   - Togliere una copia dall'ordine (prima che arrivi) rimette il libro Prenotato, con «Annulla» per 5 secondi. Un ordine si elimina solo se non è arrivato niente.
   - Ordini e abbinamenti passano uno alla volta (lock di Postgres): due postazioni non mettono lo stesso libro in due ordini.
   - **Per il negozio** (3 nov 2026, risposta 7): in «Da ordinare» si leggono col lettore (o si scrivono) i libri senza cliente da ordinare, con il numero di copie; entrano nel prossimo «Crea l'ordine», una riga per copia, anche se nessun cliente ha prenotato niente. Restano su quel computer finché non si crea l'ordine. Dentro un ordine già fatto c'è «Aggiungi per il negozio» per quelle dimenticate. I dati arrivano dalle classi, dalle schede o dal Magazzino; un codice mai visto va prima aggiunto in Magazzino. Sono copie libere come quelle annullate: se nel frattempo qualcuno prenota lo stesso libro vanno a lui, altrimenti all'arrivo finiscono in Magazzino.
   - Le Bolle segneranno `arrivatoAt` sulla copia e il libro come Assegnato.
 
-- **Magazzino: fatto** (3 nov 2026, non committato). Modelli `GiacenzaLibro` (una riga per codice, copie libere in negozio, mai sotto zero per vincolo del database) e `MovimentoGiacenza` (registro: carico, correzione a mano, dato al cliente, rimesso in negozio), campo `dalNegozioAt` sul libro del cliente. Migrazione `gestionale_libri_magazzino`, rotte `/api/libri/magazzino`, pagina `/scuole/magazzino`.
+- **Magazzino: fatto** (3 nov 2026, commit `cf0372e`). Modelli `GiacenzaLibro` (una riga per codice, copie libere in negozio, mai sotto zero per vincolo del database) e `MovimentoGiacenza` (registro: carico, correzione a mano, dato al cliente, rimesso in negozio), campo `dalNegozioAt` sul libro del cliente. Migrazione `gestionale_libri_magazzino`, rotte `/api/libri/magazzino`, pagina `/scuole/magazzino`.
   - **Carico col lettore**: si legge il codice e si preme Invio, +1 copia. Un codice nuovo prende i dati dalle classi (o dalle schede dei clienti); se non c'è da nessuna parte si apre il modulo da compilare.
   - **Correzione a mano**: − e + nella tabella, oppure nel libro si scrive quante copie ci sono davvero (il registro tiene la differenza). Un libro si toglie dal magazzino solo a zero copie.
   - In tabella, per ogni libro: copie in negozio, prenotati in attesa, in ordine, da ritirare. Se un libro è in negozio e qualcuno lo aspetta, «Prenotati» è in evidenza.
@@ -219,6 +219,32 @@ Dalla chat WhatsApp con Alessandro (committente), 30 ott 2026: vuole lavorare **
   - In Ordini, «Da ordinare» mostra quante copie dello stesso libro ci sono già in negozio.
   - Stesso lock di Ordini: l'ultima copia non va a due clienti (provato con due postazioni insieme).
   - GS_MAG distingueva «prenotato» e «locale» con quattro contatori: qui «prenotato» sono le copie dei clienti (Assegnato nelle schede), «locale» la giacenza.
+
+- **Bolle: fatte** (3 nov 2026, non committate). Modelli `BollaArrivo` (numero per anno solare, n. DDT del fornitore facoltativo, appunti) e `BollaRiga` (una copia arrivata: la copia in ordine che evade, il cliente che la riceve oppure il Magazzino), migrazione `gestionale_libri_bolle`, rotte `/api/libri/bolle`, pagina `/scuole/bolle`.
+  - Si legge ogni libro col lettore, una copia per lettura, e si vede in grande dove va (nome, scheda e classe del cliente, oppure «In Magazzino»):
+    1. c'è una copia in ordine per un cliente: va a chi ha prenotato per primo (risposta 5), il libro diventa **Assegnato**;
+    2. c'è solo una copia in ordine senza cliente (per il negozio o annullata): va al primo che aspetta lo stesso libro (Prenotato → Assegnato), altrimenti in **Magazzino**;
+    3. il libro non era in nessun ordine (arrivo fuori ordine, «locale» di GS_MAG): come il punto 2. Un codice mai visto apre il modulo del libro.
+  - **Annulla arrivo** riga per riga (con «Annulla» per 5 secondi): la copia torna «in arrivo», il cliente torna Confermato (o Prenotato se era fuori ordine), il Magazzino scende di uno. Non si annulla se il cliente ha già ritirato o la copia non è più in Magazzino. Una bolla si elimina solo vuota.
+  - Stampa A4 della bolla con per chi è ogni copia (layout provvisorio).
+  - **Etichetta da attaccare al libro** (`Mike_Bolle_BarCode`, foto e vocale del 3 nov 2026): codice del libro, cognome, nome e telefono, in maiuscolo e centrati, una per pagina su etichetta adesiva (misura a scelta fra 50 × 30, 40 × 30, 62 × 29, 57 × 32 e 100 × 50 mm, oppure «Altra misura…» con larghezza e altezza scritte a mano da 20 a 297 mm; ricordata su ogni computer. In GS_MAG la misura stava dentro `Mike_Bolle_BarCode.rpt`, che non si legge). Si stampano tutte quelle della bolla insieme, una dalla riga, oppure in automatico a ogni libro per un cliente (casella, come «abilita stampa» di GS_MAG). Anche nella scheda cliente, sui libri Assegnati (per quelli dati dal negozio o da ristampare). La stampa automatica è attiva di partenza (vocale del 3 nov: «quando spariamo il libro esce direttamente l'etichetta, senza la conferma di stampa»).
+  - **Stampa senza conferma**: dalla pagina non si può saltare la finestra di stampa, la mostra sempre il browser. Sui PC del negozio serve un collegamento che apre Chrome così (Windows): `"C:\Program Files\Google\Chrome\Application\chrome.exe" --kiosk-printing --user-data-dir=C:\BambuEtichette --app=<indirizzo>/scuole/bolle`, con la termica come stampante predefinita di Windows. Il profilo a parte (`--user-data-dir`) serve perché l'opzione vale solo se Chrome parte con lei; in quella finestra **tutte** le stampe vanno alla termica, quindi le stampe A4 (schede, ordini, bolla) si fanno dal Chrome normale.
+  - Nel Magazzino i movimenti dicono con quale bolla è arrivata una copia.
+  - Corretti rispetto a GS_MAG: la ricerca dell'ordine con la precedenza AND/OR sbagliata (prendeva righe di altri libri), «Importa» rotta, errori SQL inghiottiti (qui ogni lettura è una transazione), contatori del magazzino asimmetrici.
+
+### Nuovi e usati (vocali del 3 nov 2026 e chiamata con Alessandro, 3 nov pomeriggio)
+
+«Quando arrivano i libri devo tenere le due sezioni per i libri nuovi e i libri usati, così, sempre in ordine cronologico di chi ha prenotato, il libro viene assegnato a chi ha ordinato nuovo e a chi ha ordinato usato.»
+
+Risposte dalla chiamata (trascritta da registrazione, alcuni passaggi poco chiari sono segnati):
+
+1. **Da dove arrivano gli usati**: li compra il negozio **al banco dai clienti**. Di solito in **conto vendita**: chi li porta viene pagato dopo un paio di mesi. Serve una **scheda di chi vende** (separata da quella di chi compra) che tenga a memoria cosa gli si deve.
+2. **Prezzo**: una «piccola legenda» in **tre stati** del libro, con tre sconti sul prezzo di copertina: **40, 50 e 60 %** (dall'audio: ottimo stato → 50, molto rovinato → 60; quale stato vada al 40 non si sente bene, da confermare). In ogni caso vogliono **scrivere quanto è stato pagato e a quanto si vende**, copia per copia. Accennato anche un «10 % per la vendita e 5 % per l'acquisto», da confermare col commercialista.
+3. I libri con la scritta **New** sono **solo nuovi**: non si possono ordinare usati.
+4. **Attesa dell'usato**: chi vuole l'usato aspetta un certo numero di giorni (si è detto 10, poi 7 e 5: va impostabile). Passati i giorni, se l'usato non c'è, il libro va **ordinato nuovo in automatico**: in «Da ordinare» chi aspetta l'usato non compare finché non scadono i giorni, poi compare.
+5. **Precedenza**: chi ha ordinato **nuovo da subito** non deve passare dopo chi ha aspettato l'usato e poi è passato al nuovo («non è che lo deve avere prima lei»): per il nuovo conta da quando lo si aspetta nuovo. Il libro arriva a chi l'ha ordinato per primo, nella stessa lista.
+6. **La sera** si leggono col lettore tutti gli usati comprati durante il giorno: si vede subito se qualcuno li aspetta, altrimenti restano in giacenza (Magazzino usati).
+7. **Due copie usate uguali** di persone diverse: ogni copia usata ha un **codice numerico nostro**, stampato sull'etichetta insieme al codice del libro e attaccato quando la si compra. Così alla vendita si sa di chi era la copia (e chi va pagato).
 
 ## Prossimi passi
 

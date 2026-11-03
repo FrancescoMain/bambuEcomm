@@ -179,13 +179,15 @@ export type GiacenzaRiepilogo = Giacenza & {
   daRitirare: number;
 };
 
-export type CausaleGiacenza = "CARICO" | "RETTIFICA" | "DATO_AL_CLIENTE" | "RIENTRO";
+export type CausaleGiacenza = "CARICO" | "RETTIFICA" | "DATO_AL_CLIENTE" | "RIENTRO" | "ARRIVO" | "ARRIVO_ANNULLATO";
 
 export const CAUSALI: Record<CausaleGiacenza, string> = {
   CARICO: "Carico",
   RETTIFICA: "Correzione a mano",
   DATO_AL_CLIENTE: "Dato al cliente",
   RIENTRO: "Rimesso in negozio",
+  ARRIVO: "Arrivato con la bolla",
+  ARRIVO_ANNULLATO: "Arrivo annullato",
 };
 
 export type MovimentoGiacenza = {
@@ -194,6 +196,40 @@ export type MovimentoGiacenza = {
   causale: CausaleGiacenza;
   createdAt: string;
   cliente: ClienteCopia | null;
+  bolla: { id: number; anno: number; numero: number } | null;
 };
 
 export type GiacenzaDettaglio = Giacenza & { movimenti: MovimentoGiacenza[] };
+
+// ── Bolle (arrivo della merce dal fornitore) ──
+
+export type BollaRiepilogo = {
+  id: number;
+  anno: number;
+  numero: number;
+  barcode: string;
+  data: string;
+  numeroFornitore: string;
+  note: string;
+  copie: number;
+  aClienti: number;
+  inMagazzino: number;
+  totale: number;
+};
+
+export type RigaBolla = {
+  id: number;
+  isbn: string;
+  materia: string;
+  autori: string;
+  titolo: string;
+  volume: string;
+  editore: string;
+  prezzo: string | number;
+  destinazione: "CLIENTE" | "MAGAZZINO";
+  createdAt: string;
+  libro: { id: number; stato: StatoLibro; scheda: ClienteCopia & { classe: string; telefono: string } } | null;
+  ordineRiga: { id: number; ordine: { id: number; anno: number; numero: number } } | null;
+};
+
+export type Bolla = Omit<BollaRiepilogo, "copie" | "aClienti" | "inMagazzino"> & { righe: RigaBolla[] };

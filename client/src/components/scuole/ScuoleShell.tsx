@@ -15,6 +15,7 @@ const SEZIONI = [
   { href: "/scuole", label: "Scuole" },
   { href: "/scuole/clienti", label: "Clienti" },
   { href: "/scuole/ordini", label: "Ordini" },
+  { href: "/scuole/bolle", label: "Bolle" },
   { href: "/scuole/magazzino", label: "Magazzino" },
 ] as const;
 
@@ -122,7 +123,7 @@ export function ScuoleShell({ children }: { children: React.ReactNode }) {
           <LogOut className="h-4 w-4" /> Esci
         </button>
       </header>
-      <main className="w-full p-4 sm:p-6">{children}</main>
+      <main className="w-full p-4 sm:p-6 print:p-0">{children}</main>
     </div>
   );
 }

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { ArrowLeft, BookOpen, Download, HandCoins, Pencil, Plus, Printer, StickyNote, Trash2 } from "lucide-react";
+import { ArrowLeft, BookOpen, Download, HandCoins, Pencil, Plus, Printer, StickyNote, Tag, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { Callout } from "@/components/admin/ops/Callout";
 import { useAsync } from "@/components/admin/ops/useAsync";
@@ -14,6 +14,7 @@ import { errorMessage } from "@/lib/api/client";
 import { api } from "@/lib/api/scuole";
 import { cn } from "@/lib/cn";
 import { formatDateTime, formatPrice } from "@/lib/format";
+import { FogliEtichette, usePreferenzeEtichette, useStampaEtichette } from "../Etichette";
 import { LibroModal } from "../LibroModal";
 import { STATI, type AzioneLibro, type ClienteCopia, type LibroCliente, type SchedaCliente } from "../types";
 import { SchedaClienteModal } from "./SchedaClienteModal";
@@ -46,15 +47,9 @@ export function SchedaClienteView({
   const [appunti, setAppunti] = useState("");
   const [stampa, setStampa] = useState<TipoStampa | null>(null);
   const [nascosti, setNascosti] = useState<ReadonlySet<number>>(new Set());
-  const [daAnnullare, setDaAnnullare] = useState<number | null>(null);
   const [confirm, dialog] = useConfirm();
-
-  // La richiesta di conferma sul pulsante «Annulla ordine» sparisce da sola dopo qualche secondo
-  useEffect(() => {
-    if (daAnnullare === null) return;
-    const t = setTimeout(() => setDaAnnullare(null), 4000);
-    return () => clearTimeout(t);
-  }, [daAnnullare]);
+  const [pref] = usePreferenzeEtichette();
+  const [etichette, stampaEtichette] = useStampaEtichette();
 
   useEffect(() => setAggiornata(null), [caricata.data]);
   useEffect(() => {
@@ -92,13 +87,15 @@ export function SchedaClienteView({
   };
 
   // Il cliente non vuole più un libro già ordinato: la copia passa al primo che aspetta lo stesso libro.
-  // Al primo clic il pulsante chiede conferma sul posto (niente finestra), al secondo annulla.
+  // Il negozio ha chiesto una conferma in più (3 nov 2026): un clic per sbaglio non deve annullare niente.
   const annullaOrdine = async (l: LibroCliente) => {
-    if (daAnnullare !== l.id) {
-      setDaAnnullare(l.id);
-      return;
-    }
-    setDaAnnullare(null);
+    const ok = await confirm({
+      title: `Annullare l'ordine di «${l.titolo}»?`,
+      message: "Il libro torna «in lista» e la copia ordinata passa al primo cliente che aspetta lo stesso libro, altrimenti resta per il negozio.",
+      confirmLabel: "Sì, annulla l'ordine",
+      danger: true,
+    });
+    if (!ok) return;
     setLavoro(true);
     try {
       const esito = await api<{ passatoA: ClienteCopia | null; ordine: { numero: number } | null }>("/libri/ordini/annulla-libro", {
@@ -425,14 +422,22 @@ export function SchedaClienteView({
                             </Button>
                           )}
                           {l.stato === "CONFERMATO" && (
-                            <Button
-                              size="sm"
-                              variant={daAnnullare === l.id ? "danger" : "ghost"}
-                              onClick={() => annullaOrdine(l)}
-                              disabled={lavoro}
-                            >
-                              {daAnnullare === l.id ? "Sì, annulla" : "Annulla ordine"}
+                            <Button size="sm" variant="ghost" onClick={() => annullaOrdine(l)} disabled={lavoro}>
+                              Annulla ordine
                             </Button>
+                          )}
+                          {l.stato === "ASSEGNATO" && (
+                            <button
+                              type="button"
+                              onClick={() =>
+                                stampaEtichette([{ chiave: l.id, isbn: l.isbn, cognome: scheda.cognome, nome: scheda.nome, telefono: scheda.telefono }])
+                              }
+                              className="mr-1 rounded-full p-2 align-middle text-ink-muted transition hover:bg-paper-warm hover:text-ink"
+                              aria-label={`Stampa l'etichetta di ${l.titolo}`}
+                              title="Stampa l'etichetta da attaccare al libro"
+                            >
+                              <Tag className="h-4 w-4" />
+                            </button>
                           )}
                           {l.stato === "ASSEGNATO" && l.dalNegozioAt && (
                             <Button size="sm" variant="ghost" onClick={() => rimettiInNegozio(l)} disabled={lavoro}>
@@ -470,7 +475,8 @@ export function SchedaClienteView({
         </section>
       </div>
 
-      {stampa && <StampaScheda scheda={scheda} tipo={stampa} />}
+      {stampa && !etichette && <StampaScheda scheda={scheda} tipo={stampa} />}
+      {etichette && <FogliEtichette etichette={etichette} misura={pref} />}
 
       <LibroModal
         open={libroAperto !== undefined}

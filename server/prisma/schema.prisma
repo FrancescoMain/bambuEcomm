@@ -541,6 +541,7 @@ model SchedaClienteLibro {
   createdAt     DateTime          @default(now())
   updatedAt     DateTime          @updatedAt
   rigaOrdine    OrdineRiga?
+  rigaBolla     BollaRiga?
 
   @@unique([schedaId, isbn])
   @@index([isbn, stato])
@@ -578,6 +579,7 @@ model OrdineRiga {
   /// Lo scrive la sezione Bolle all'arrivo della merce
   arrivatoAt DateTime?
   createdAt  DateTime            @default(now())
+  rigaBolla  BollaRiga?
 
   @@index([ordineId])
   @@index([isbn, arrivatoAt])
@@ -606,6 +608,8 @@ enum CausaleGiacenza {
   RETTIFICA
   DATO_AL_CLIENTE
   RIENTRO
+  ARRIVO
+  ARRIVO_ANNULLATO
 }
 
 /// Registro dei movimenti della giacenza: in GS_MAG c'erano solo i contatori, senza storia.
@@ -618,7 +622,53 @@ model MovimentoGiacenza {
   causale     CausaleGiacenza
   /// Il libro della scheda cliente, per «Dato al cliente» e «Rientro»
   libroId     Int?
+  /// La bolla, per «Arrivo» e «Arrivo annullato»
+  bollaId     Int?
   createdAt   DateTime        @default(now())
 
   @@index([giacenzaId, createdAt])
+}
+
+/// Arrivo della merce dal fornitore (ex Bolla_Testata). Un solo fornitore: il numero del suo DDT e appunti.
+model BollaArrivo {
+  id              Int         @id @default(autoincrement())
+  anno            Int
+  numero          Int
+  data            DateTime    @default(now())
+  numeroFornitore String      @default("")
+  note            String      @default("")
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+  righe           BollaRiga[]
+
+  @@unique([anno, numero])
+}
+
+enum DestinazioneArrivo {
+  CLIENTE
+  MAGAZZINO
+}
+
+/// Una copia arrivata (ex Bolla_Dettaglio, una riga per copia): dalla copia in ordine che evade, se c'era, al
+/// cliente che la riceve (Assegnato) oppure al Magazzino. Servono entrambe per annullare l'arrivo.
+model BollaRiga {
+  id           Int                 @id @default(autoincrement())
+  bollaId      Int
+  bolla        BollaArrivo         @relation(fields: [bollaId], references: [id], onDelete: Cascade)
+  isbn         String
+  materia      String
+  autori       String
+  titolo       String
+  volume       String
+  editore      String
+  prezzo       Decimal             @db.Decimal(10, 2)
+  destinazione DestinazioneArrivo
+  ordineRigaId Int?                @unique
+  ordineRiga   OrdineRiga?         @relation(fields: [ordineRigaId], references: [id], onDelete: SetNull)
+  libroId      Int?                @unique
+  libro        SchedaClienteLibro? @relation(fields: [libroId], references: [id], onDelete: SetNull)
+  createdAt    DateTime            @default(now())
+
+  @@index([bollaId])
+  @@index([isbn])
 }

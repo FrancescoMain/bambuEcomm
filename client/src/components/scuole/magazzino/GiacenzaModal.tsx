@@ -168,6 +168,7 @@ export function GiacenzaModal({
                       · {m.cliente.cognome} {m.cliente.nome} (scheda n. {m.cliente.numero})
                     </span>
                   )}
+                  {m.bolla && <span className="text-ink-muted"> n. {m.bolla.numero}</span>}
                 </span>
                 <span className="whitespace-nowrap text-sm text-ink-muted">{formatDateTime(m.createdAt)}</span>
               </li>
