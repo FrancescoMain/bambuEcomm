@@ -13,16 +13,18 @@ import { Skeleton } from "@/components/ui/Spinner";
 import { errorMessage } from "@/lib/api/client";
 import { api } from "@/lib/api/scuole";
 import { cn } from "@/lib/cn";
-import { formatDateTime, formatPrice } from "@/lib/format";
-import { FogliEtichette, usePreferenzeEtichette, useStampaEtichette } from "../Etichette";
+import { formatDate, formatDateTime, formatPrice } from "@/lib/format";
+import { etichettaCliente, FogliEtichette, usePreferenzeEtichette, useStampaEtichette } from "../Etichette";
 import { LibroModal } from "../LibroModal";
-import { STATI, type AzioneLibro, type ClienteCopia, type LibroCliente, type SchedaCliente } from "../types";
+import { prezzoCliente, STATI, type AzioneLibro, type ClienteCopia, type LibroCliente, type SchedaCliente } from "../types";
 import { SchedaClienteModal } from "./SchedaClienteModal";
 import { StampaScheda, type TipoStampa } from "./StampaScheda";
 
 const modificabile = (l: LibroCliente) => l.stato === "IN_LISTA" || l.stato === "PRENOTATO";
 /** Libri che il cliente non ha ancora in mano e che ci sono in negozio: si danno subito (risposta 7) */
 const daDare = (l: LibroCliente) => l.inNegozio > 0 && (modificabile(l) || l.stato === "CONFERMATO");
+/** Copie usate di questo libro in negozio da dare subito (mai per i «New», che si trovano solo nuovi) */
+const daDareUsato = (l: LibroCliente) => l.usatiInNegozio > 0 && modificabile(l) && !l.nuovaAdozione;
 
 /** Scheda di prenotazione di un alunno (ex scheda cliente di GS_MAG). */
 export function SchedaClienteView({
@@ -142,15 +144,44 @@ export function SchedaClienteView({
     }
   };
 
+  // La copia (nuova dal Magazzino, oppure usata) torna in negozio e il libro torna «Prenotato»
   const rimettiInNegozio = async (l: LibroCliente) => {
     setLavoro(true);
     try {
-      await api("/libri/magazzino/rimetti", { method: "POST", body: { libroId: l.id } });
+      await api(l.copiaUsata ? "/libri/usati/rimetti" : "/libri/magazzino/rimetti", { method: "POST", body: { libroId: l.id } });
       toast.success(`«${l.titolo}» rimesso in negozio: per il cliente torna «Prenotato».`);
       caricata.reload();
       onChanged();
     } catch (e) {
       toast.error(errorMessage(e));
+    } finally {
+      setLavoro(false);
+    }
+  };
+
+  // Il cliente lo vuole usato (o torna al nuovo): chi aspetta l'usato si ordina nuovo dopo i giorni di attesa
+  const cambiaUsato = async (l: LibroCliente) => {
+    setLavoro(true);
+    try {
+      applica(await api<SchedaCliente>(`/libri/clienti/${schedaId}/libri/${l.id}/usato`, { method: "PATCH", body: { usato: !l.usato } }));
+    } catch (e) {
+      toast.error(errorMessage(e));
+    } finally {
+      setLavoro(false);
+    }
+  };
+
+  // C'è una copia usata dello stesso libro in negozio: gliela si dà subito (la più vecchia)
+  const daiUsato = async (l: LibroCliente) => {
+    setLavoro(true);
+    try {
+      await api("/libri/usati/dai", { method: "POST", body: { libroId: l.id } });
+      toast.success(`«${l.titolo}»: data una copia usata.`);
+      caricata.reload();
+      onChanged();
+    } catch (e) {
+      toast.error(errorMessage(e));
+      caricata.reload();
     } finally {
       setLavoro(false);
     }
@@ -409,13 +440,45 @@ export function SchedaClienteView({
                         <td className="w-[150px] px-2 py-3 text-sm">{l.editore}</td>
                         <td className="px-2 py-3 text-lg font-bold">{l.volume}</td>
                         <td className="whitespace-nowrap px-2 py-3 font-mono text-sm">{l.isbn}</td>
-                        <td className="whitespace-nowrap px-2 py-3 text-right tabular-nums">{formatPrice(l.prezzo)}</td>
+                        <td className="whitespace-nowrap px-2 py-3 text-right tabular-nums">
+                          {formatPrice(prezzoCliente(l))}
+                          {l.prezzoUsato !== null && <span className="block text-xs text-ink-muted line-through">{formatPrice(l.prezzo)}</span>}
+                        </td>
                         <td className="whitespace-nowrap px-2 py-3">
                           <span className={cn("rounded-full px-3 py-1 text-sm font-bold", STATI[l.stato].classe)}>{STATI[l.stato].label}</span>
                           {l.dalNegozioAt && l.stato !== "IN_LISTA" && <span className="mt-1 block text-xs text-ink-muted">dal negozio</span>}
+                          {l.copiaUsata && <span className="mt-1 block text-xs text-ink-muted">usato · cod. {l.copiaUsata.codice}</span>}
+                          {!l.copiaUsata && l.usato && l.stato === "PRENOTATO" && (
+                            <span className="mt-1 block text-xs font-semibold text-orange-ink">
+                              {l.attesaUsatoFino && new Date(l.attesaUsatoFino) > new Date()
+                                ? `usato · aspetta fino al ${formatDate(l.attesaUsatoFino)}`
+                                : "usato non trovato: va ordinato nuovo"}
+                            </span>
+                          )}
                           {daDare(l) && <span className="mt-1 block text-xs font-bold text-leaf-ink">{l.inNegozio} in negozio</span>}
+                          {daDareUsato(l) && <span className="mt-1 block text-xs font-bold text-leaf-ink">{l.usatiInNegozio} usati in negozio</span>}
                         </td>
                         <td className="whitespace-nowrap py-2 pl-2 pr-5 text-right">
+                          {modificabile(l) && !l.nuovaAdozione && (
+                            <button
+                              type="button"
+                              onClick={() => cambiaUsato(l)}
+                              disabled={lavoro}
+                              className={cn(
+                                "mr-1 rounded-full border px-3 py-1 align-middle text-sm font-bold transition disabled:opacity-50",
+                                l.usato ? "border-orange-ink bg-orange-soft text-orange-ink" : "border-paper-line text-ink-muted hover:bg-paper-warm"
+                              )}
+                              aria-pressed={l.usato}
+                              title={l.usato ? "Lo vuole usato: clicca per il nuovo" : "Lo vuole nuovo: clicca per l'usato"}
+                            >
+                              {l.usato ? "Usato" : "Nuovo"}
+                            </button>
+                          )}
+                          {daDareUsato(l) && (
+                            <Button size="sm" variant="secondary" onClick={() => daiUsato(l)} disabled={lavoro}>
+                              Dai usato
+                            </Button>
+                          )}
                           {daDare(l) && (
                             <Button size="sm" variant="secondary" onClick={() => daiDalNegozio(l)} disabled={lavoro}>
                               Dai dal negozio
@@ -430,7 +493,7 @@ export function SchedaClienteView({
                             <button
                               type="button"
                               onClick={() =>
-                                stampaEtichette([{ chiave: l.id, isbn: l.isbn, cognome: scheda.cognome, nome: scheda.nome, telefono: scheda.telefono }])
+                                stampaEtichette([etichettaCliente(l.id, l.isbn, scheda)])
                               }
                               className="mr-1 rounded-full p-2 align-middle text-ink-muted transition hover:bg-paper-warm hover:text-ink"
                               aria-label={`Stampa l'etichetta di ${l.titolo}`}
@@ -439,7 +502,7 @@ export function SchedaClienteView({
                               <Tag className="h-4 w-4" />
                             </button>
                           )}
-                          {l.stato === "ASSEGNATO" && l.dalNegozioAt && (
+                          {l.stato === "ASSEGNATO" && (l.dalNegozioAt || l.copiaUsata) && (
                             <Button size="sm" variant="ghost" onClick={() => rimettiInNegozio(l)} disabled={lavoro}>
                               Rimetti in negozio
                             </Button>
@@ -449,7 +512,7 @@ export function SchedaClienteView({
                               Ritira
                             </Button>
                           )}
-                          {l.stato === "RITIRATO" && (
+                          {l.stato === "RITIRATO" && !l.copiaUsata?.pagataAt && (
                             <Button size="sm" variant="ghost" onClick={() => cambiaStato("annullaRitiro", [l])} disabled={lavoro}>
                               Annulla ritiro
                             </Button>

@@ -1,5 +1,5 @@
 import { formatDate, formatPrice } from "@/lib/format";
-import { STATI, type SchedaCliente } from "../types";
+import { prezzoCliente, STATI, type SchedaCliente } from "../types";
 
 /**
  * «scheda» = solo i libri prenotati (come Mike_Cliente.rpt); «lista» = tutti i libri della classe;
@@ -25,7 +25,7 @@ export function StampaScheda({ scheda, tipo }: { scheda: SchedaCliente; tipo: Ti
         ? scheda.libri.filter((l) => l.daAcquistare)
         : scheda.libri;
   const t = scheda.totali;
-  const totaleStampati = Math.round(libri.reduce((s, l) => s + Number(l.prezzo), 0) * 100) / 100;
+  const totaleStampati = Math.round(libri.reduce((s, l) => s + prezzoCliente(l), 0) * 100) / 100;
   return (
     <div className="hidden text-[11pt] leading-snug text-black print:block">
       <style>{"@page { size: A4; margin: 14mm; }"}</style>
@@ -83,7 +83,10 @@ export function StampaScheda({ scheda, tipo }: { scheda: SchedaCliente; tipo: Ti
               <td className="py-1 pr-2">{l.editore}</td>
               <td className="py-1 pr-2 font-bold">{l.volume}</td>
               <td className="py-1 pr-2 font-mono">{l.isbn}</td>
-              <td className="whitespace-nowrap py-1 pr-2 text-right">{formatPrice(l.prezzo)}</td>
+              <td className="whitespace-nowrap py-1 pr-2 text-right">
+                {formatPrice(prezzoCliente(l))}
+                {l.copiaUsata && <span className="block text-[8pt]">usato</span>}
+              </td>
               {tipo !== "acquistare" && (
                 <td className="py-1">{tipo === "lista" ? (l.stato === "IN_LISTA" ? "—" : "Sì") : STATI[l.stato].label}</td>
               )}

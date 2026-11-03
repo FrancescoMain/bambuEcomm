@@ -93,13 +93,26 @@ export type LibroCliente = LibroScheda & {
   inNegozio: number;
   /** La copia è stata data dal negozio: «Rimetti in negozio» la restituisce */
   dalNegozioAt: string | null;
+  /** Il cliente lo vuole usato */
+  usato: boolean;
+  /** Fino a quando aspetta l'usato; dopo va ordinato nuovo */
+  attesaUsatoFino: string | null;
+  /** Prezzo della copia usata ricevuta (al posto della copertina) */
+  prezzoUsato: string | number | null;
+  copiaUsata: { id: number; codice: string; prezzoVendita: string | number; pagataAt: string | null } | null;
+  /** Copie usate di questo libro in negozio, ancora di nessuno */
+  usatiInNegozio: number;
 };
+
+/** Quanto paga il cliente per un libro: la copia usata se l'ha ricevuta, altrimenti la copertina (come sul server). */
+export const prezzoCliente = (l: { prezzo: string | number; prezzoUsato?: string | number | null }) => Number(l.prezzoUsato ?? l.prezzo);
 
 export type SchedaCliente = Omit<SchedaClienteRiepilogo, "conteggi" | "scuola"> & {
   scuola: { id: number; codice: string; nome: string; citta: string | null };
   acconto: string | number;
   note: string;
   libri: LibroCliente[];
+  giorniAttesaUsato: number;
   importazione?: { classeTrovata: boolean; libriAggiunti: number };
 };
 
@@ -233,3 +246,41 @@ export type RigaBolla = {
 };
 
 export type Bolla = Omit<BollaRiepilogo, "copie" | "aClienti" | "inMagazzino"> & { righe: RigaBolla[] };
+
+// ── Usati (comprati al banco in conto vendita) ──
+
+export type StatoCopia = "IN_NEGOZIO" | "ASSEGNATA" | "VENDUTA" | "PAGATA";
+
+export const STATI_COPIA: Record<StatoCopia, { label: string; classe: string }> = {
+  IN_NEGOZIO: { label: "In negozio", classe: "bg-sky-soft text-sky-ink" },
+  ASSEGNATA: { label: "A un cliente", classe: "bg-brand-100 text-brand-800" },
+  VENDUTA: { label: "Venduta, da pagare", classe: "bg-orange-soft text-orange-ink" },
+  PAGATA: { label: "Pagata", classe: "bg-paper-warm text-ink-muted" },
+};
+
+export type CopiaUsata = {
+  id: number;
+  codice: string;
+  isbn: string;
+  materia: string;
+  autori: string;
+  titolo: string;
+  volume: string;
+  editore: string;
+  prezzo: string | number;
+  scontoVendita: string | number;
+  prezzoVendita: string | number;
+  percentualeAcquisto: string | number;
+  prezzoAcquisto: string | number;
+  createdAt: string;
+  pagataAt: string | null;
+  stato: StatoCopia;
+  venditore: { id: number; cognome: string; nome: string };
+  libro: { id: number; stato: StatoLibro; scheda: ClienteCopia & { classe: string; telefono: string } } | null;
+};
+
+export type ContiVenditore = { inNegozio: number; vendute: number; daPagare: number; pagato: number };
+
+export type VenditoreRiepilogo = { id: number; cognome: string; nome: string; telefono: string; note: string; conti: ContiVenditore };
+
+export type Venditore = VenditoreRiepilogo & { copie: CopiaUsata[] };

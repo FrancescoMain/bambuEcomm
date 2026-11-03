@@ -9,6 +9,7 @@ import { normalizzaIsbn } from "../lib/libriMagazzino";
 import { datiLibri, type DatiLibro } from "../lib/libriCatalogo";
 import { scegliCopia } from "../lib/libriBolle";
 import { blocca, Cambiati, CLIENTE } from "../lib/libriTx";
+import { giorniAttesa, sogliaAttesa, vuoleIlNuovo } from "../lib/libriUsato";
 
 // Gestionale libri scolastici (ex GS_MAG), sezione Bolle: l'arrivo della merce dal fornitore. Si legge ogni libro
 // col lettore (una copia per lettura) e la copia va da sola al cliente che la aspetta («Assegnato») o in Magazzino.
@@ -201,9 +202,9 @@ router.post("/:id/righe", async (req: Request, res: Response) => {
         }
       }
       if (!libroId) {
-        // Copia di nessuno (per il negozio, annullata o fuori ordine): al primo che aspetta lo stesso libro
+        // Copia di nessuno (per il negozio, annullata o fuori ordine): al primo che aspetta lo stesso libro nuovo
         const prossimo = await tx.schedaClienteLibro.findFirst({
-          where: { isbn, stato: "PRENOTATO" },
+          where: { isbn, stato: "PRENOTATO", ...vuoleIlNuovo(sogliaAttesa(await giorniAttesa(tx))) },
           orderBy: [{ prenotatoAt: "asc" }, { id: "asc" }],
           select: { id: true },
         });

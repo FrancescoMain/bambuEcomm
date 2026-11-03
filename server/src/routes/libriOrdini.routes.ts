@@ -7,6 +7,7 @@ import { barcodeScheda } from "../lib/libriClienti";
 import { abbina, leggiCopieNegozio, perCodice } from "../lib/libriOrdini";
 import { datiLibri } from "../lib/libriCatalogo";
 import { blocca, Cambiati, CLIENTE, conferma, passaAlProssimo } from "../lib/libriTx";
+import { giorniAttesa, sogliaAttesa, vuoleIlNuovo } from "../lib/libriUsato";
 
 // Gestionale libri scolastici (ex GS_MAG), sezione Ordini: i libri prenotati dai clienti si ordinano al fornitore
 // e diventano «Confermato». Ogni riga d'ordine è una copia, legata al libro del cliente che la aspetta.
@@ -60,8 +61,10 @@ async function leggiOrdine(ordineId: number) {
 // GET /api/libri/ordini/da-ordinare — i libri prenotati non ancora ordinati, per codice, meno le copie libere
 router.get("/da-ordinare", async (_req: Request, res: Response) => {
   try {
+    // Chi aspetta ancora l'usato non si ordina: compare qui scaduti i giorni di attesa
+    const soglia = sogliaAttesa(await giorniAttesa());
     const [prenotati, libere, inNegozio] = await Promise.all([
-      prisma.schedaClienteLibro.findMany({ where: { stato: "PRENOTATO" }, select: CAMPI_LIBRO }),
+      prisma.schedaClienteLibro.findMany({ where: { stato: "PRENOTATO", ...vuoleIlNuovo(soglia) }, select: CAMPI_LIBRO }),
       prisma.ordineRiga.findMany({ where: copieLibere, select: { isbn: true } }),
       prisma.giacenzaLibro.findMany({ where: { quantita: { gt: 0 } }, select: { isbn: true, quantita: true } }),
     ]);
@@ -115,7 +118,7 @@ router.post("/", async (req: Request, res: Response) => {
         await blocca(tx);
         const adesso = new Date();
         const prenotati = await tx.schedaClienteLibro.findMany({
-          where: { stato: "PRENOTATO", ...(codici ? { isbn: { in: codici } } : {}) },
+          where: { stato: "PRENOTATO", ...vuoleIlNuovo(sogliaAttesa(await giorniAttesa(tx))), ...(codici ? { isbn: { in: codici } } : {}) },
           orderBy: [{ prenotatoAt: "asc" }, { id: "asc" }],
           select: { id: true, ...CAMPI_LIBRO },
         });

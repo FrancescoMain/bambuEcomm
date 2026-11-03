@@ -15,6 +15,7 @@ import {
   validaTestataCliente,
   type AzioneLibro,
 } from "../lib/libriClienti";
+import { giorniAttesa } from "../lib/libriUsato";
 
 // Gestionale libri scolastici (ex GS_MAG), sezione Clienti: schede di prenotazione dei libri degli alunni.
 const router = Router();
@@ -67,19 +68,30 @@ async function leggiScheda(schedaId: number) {
     where: { id: schedaId },
     include: {
       scuola: { select: { id: true, codice: true, nome: true, citta: true } },
-      libri: { orderBy: { isbn: "asc" } },
+      libri: { orderBy: { isbn: "asc" }, include: { copiaUsata: { select: { id: true, codice: true, prezzoVendita: true, pagataAt: true } } } },
     },
   });
   if (!scheda) return null;
-  // Copie libere in negozio per ogni libro: se ci sono, il libro si dà subito al cliente (risposta 7)
-  const giacenze = await prisma.giacenzaLibro.findMany({
-    where: { isbn: { in: scheda.libri.map((l) => l.isbn) }, quantita: { gt: 0 } },
-    select: { isbn: true, quantita: true },
-  });
+  // Copie libere in negozio per ogni libro, nuove e usate: se ci sono, il libro si dà subito al cliente (risposta 7)
+  const codici = scheda.libri.map((l) => l.isbn);
+  const [giacenze, usati, giorni] = await Promise.all([
+    prisma.giacenzaLibro.findMany({ where: { isbn: { in: codici }, quantita: { gt: 0 } }, select: { isbn: true, quantita: true } }),
+    prisma.copiaUsata.groupBy({ by: ["isbn"], where: { isbn: { in: codici }, libroId: null }, _count: true }),
+    giorniAttesa(),
+  ]);
   const inNegozio = new Map(giacenze.map((g) => [g.isbn, g.quantita]));
+  const usatiInNegozio = new Map(usati.map((u) => [u.isbn, u._count]));
+  const giorno = 24 * 60 * 60 * 1000;
   return {
     ...scheda,
-    libri: scheda.libri.map((l) => ({ ...l, inNegozio: inNegozio.get(l.isbn) ?? 0 })),
+    giorniAttesaUsato: giorni,
+    libri: scheda.libri.map((l) => ({
+      ...l,
+      inNegozio: inNegozio.get(l.isbn) ?? 0,
+      usatiInNegozio: usatiInNegozio.get(l.isbn) ?? 0,
+      // Fino a quando aspetta l'usato; dopo va in «Da ordinare» come nuovo
+      attesaUsatoFino: l.usato && l.usatoDal ? new Date(l.usatoDal.getTime() + giorni * giorno) : null,
+    })),
     barcode: barcodeScheda(scheda.anno, scheda.numero),
     totali: totaliCliente(scheda.libri, scheda.acconto),
   };
@@ -356,6 +368,40 @@ router.delete("/:id/libri/:libroId", async (req: Request, res: Response) => {
   }
 });
 
+// PATCH /api/libri/clienti/:id/libri/:libroId/usato { usato } — il cliente lo vuole usato (o di nuovo nuovo). Solo per
+// i libri non ancora ordinati e mai per i «New», che si trovano solo nuovi.
+router.patch("/:id/libri/:libroId/usato", async (req: Request, res: Response) => {
+  const schedaId = id(req.params.id);
+  const libroId = id(req.params.libroId);
+  const usato = req.body?.usato === true;
+  if (!schedaId || !libroId) {
+    res.status(400).json({ message: "Libro non valido." });
+    return;
+  }
+  try {
+    const libro = await prisma.schedaClienteLibro.findFirst({ where: { id: libroId, schedaId }, select: { stato: true, nuovaAdozione: true } });
+    if (!libro) {
+      res.status(404).json({ message: "Libro non trovato." });
+      return;
+    }
+    if (usato && libro.nuovaAdozione) {
+      res.status(409).json({ message: "È una nuova adozione («New»): si trova solo nuovo." });
+      return;
+    }
+    const { count } = await prisma.schedaClienteLibro.updateMany({
+      where: { id: libroId, schedaId, stato: { in: ["IN_LISTA", "PRENOTATO"] } },
+      data: { usato, usatoDal: usato && libro.stato === "PRENOTATO" ? new Date() : null },
+    });
+    if (!count) {
+      res.status(409).json({ message: "Il libro è già stato ordinato o assegnato: non si cambia più." });
+      return;
+    }
+    await rispondiScheda(res, schedaId);
+  } catch (e) {
+    errore(res, e, "Non è stato possibile cambiare il libro.");
+  }
+});
+
 // POST /api/libri/clienti/:id/stato { azione, libri: [id] } — prenota/togli/ritira/annulla ritiro, anche più libri.
 // Cambia solo i libri che sono davvero nello stato di partenza (con tre postazioni insieme non si pestano i piedi).
 router.post("/:id/stato", async (req: Request, res: Response) => {
@@ -369,9 +415,17 @@ router.post("/:id/stato", async (req: Request, res: Response) => {
   try {
     const p = passaggio(azione);
     const { count } = await prisma.schedaClienteLibro.updateMany({
-      where: { id: { in: libri }, schedaId, stato: p.da },
+      // Una copia usata già pagata al venditore è venduta: il ritiro non si annulla più
+      where: { id: { in: libri }, schedaId, stato: p.da, ...(azione === "annullaRitiro" ? { NOT: { copiaUsata: { pagataAt: { not: null } } } } : {}) },
       data: p.dati,
     });
+    // Chi vuole l'usato lo aspetta da quando prenota; togliendo la prenotazione l'attesa ricomincia
+    if (azione === "togli") {
+      await prisma.schedaClienteLibro.updateMany({ where: { id: { in: libri }, schedaId, stato: "IN_LISTA" }, data: { usatoDal: null } });
+    }
+    if (azione === "prenota") {
+      await prisma.schedaClienteLibro.updateMany({ where: { id: { in: libri }, schedaId, usato: true, stato: "PRENOTATO", usatoDal: null }, data: { usatoDal: new Date() } });
+    }
     const scheda = await leggiScheda(schedaId);
     if (!scheda) {
       res.status(404).json({ message: "Scheda non trovata." });

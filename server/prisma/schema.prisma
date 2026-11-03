@@ -538,10 +538,17 @@ model SchedaClienteLibro {
   ritiratoAt    DateTime?
   /// La copia è stata presa dal negozio (Magazzino) invece che da un ordine: «Rimetti in negozio» la restituisce
   dalNegozioAt  DateTime?
+  /// Il cliente lo vuole usato; dopo i giorni di attesa senza usato va ordinato nuovo
+  usato         Boolean           @default(false)
+  /// Da quando aspetta l'usato (alla prenotazione, o quando sceglie l'usato)
+  usatoDal      DateTime?
+  /// Prezzo della copia usata che ha ricevuto (al posto del prezzo di copertina)
+  prezzoUsato   Decimal?          @db.Decimal(10, 2)
   createdAt     DateTime          @default(now())
   updatedAt     DateTime          @updatedAt
   rigaOrdine    OrdineRiga?
   rigaBolla     BollaRiga?
+  copiaUsata    CopiaUsata?
 
   @@unique([schedaId, isbn])
   @@index([isbn, stato])
@@ -671,4 +678,52 @@ model BollaRiga {
 
   @@index([bollaId])
   @@index([isbn])
+}
+
+/// Chi porta libri usati al banco (scheda di chi vende): li si paga solo quando la copia è venduta, in conto vendita.
+model Venditore {
+  id        Int          @id @default(autoincrement())
+  cognome   String
+  nome      String
+  telefono  String       @default("")
+  note      String       @default("")
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+  copie     CopiaUsata[]
+
+  @@index([cognome])
+}
+
+/// Una copia usata comprata al banco, con un codice nostro (sull'etichetta) per distinguere copie uguali di venditori
+/// diversi. Percentuali e prezzi si scrivono copia per copia. È «venduta» quando il cliente che la riceve la ritira.
+model CopiaUsata {
+  id                  Int                 @id @default(autoincrement())
+  /// Anno + progressivo su 6 cifre (2026000001): 10 cifre, non si confonde con un ISBN né con una scheda
+  codice              String              @unique
+  venditoreId         Int
+  venditore           Venditore           @relation(fields: [venditoreId], references: [id], onDelete: Restrict)
+  isbn                String
+  materia             String
+  autori              String
+  titolo              String
+  volume              String
+  editore             String
+  /// Prezzo di copertina
+  prezzo              Decimal             @db.Decimal(10, 2)
+  /// Sconto sulla copertina per la vendita (40, 50, 60…) e prezzo che ne viene
+  scontoVendita       Decimal             @db.Decimal(5, 2)
+  prezzoVendita       Decimal             @db.Decimal(10, 2)
+  /// Percentuale della copertina che si paga al venditore e prezzo che ne viene
+  percentualeAcquisto Decimal             @db.Decimal(5, 2)
+  prezzoAcquisto      Decimal             @db.Decimal(10, 2)
+  libroId             Int?                @unique
+  libro               SchedaClienteLibro? @relation(fields: [libroId], references: [id], onDelete: SetNull)
+  assegnataAt         DateTime?
+  /// Il venditore è stato pagato (lo segna il negozio a mano)
+  pagataAt            DateTime?
+  createdAt           DateTime            @default(now())
+  updatedAt           DateTime            @updatedAt
+
+  @@index([isbn, libroId])
+  @@index([venditoreId])
 }

@@ -38,7 +38,11 @@ export function passaggio(azione: AzioneLibro, adesso = new Date()) {
 /** Righe che si possono ancora modificare o eliminare: quelle non ancora ordinate al fornitore. */
 export const modificabile = (stato: StatoLibroCliente) => stato === "IN_LISTA" || stato === "PRENOTATO";
 
-type Riga = { prezzo: Prisma.Decimal | number | string; stato: StatoLibroCliente };
+type Prezzo = Prisma.Decimal | number | string;
+type Riga = { prezzo: Prezzo; prezzoUsato?: Prezzo | null; stato: StatoLibroCliente };
+
+/** Quanto paga il cliente per un libro: il prezzo della copia usata se ne ha ricevuta una, altrimenti la copertina. */
+export const prezzoCliente = (r: { prezzo: Prezzo; prezzoUsato?: Prezzo | null }) => Number(r.prezzoUsato ?? r.prezzo);
 const arrotonda = (n: number) => Math.round(n * 100) / 100;
 
 /**
@@ -47,7 +51,7 @@ const arrotonda = (n: number) => Math.round(n * 100) / 100;
  */
 export function totaliCliente(righe: Riga[], acconto: Prisma.Decimal | number | string) {
   const lista = righe.reduce((t, r) => t + Number(r.prezzo), 0);
-  const prenotati = righe.filter((r) => r.stato !== "IN_LISTA").reduce((t, r) => t + Number(r.prezzo), 0);
+  const prenotati = righe.filter((r) => r.stato !== "IN_LISTA").reduce((t, r) => t + prezzoCliente(r), 0);
   return {
     lista: arrotonda(lista),
     prenotati: arrotonda(prenotati),

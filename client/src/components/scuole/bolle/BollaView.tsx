@@ -12,7 +12,7 @@ import { ApiError, errorMessage } from "@/lib/api/client";
 import { api } from "@/lib/api/scuole";
 import { cn } from "@/lib/cn";
 import { formatDateTime, formatPrice } from "@/lib/format";
-import { FogliEtichette, SceltaMisura, usePreferenzeEtichette, useStampaEtichette, type Etichetta } from "../Etichette";
+import { etichettaCliente, FogliEtichette, SceltaMisura, usePreferenzeEtichette, useStampaEtichette, type Etichetta } from "../Etichette";
 import { LibroModal } from "../LibroModal";
 import { useStampa } from "../ordini/utils";
 import type { Bolla, RigaBolla } from "../types";
@@ -22,7 +22,7 @@ type Arrivo = { riga: RigaBolla; bolla: Bolla };
 
 /** L'etichetta da attaccare al libro arrivato per un cliente (codice, cognome, nome, telefono) */
 const etichetta = (r: RigaBolla): Etichetta[] =>
-  r.libro ? [{ chiave: r.id, isbn: r.isbn, cognome: r.libro.scheda.cognome, nome: r.libro.scheda.nome, telefono: r.libro.scheda.telefono }] : [];
+  r.libro ? [etichettaCliente(r.id, r.isbn, r.libro.scheda)] : [];
 
 /**
  * Una bolla di arrivo: si legge ogni libro col lettore (una copia per lettura) e si vede subito, in grande, dove

@@ -1,4 +1,5 @@
 import { Prisma } from "@prisma/client";
+import { giorniAttesa, sogliaAttesa, vuoleIlNuovo } from "./libriUsato";
 
 // Passaggi del gestionale libri che toccano più tabelle insieme (Ordini e Magazzino), dentro una transazione.
 
@@ -23,10 +24,13 @@ export async function conferma(tx: Prisma.TransactionClient, libri: number[], ad
   if (count !== libri.length) throw new Cambiati();
 }
 
-/** La copia libera va al primo cliente che aspetta lo stesso libro; restituisce chi è, o null se resta libera. */
+/**
+ * La copia libera (nuova) va al primo cliente che aspetta lo stesso libro nuovo: chi aspetta ancora l'usato no.
+ * Restituisce chi è, o null se resta libera.
+ */
 export async function passaAlProssimo(tx: Prisma.TransactionClient, riga: { id: number; isbn: string }) {
   const prossimo = await tx.schedaClienteLibro.findFirst({
-    where: { isbn: riga.isbn, stato: "PRENOTATO" },
+    where: { isbn: riga.isbn, stato: "PRENOTATO", ...vuoleIlNuovo(sogliaAttesa(await giorniAttesa(tx))) },
     orderBy: [{ prenotatoAt: "asc" }, { id: "asc" }],
     select: { id: true, ...CLIENTE },
   });

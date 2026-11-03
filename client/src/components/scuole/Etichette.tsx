@@ -2,8 +2,26 @@
 
 import { useCallback, useEffect, useState } from "react";
 
-/** Quello che c'è sull'etichetta del negozio: codice del libro, cognome, nome e telefono (come in GS_MAG). */
-export type Etichetta = { chiave: string | number; isbn: string; cognome: string; nome: string; telefono: string };
+/** Un'etichetta: il codice del libro in alto, poi una riga grande, una media e una piccola. */
+export type Etichetta = { chiave: string | number; isbn: string; grande: string; media: string; piccola: string };
+
+/** L'etichetta del negozio per il libro di un cliente: codice del libro, cognome, nome e telefono (come in GS_MAG). */
+export const etichettaCliente = (chiave: string | number, isbn: string, c: { cognome: string; nome: string; telefono: string }): Etichetta => ({
+  chiave,
+  isbn,
+  grande: c.cognome,
+  media: c.nome,
+  piccola: c.telefono,
+});
+
+/** L'etichetta della copia usata, attaccata quando la si compra: il nostro codice distingue copie uguali di venditori diversi. */
+export const etichettaCopia = (c: { id: number; isbn: string; codice: string; prezzoVendita: string | number }): Etichetta => ({
+  chiave: `u${c.id}`,
+  isbn: c.isbn,
+  grande: c.codice,
+  media: `Usato · ${Number(c.prezzoVendita).toFixed(2).replace(".", ",")} €`,
+  piccola: "",
+});
 
 /** Larghezza × altezza dell'etichetta, in mm. */
 export type Misura = { larghezza: number; altezza: number };
@@ -170,9 +188,9 @@ export function FogliEtichette({ etichette, misura: f }: { etichette: Etichetta[
           style={{ width: `${f.larghezza}mm`, height: `${f.altezza - 0.5}mm`, padding: "2mm", breakAfter: i < etichette.length - 1 ? "page" : "auto", breakInside: "avoid" }}
         >
           <span className="font-mono text-[9pt]">{e.isbn}</span>
-          <span className="max-w-full truncate text-[12pt] font-extrabold">{e.cognome}</span>
-          <span className="max-w-full truncate text-[10pt] font-bold">{e.nome}</span>
-          {e.telefono && <span className="text-[9pt]">{e.telefono}</span>}
+          <span className="max-w-full truncate text-[12pt] font-extrabold">{e.grande}</span>
+          <span className="max-w-full truncate text-[10pt] font-bold">{e.media}</span>
+          {e.piccola && <span className="text-[9pt]">{e.piccola}</span>}
         </div>
       ))}
     </div>

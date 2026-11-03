@@ -246,6 +246,16 @@ Risposte dalla chiamata (trascritta da registrazione, alcuni passaggi poco chiar
 6. **La sera** si leggono col lettore tutti gli usati comprati durante il giorno: si vede subito se qualcuno li aspetta, altrimenti restano in giacenza (Magazzino usati).
 7. **Due copie usate uguali** di persone diverse: ogni copia usata ha un **codice numerico nostro**, stampato sull'etichetta insieme al codice del libro e attaccato quando la si compra. Così alla vendita si sa di chi era la copia (e chi va pagato).
 
+Decisioni di Francesco (3 nov 2026): la copia (nuova o usata) va sempre a chi l'ha prenotata per primo; le percentuali di acquisto e di vendita si scrivono copia per copia quando la si compra; il venditore si paga solo quando la copia è venduta, ma risulta come «da pagare» e il pagamento lo segna il negozio a mano.
+
+**Usati: fatti** (3 nov 2026, non committati). Modelli `Venditore` e `CopiaUsata` (codice nostro anno + 6 cifre, prezzo di copertina, sconto di vendita e percentuale al venditore con i prezzi che ne vengono, cliente a cui va, data del pagamento); sul libro del cliente `usato`, `usatoDal`, `prezzoUsato`. Migrazione `gestionale_libri_usati`, rotte `/api/libri/usati`, pagina `/scuole/usati`.
+  - **Scheda cliente**: pulsante «Nuovo / Usato» sui libri non ancora ordinati (mai sui New). Chi vuole l'usato aspetta i giorni impostati («usato · aspetta fino al…»), poi compare in «Da ordinare» come nuovo. «Dai usato» se in negozio c'è una copia usata dello stesso libro; «Rimetti in negozio» la restituisce. Totali e stampe usano il prezzo della copia usata.
+  - **Venditori**: scheda di chi vende con le sue copie; si legge il libro portato, si scrivono le due percentuali (restano proposte per il libro dopo), esce l'etichetta col nostro codice e il prezzo. Conti: copie non vendute, vendute, **da pagare** (solo le vendute, cioè ritirate dal cliente), già pagato; «Segna pagato» per tutte o copia per copia.
+  - **Assegna ai clienti** (la sera): si legge il nostro codice e la copia va al primo che aspetta lo stesso libro usato, altrimenti resta in negozio; esce l'etichetta del cliente.
+  - **In negozio**: le copie usate di nessuno, con quanti clienti aspettano lo stesso libro.
+  - Una copia nuova (bolla, magazzino, annullo d'ordine) non va a chi aspetta ancora l'usato; dal Magazzino la si può dare lo stesso, e allora il libro diventa nuovo.
+  - Una copia usata già pagata al venditore non si toglie più dal cliente (niente «Annulla ritiro»).
+
 ## Prossimi passi
 
 1. Modello Prisma definitivo con le risposte sopra. Il magazzino resta provvisorio finché non arriva la risposta alla domanda 7.

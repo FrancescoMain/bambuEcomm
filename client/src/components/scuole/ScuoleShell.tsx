@@ -17,6 +17,7 @@ const SEZIONI = [
   { href: "/scuole/ordini", label: "Ordini" },
   { href: "/scuole/bolle", label: "Bolle" },
   { href: "/scuole/magazzino", label: "Magazzino" },
+  { href: "/scuole/usati", label: "Usati" },
 ] as const;
 
 function Accesso() {

@@ -168,7 +168,8 @@ router.post("/dai", async (req: Request, res: Response) => {
       const adesso = new Date();
       await tx.schedaClienteLibro.update({
         where: { id: libroId },
-        data: { stato: "ASSEGNATO", prenotatoAt: libro.prenotatoAt ?? adesso, confermatoAt: null, assegnatoAt: adesso, dalNegozioAt: adesso },
+        // Copia nuova: anche chi aspettava l'usato la riceve nuova
+        data: { stato: "ASSEGNATO", prenotatoAt: libro.prenotatoAt ?? adesso, confermatoAt: null, assegnatoAt: adesso, dalNegozioAt: adesso, usato: false, usatoDal: null },
       });
       return { passatoA, ordine };
     });
