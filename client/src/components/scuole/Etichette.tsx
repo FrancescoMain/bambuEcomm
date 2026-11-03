@@ -14,13 +14,22 @@ export const etichettaCliente = (chiave: string | number, isbn: string, c: { cog
   piccola: c.telefono,
 });
 
-/** L'etichetta della copia usata, attaccata quando la si compra: il nostro codice distingue copie uguali di venditori diversi. */
-export const etichettaCopia = (c: { id: number; isbn: string; codice: string; prezzoVendita: string | number }): Etichetta => ({
+/**
+ * L'etichetta della copia usata, attaccata quando la si compra: il nostro codice distingue copie uguali di venditori
+ * diversi, e sotto c'è chi l'ha portata.
+ */
+export const etichettaCopia = (c: {
+  id: number;
+  isbn: string;
+  codice: string;
+  prezzoVendita: string | number;
+  venditore: { cognome: string; nome: string };
+}): Etichetta => ({
   chiave: `u${c.id}`,
   isbn: c.isbn,
   grande: c.codice,
   media: `Usato · ${Number(c.prezzoVendita).toFixed(2).replace(".", ",")} €`,
-  piccola: "",
+  piccola: `${c.venditore.cognome} ${c.venditore.nome}`,
 });
 
 /** Larghezza × altezza dell'etichetta, in mm. */
@@ -190,7 +199,7 @@ export function FogliEtichette({ etichette, misura: f }: { etichette: Etichetta[
           <span className="font-mono text-[9pt]">{e.isbn}</span>
           <span className="max-w-full truncate text-[12pt] font-extrabold">{e.grande}</span>
           <span className="max-w-full truncate text-[10pt] font-bold">{e.media}</span>
-          {e.piccola && <span className="text-[9pt]">{e.piccola}</span>}
+          {e.piccola && <span className="max-w-full truncate text-[9pt]">{e.piccola}</span>}
         </div>
       ))}
     </div>

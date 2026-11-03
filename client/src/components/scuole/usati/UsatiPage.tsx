@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
-import { Plus, ScanLine, Search, UserRound, Users, Warehouse } from "lucide-react";
+import { Plus, ScanLine, Search, Tag, UserRound, Users, Warehouse } from "lucide-react";
 import { toast } from "sonner";
 import { PageTitle } from "@/components/admin/PageTitle";
 import { Callout } from "@/components/admin/ops/Callout";
@@ -40,12 +40,15 @@ export function UsatiPage() {
 
   return (
     <div>
-      <PageTitle
-        title="Usati"
-        description="Libri comprati al banco in conto vendita: si paga chi li porta solo quando la copia è venduta."
-        actions={<GiorniAttesa />}
-      />
-      <div className="mb-5 flex flex-wrap gap-2">
+      {/* In stampa resta solo l'etichetta, quando se ne stampa una */}
+      <div className="print:hidden">
+        <PageTitle
+          title="Usati"
+          description="Libri comprati al banco in conto vendita: si paga chi li porta solo quando la copia è venduta."
+          actions={<GiorniAttesa />}
+        />
+      </div>
+      <div className="mb-5 flex flex-wrap gap-2 print:hidden">
         {VISTE.map((v) => (
           <button
             key={v.id}
@@ -206,9 +209,8 @@ function Assegna() {
       const a = await api<Assegnazione>("/libri/usati/assegna", { method: "POST", body: { codice: c } });
       setUltima(a);
       setLette((l) => [a, ...l.filter((x) => x.copia.id !== a.copia.id)]);
+      // Qui non si stampa niente da solo (richiesta del negozio, 3 nov 2026): l'etichetta, se serve, dalla riga
       setCodice("");
-      const s = a.copia.libro?.scheda;
-      if (s && !a.giaAssegnata && pref.automatica) stampaEtichette([etichettaCliente(`a${a.copia.id}`, a.copia.isbn, s)]);
     } catch (err) {
       setCodice("");
       toast.error(errorMessage(err));
@@ -220,74 +222,87 @@ function Assegna() {
 
   const cliente = ultima?.copia.libro?.scheda;
   return (
-    <div className="card overflow-hidden">
-      <div className="grid gap-4 p-4 sm:p-5 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.3fr)]">
-        <form onSubmit={leggi}>
-          <label htmlFor="lettore-usati" className="mb-1.5 block text-sm font-semibold text-ink-soft">
-            Leggi il nostro codice sull&apos;etichetta della copia
-          </label>
-          <span className="relative block">
-            <ScanLine className="pointer-events-none absolute left-3 top-1/2 h-6 w-6 -translate-y-1/2 text-brand-600" />
-            <input
-              id="lettore-usati"
-              ref={lettore}
-              value={codice}
-              onChange={(e) => setCodice(e.target.value)}
-              placeholder="Codice e Invio"
-              inputMode="numeric"
-              autoFocus
-              autoComplete="off"
-              readOnly={leggendo}
-              className="w-full rounded-xl border-2 border-brand-200 bg-white py-3.5 pl-12 pr-3 font-mono text-lg focus:border-brand-500 focus:outline-none"
-            />
-          </span>
-          <p className="mt-2 text-sm text-ink-muted">L&apos;etichetta del cliente esce da sola se è attiva la stampa automatica (si sceglie nelle Bolle).</p>
-        </form>
-        {!ultima ? (
-          <div className="flex items-center rounded-2xl border-2 border-dashed border-paper-line px-5 py-4 text-[15px] text-ink-muted">
-            Qui compare a chi va ogni copia letta, oppure se resta in negozio.
-          </div>
-        ) : (
-          <div className={cn("flex items-center gap-4 rounded-2xl px-5 py-4", cliente ? "bg-brand-100 text-brand-900" : "bg-sky-soft text-sky-ink")}>
-            {cliente ? <UserRound className="h-9 w-9 shrink-0" /> : <Warehouse className="h-9 w-9 shrink-0" />}
-            <div className="min-w-0">
-              <p className="truncate text-sm font-semibold">
-                {ultima.copia.codice} · {ultima.copia.titolo} · vol. {ultima.copia.volume}
-              </p>
-              {cliente ? (
-                <p className="text-2xl font-extrabold leading-tight">
-                  {cliente.cognome} {cliente.nome}
-                  <span className="ml-2 text-lg font-bold">
-                    scheda n. {cliente.numero} · {cliente.classe}
-                  </span>
-                  {ultima.giaAssegnata && <span className="block text-sm font-semibold">era già sua</span>}
-                </p>
-              ) : (
-                <p className="text-2xl font-extrabold leading-tight">Nessuno l&apos;aspetta: resta in negozio</p>
-              )}
+    <>
+      <div className="card overflow-hidden print:hidden">
+        <div className="grid gap-4 p-4 sm:p-5 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.3fr)]">
+          <form onSubmit={leggi}>
+            <label htmlFor="lettore-usati" className="mb-1.5 block text-sm font-semibold text-ink-soft">
+              Leggi il nostro codice sull&apos;etichetta della copia
+            </label>
+            <span className="relative block">
+              <ScanLine className="pointer-events-none absolute left-3 top-1/2 h-6 w-6 -translate-y-1/2 text-brand-600" />
+              <input
+                id="lettore-usati"
+                ref={lettore}
+                value={codice}
+                onChange={(e) => setCodice(e.target.value)}
+                placeholder="Codice e Invio"
+                inputMode="numeric"
+                autoFocus
+                autoComplete="off"
+                readOnly={leggendo}
+                className="w-full rounded-xl border-2 border-brand-200 bg-white py-3.5 pl-12 pr-3 font-mono text-lg focus:border-brand-500 focus:outline-none"
+              />
+            </span>
+            <p className="mt-2 text-sm text-ink-muted">Se serve l&apos;etichetta del cliente, stampala dalla riga qui sotto.</p>
+          </form>
+          {!ultima ? (
+            <div className="flex items-center rounded-2xl border-2 border-dashed border-paper-line px-5 py-4 text-[15px] text-ink-muted">
+              Qui compare a chi va ogni copia letta, oppure se resta in negozio.
             </div>
-          </div>
+          ) : (
+            <div className={cn("flex items-center gap-4 rounded-2xl px-5 py-4", cliente ? "bg-brand-100 text-brand-900" : "bg-sky-soft text-sky-ink")}>
+              {cliente ? <UserRound className="h-9 w-9 shrink-0" /> : <Warehouse className="h-9 w-9 shrink-0" />}
+              <div className="min-w-0">
+                <p className="truncate text-sm font-semibold">
+                  {ultima.copia.codice} · {ultima.copia.titolo} · vol. {ultima.copia.volume}
+                </p>
+                {cliente ? (
+                  <p className="text-2xl font-extrabold leading-tight">
+                    {cliente.cognome} {cliente.nome}
+                    <span className="ml-2 text-lg font-bold">
+                      scheda n. {cliente.numero} · {cliente.classe}
+                    </span>
+                    {ultima.giaAssegnata && <span className="block text-sm font-semibold">era già sua</span>}
+                  </p>
+                ) : (
+                  <p className="text-2xl font-extrabold leading-tight">Nessuno l&apos;aspetta: resta in negozio</p>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+        {lette.length > 0 && (
+          <ul className="divide-y divide-paper-line border-t border-paper-line">
+            {lette.map((a) => (
+              <li key={a.copia.id} className="flex flex-wrap items-baseline gap-x-4 gap-y-1 px-4 py-2.5 sm:px-5">
+                <span className="font-mono text-sm">{a.copia.codice}</span>
+                <span className="min-w-0 flex-1 font-semibold">{a.copia.titolo}</span>
+                {a.copia.libro ? (
+                  <span className="flex items-center gap-2">
+                    <Link href={`/scuole/clienti?scheda=${a.copia.libro.scheda.id}`} className="font-semibold text-brand-700 hover:underline">
+                      {a.copia.libro.scheda.cognome} {a.copia.libro.scheda.nome}
+                    </Link>
+                    <button
+                      type="button"
+                      onClick={() => a.copia.libro && stampaEtichette([etichettaCliente(`a${a.copia.id}`, a.copia.isbn, a.copia.libro.scheda)])}
+                      className="rounded-full p-1.5 text-ink-muted transition hover:bg-paper-warm hover:text-ink"
+                      aria-label={`Stampa l'etichetta di ${a.copia.libro.scheda.cognome} per ${a.copia.titolo}`}
+                      title="Stampa l'etichetta del cliente"
+                    >
+                      <Tag className="h-4 w-4" />
+                    </button>
+                  </span>
+                ) : (
+                  <span className="text-ink-muted">in negozio</span>
+                )}
+              </li>
+            ))}
+          </ul>
         )}
       </div>
-      {lette.length > 0 && (
-        <ul className="divide-y divide-paper-line border-t border-paper-line">
-          {lette.map((a) => (
-            <li key={a.copia.id} className="flex flex-wrap items-baseline gap-x-4 gap-y-1 px-4 py-2.5 sm:px-5">
-              <span className="font-mono text-sm">{a.copia.codice}</span>
-              <span className="min-w-0 flex-1 font-semibold">{a.copia.titolo}</span>
-              {a.copia.libro ? (
-                <Link href={`/scuole/clienti?scheda=${a.copia.libro.scheda.id}`} className="font-semibold text-brand-700 hover:underline">
-                  {a.copia.libro.scheda.cognome} {a.copia.libro.scheda.nome}
-                </Link>
-              ) : (
-                <span className="text-ink-muted">in negozio</span>
-              )}
-            </li>
-          ))}
-        </ul>
-      )}
       {etichette && <FogliEtichette etichette={etichette} misura={pref} />}
-    </div>
+    </>
   );
 }
 

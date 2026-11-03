@@ -59,10 +59,11 @@ async function leggiGiacenza(isbn: string) {
   };
 }
 
-// GET /api/libri/magazzino?q= — giacenze per codice, con prenotati, in ordine e da ritirare dello stesso libro
+// GET /api/libri/magazzino?q= — i libri in negozio senza cliente, nuovi (giacenza) e usati (copie di nessuno), uno per
+// codice, con prenotati, in ordine e da ritirare dello stesso libro
 router.get("/", async (req: Request, res: Response) => {
   const q = String(req.query.q ?? "").trim();
-  const where: Prisma.GiacenzaLibroWhereInput = q
+  const cerca = q
     ? {
         OR: [
           { isbn: { startsWith: normalizzaIsbn(q) } },
@@ -71,8 +72,18 @@ router.get("/", async (req: Request, res: Response) => {
       }
     : {};
   try {
-    const giacenze = await prisma.giacenzaLibro.findMany({ where, orderBy: { isbn: "asc" }, take: 3000 });
-    const codici = giacenze.map((g) => g.isbn);
+    const [giacenze, usati] = await Promise.all([
+      prisma.giacenzaLibro.findMany({ where: cerca, orderBy: { isbn: "asc" }, take: 3000 }),
+      prisma.copiaUsata.findMany({ where: { ...cerca, libroId: null }, orderBy: { codice: "asc" }, select: { ...DATI_LIBRO, updatedAt: true } }),
+    ]);
+    // Un libro che c'è solo usato compare lo stesso, con zero copie nuove
+    const righe = new Map(giacenze.map((g) => [g.isbn, { ...g, id: g.id as number | null, usati: 0 }]));
+    for (const u of usati) {
+      const r = righe.get(u.isbn);
+      if (r) r.usati++;
+      else righe.set(u.isbn, { ...u, id: null, quantita: 0, createdAt: u.updatedAt, usati: 1 });
+    }
+    const codici = [...righe.keys()];
     const [prenotati, inOrdine, daRitirare] = await Promise.all([
       prisma.schedaClienteLibro.findMany({ where: { isbn: { in: codici }, stato: "PRENOTATO" }, select: { isbn: true } }),
       prisma.ordineRiga.findMany({ where: { isbn: { in: codici }, arrivatoAt: null }, select: { isbn: true } }),
@@ -80,7 +91,9 @@ router.get("/", async (req: Request, res: Response) => {
     ]);
     const [p, o, r] = [contaPerCodice(prenotati), contaPerCodice(inOrdine), contaPerCodice(daRitirare)];
     res.json(
-      giacenze.map((g) => ({ ...g, prenotati: p.get(g.isbn) ?? 0, inOrdine: o.get(g.isbn) ?? 0, daRitirare: r.get(g.isbn) ?? 0 }))
+      [...righe.values()]
+        .sort((a, b) => a.isbn.localeCompare(b.isbn))
+        .map((g) => ({ ...g, prenotati: p.get(g.isbn) ?? 0, inOrdine: o.get(g.isbn) ?? 0, daRitirare: r.get(g.isbn) ?? 0 }))
     );
   } catch (e) {
     errore(res, e, "Errore nel recupero del magazzino.");

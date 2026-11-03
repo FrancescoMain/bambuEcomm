@@ -183,7 +183,11 @@ export type Giacenza = {
   updatedAt: string;
 };
 
-export type GiacenzaRiepilogo = Giacenza & {
+export type GiacenzaRiepilogo = Omit<Giacenza, "id"> & {
+  /** null = il libro c'è solo usato (nessuna copia nuova caricata) */
+  id: number | null;
+  /** Copie usate in negozio, ancora di nessuno */
+  usati: number;
   /** Clienti che aspettano il libro e non è ancora ordinato */
   prenotati: number;
   /** Copie ordinate al fornitore e non ancora arrivate */

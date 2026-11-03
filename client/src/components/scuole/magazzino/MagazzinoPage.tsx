@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { Minus, Plus, ScanLine, Search, Warehouse } from "lucide-react";
 import { toast } from "sonner";
@@ -81,6 +82,7 @@ export function MagazzinoPage() {
 
   const righe = giacenze.data ?? [];
   const copie = righe.reduce((t, g) => t + g.quantita, 0);
+  const usati = righe.reduce((t, g) => t + g.usati, 0);
   const valore = righe.reduce((t, g) => t + g.quantita * Number(g.prezzo), 0);
 
   return (
@@ -148,11 +150,15 @@ export function MagazzinoPage() {
       ) : (
         <div className="card overflow-hidden">
           <p className="border-b border-paper-line p-4 text-[15px] sm:px-5">
-            <strong className="text-2xl font-extrabold tabular-nums">{copie}</strong> {copie === 1 ? "copia" : "copie"} in negozio
-            <span className="text-ink-muted">
-              {" "}
-              · {pluralize(righe.length, "titolo", "titoli")} · {formatPrice(valore)}
-            </span>
+            <strong className="text-2xl font-extrabold tabular-nums">{copie}</strong> {copie === 1 ? "copia nuova" : "copie nuove"} in negozio
+            <span className="text-ink-muted"> ({formatPrice(valore)})</span>
+            {usati > 0 && (
+              <>
+                {" "}
+                · <strong className="text-2xl font-extrabold tabular-nums">{usati}</strong> {usati === 1 ? "usata" : "usate"}
+              </>
+            )}
+            <span className="text-ink-muted"> · {pluralize(righe.length, "titolo", "titoli")}</span>
           </p>
           <div className="overflow-x-auto">
             <table className="w-full min-w-[1100px] text-left text-base">
@@ -166,15 +172,17 @@ export function MagazzinoPage() {
                   <th scope="col" className="px-2 py-3 text-right">Prenotati</th>
                   <th scope="col" className="px-2 py-3 text-right">In ordine</th>
                   <th scope="col" className="px-2 py-3 text-right">Da ritirare</th>
-                  <th scope="col" className="py-3 pl-2 pr-5 text-center">In negozio</th>
+                  <th scope="col" className="px-2 py-3 text-right">Usati</th>
+                  <th scope="col" className="py-3 pl-2 pr-5 text-center">Nuovi in negozio</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-paper-line">
                 {righe.map((g) => (
                   <tr
                     key={g.isbn}
-                    onClick={() => setAperto(g)}
-                    className={cn("cursor-pointer align-top transition hover:bg-paper/60", !g.quantita && "text-ink-muted")}
+                    // Un libro che c'è solo usato non ha la scheda di magazzino: le sue copie sono negli Usati
+                    onClick={() => g.id !== null && setAperto(g)}
+                    className={cn("align-top transition hover:bg-paper/60", g.id !== null && "cursor-pointer", !g.quantita && !g.usati && "text-ink-muted")}
                   >
                     <td className="whitespace-nowrap py-3 pl-5 pr-2 font-mono text-sm">{g.isbn}</td>
                     <td className="px-2 py-3">
@@ -186,11 +194,20 @@ export function MagazzinoPage() {
                     <td className="w-[150px] px-2 py-3 text-sm">{g.editore}</td>
                     <td className="px-2 py-3 text-lg font-bold">{g.volume}</td>
                     <td className="whitespace-nowrap px-2 py-3 text-right tabular-nums">{formatPrice(g.prezzo)}</td>
-                    <td className={cn("px-2 py-3 text-right tabular-nums", g.prenotati > 0 && g.quantita > 0 && "font-bold text-orange-ink")}>
+                    <td className={cn("px-2 py-3 text-right tabular-nums", g.prenotati > 0 && (g.quantita > 0 || g.usati > 0) && "font-bold text-orange-ink")}>
                       {g.prenotati || "–"}
                     </td>
                     <td className="px-2 py-3 text-right tabular-nums">{g.inOrdine || "–"}</td>
                     <td className="px-2 py-3 text-right tabular-nums">{g.daRitirare || "–"}</td>
+                    <td className="px-2 py-3 text-right" onClick={(e) => e.stopPropagation()}>
+                      {g.usati > 0 ? (
+                        <Link href="/scuole/usati?vista=negozio" className="text-lg font-extrabold tabular-nums text-brand-700 hover:underline" title="Le copie usate, una per una">
+                          {g.usati}
+                        </Link>
+                      ) : (
+                        <span className="tabular-nums text-ink-muted">–</span>
+                      )}
+                    </td>
                     <td className="py-2 pl-2 pr-5" onClick={(e) => e.stopPropagation()}>
                       <div className="flex items-center justify-center gap-2">
                         <button
