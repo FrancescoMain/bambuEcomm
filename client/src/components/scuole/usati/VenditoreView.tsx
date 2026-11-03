@@ -10,18 +10,20 @@ import { useConfirm } from "@/components/admin/useConfirm";
 import { pluralize } from "@/components/admin/catalog/utils";
 import { Button } from "@/components/ui/Button";
 import { Skeleton } from "@/components/ui/Spinner";
-import { errorMessage } from "@/lib/api/client";
+import { ApiError, errorMessage } from "@/lib/api/client";
 import { api } from "@/lib/api/scuole";
 import { cn } from "@/lib/cn";
 import { formatDate, formatPrice } from "@/lib/format";
 import { etichettaCopia, FogliEtichette, usePreferenzeEtichette, useStampaEtichette } from "../Etichette";
-import { cercaLibro } from "../ordini/PerIlNegozio";
-import { STATI_COPIA, type CopiaUsata, type Venditore } from "../types";
+import { STATI_COPIA, type CopiaUsata, type LibroScheda, type Venditore } from "../types";
 import { VenditoreModal } from "./VenditoreModal";
 
 const CHIAVE_PERCENTUALI = "scuole_usato_percentuali";
 
-type LibroLetto = { isbn: string; titolo: string; volume: string; editore: string; prezzo: number };
+/** «classi» = in quante classi delle scuole importate è adottato: zero vuol dire che le nostre scuole non lo chiedono */
+type LibroLetto = { isbn: string; titolo: string; volume: string; editore: string; prezzo: number; classi: number };
+
+const NON_RICHIESTO = "Questo libro non è richiesto dalle nostre scuole";
 
 const numero = (t: string) => {
   const n = Number(t.replace(",", "."));
@@ -75,14 +77,20 @@ export function VenditoreView({ venditoreId, onBack }: { venditoreId: number; on
     if (!isbn || salvando) return;
     if (libro?.isbn !== isbn) {
       setSalvando(true);
-      const l = await cercaLibro(isbn);
+      let l: (Omit<LibroScheda, "id"> & { classi: number }) | null = null;
+      try {
+        l = await api(`/libri/catalogo/${encodeURIComponent(isbn)}`);
+      } catch (err) {
+        // Mai visto da nessuna parte: di sicuro non è in nessuna classe delle scuole importate
+        toast.error(err instanceof ApiError && err.status === 404 ? `${NON_RICHIESTO} (codice ${isbn}).` : errorMessage(err), { duration: 6000 });
+      }
       setSalvando(false);
       if (!l) {
         setLibro(null);
         lettore.current?.select();
         return;
       }
-      setLibro({ isbn, titolo: l.titolo, volume: l.volume, editore: l.editore, prezzo: Number(l.prezzo) });
+      setLibro({ isbn, titolo: l.titolo, volume: l.volume, editore: l.editore, prezzo: Number(l.prezzo), classi: l.classi });
       setTimeout(() => campoSconto.current?.select(), 0);
       return;
     }
@@ -219,7 +227,7 @@ export function VenditoreView({ venditoreId, onBack }: { venditoreId: number; on
             <Percentuale label="Sconto di vendita" valore={sconto} onCambia={setSconto} campo={campoSconto} />
             <Percentuale label="Al venditore" valore={acquisto} onCambia={setAcquisto} />
             <Button type="submit" disabled={salvando || !codice.trim() || (!!libro && (numero(sconto) === null || numero(acquisto) === null))}>
-              {libro ? "Aggiungi" : "Cerca"}
+              {!libro ? "Cerca" : libro.classi ? "Aggiungi" : "Aggiungi comunque"}
             </Button>
             {libro && <Anteprima libro={libro} sconto={numero(sconto)} acquisto={numero(acquisto)} />}
           </form>
@@ -322,10 +330,16 @@ function Anteprima({ libro, sconto, acquisto }: { libro: LibroLetto; sconto: num
   const alVenditore = acquisto === null ? null : arrotonda((libro.prezzo * acquisto) / 100);
   return (
     <div className="grid gap-px overflow-hidden rounded-2xl border border-paper-line bg-paper-line sm:grid-cols-[minmax(0,2fr)_1fr_1fr] lg:col-span-4">
+      {!libro.classi && (
+        <p role="alert" className="bg-magenta-soft px-5 py-3 text-[15px] font-bold text-magenta-ink sm:col-span-3">
+          {NON_RICHIESTO}: non è adottato in nessuna classe delle scuole importate.
+        </p>
+      )}
       <div className="bg-white px-5 py-3">
         <p className="font-bold leading-snug">{libro.titolo}</p>
         <p className="text-sm text-ink-muted">
           {libro.editore} · vol. {libro.volume} · copertina <strong className="text-ink">{formatPrice(libro.prezzo)}</strong>
+          {libro.classi > 0 && ` · adottato in ${libro.classi === 1 ? "1 classe" : `${libro.classi} classi`}`}
         </p>
       </div>
       <div className="bg-brand-50 px-5 py-3">

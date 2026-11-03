@@ -291,7 +291,8 @@ router.post("/schede/:id/importa", async (req: Request, res: Response) => {
 
 // ── Libri della classe ───────────────────────────────────────────────────
 
-// GET /api/libri/catalogo/:isbn — ultimo libro con quel codice in qualsiasi classe, per compilare la riga
+// GET /api/libri/catalogo/:isbn — ultimo libro con quel codice in qualsiasi classe, per compilare la riga. «classi» dice
+// in quante classi delle scuole importate è adottato: un usato con zero non è richiesto dalle nostre scuole.
 router.get("/catalogo/:isbn", async (req: Request, res: Response) => {
   const isbn = String(req.params.isbn || "").replace(/[\s-]/g, "").toUpperCase();
   try {
@@ -312,7 +313,7 @@ router.get("/catalogo/:isbn", async (req: Request, res: Response) => {
       },
     });
     if (libro) {
-      res.json(libro);
+      res.json({ ...libro, classi: await prisma.schedaScuolaLibro.count({ where: { isbn } }) });
       return;
     }
     // Non è in nessuna classe: magari è stato scritto a mano in una scheda o caricato in magazzino
@@ -321,7 +322,7 @@ router.get("/catalogo/:isbn", async (req: Request, res: Response) => {
       res.status(404).json({ message: "Libro mai inserito." });
       return;
     }
-    res.json({ ...altrove, nuovaAdozione: false, daAcquistare: false, consigliato: false });
+    res.json({ ...altrove, nuovaAdozione: false, daAcquistare: false, consigliato: false, classi: 0 });
   } catch (e) {
     errore(res, e, "Errore nella ricerca del libro.");
   }
