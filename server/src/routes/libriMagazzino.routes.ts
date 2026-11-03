@@ -6,6 +6,7 @@ import { noStore } from "../lib/http";
 import { validaLibro } from "../lib/libriScuole";
 import { contaPerCodice, daDareDalNegozio, leggiQuantita, normalizzaIsbn } from "../lib/libriMagazzino";
 import { blocca, CLIENTE, passaAlProssimo } from "../lib/libriTx";
+import { datiLibri } from "../lib/libriCatalogo";
 
 // Gestionale libri scolastici (ex GS_MAG), sezione Magazzino: i libri già in negozio senza cliente, caricati in
 // anticipo (anche col lettore di codici) e corretti a mano. Dalla scheda del cliente si danno subito.
@@ -28,15 +29,6 @@ const sottoZero = (e: unknown) =>
   String(e.message).includes("GiacenzaLibro_quantita_check");
 
 const DATI_LIBRO = { isbn: true, materia: true, autori: true, titolo: true, volume: true, editore: true, prezzo: true } as const;
-
-/** Dati del libro da un codice già visto, prima nelle classi e poi nelle schede dei clienti. */
-async function trovaDatiLibro(isbn: string) {
-  const ordine = { updatedAt: "desc" } as const;
-  return (
-    (await prisma.schedaScuolaLibro.findFirst({ where: { isbn }, orderBy: ordine, select: DATI_LIBRO })) ??
-    (await prisma.schedaClienteLibro.findFirst({ where: { isbn }, orderBy: ordine, select: DATI_LIBRO }))
-  );
-}
 
 async function leggiGiacenza(isbn: string) {
   const giacenza = await prisma.giacenzaLibro.findUnique({
@@ -107,7 +99,7 @@ router.post("/carico", async (req: Request, res: Response) => {
         const { nuovaAdozione: _n, daAcquistare: _a, consigliato: _c, ...libro } = v.libro;
         dati = libro;
       } else {
-        dati = await trovaDatiLibro(isbn);
+        dati = (await datiLibri([isbn])).get(isbn) ?? null;
         if (!dati) {
           res.status(404).json({ message: `Il codice ${isbn} non è in nessuna classe: scrivi i dati del libro.`, daCompilare: true });
           return;

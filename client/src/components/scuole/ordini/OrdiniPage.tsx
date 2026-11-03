@@ -19,6 +19,7 @@ import { cn } from "@/lib/cn";
 import { formatDate, formatPrice } from "@/lib/format";
 import { anniDisponibili, type DaOrdinare, type Ordine, type OrdineRiepilogo, type RigaInOrdine } from "../types";
 import { OrdineView } from "./OrdineView";
+import { PerIlNegozio, useCopieNegozio } from "./PerIlNegozio";
 import { StampaOrdine } from "./StampaOrdine";
 import { perCodice, scaricaCsv, useStampa } from "./utils";
 
@@ -71,24 +72,17 @@ function DaOrdinareVista({ onCreato }: { onCreato: (ordineId: number) => void })
   // Si tengono i codici esclusi, così un libro prenotato nel frattempo entra già spuntato
   const [esclusi, setEsclusi] = useState<ReadonlySet<string>>(new Set());
   const [lavoro, setLavoro] = useState(false);
+  const [negozio, setNegozio] = useCopieNegozio();
 
   if (libri.error) return <Callout tone="danger">{libri.error}</Callout>;
   if (!libri.data) return <Skeleton className="h-64" />;
-  if (!libri.data.length) {
-    return (
-      <EmptyState
-        icon={<PackageCheck className="h-7 w-7" />}
-        title="Niente da ordinare"
-        text="Tutti i libri prenotati sono già in un ordine. Quando un cliente prenota un libro, compare qui."
-        className="card"
-      />
-    );
-  }
 
   const scelti = libri.data.filter((l) => !esclusi.has(l.isbn));
   const daOrdinare = scelti.reduce((t, l) => t + l.daOrdinare, 0);
   const giaInOrdine = scelti.reduce((t, l) => t + l.giaInOrdine, 0);
-  const totale = scelti.reduce((t, l) => t + l.prezzo * l.daOrdinare, 0);
+  const perNegozio = negozio.reduce((t, c) => t + c.quantita, 0);
+  const copie = daOrdinare + perNegozio;
+  const totale = scelti.reduce((t, l) => t + l.prezzo * l.daOrdinare, 0) + negozio.reduce((t, c) => t + c.prezzo * c.quantita, 0);
   const tutti = esclusi.size === 0;
 
   const inverti = (isbn: string) =>
@@ -102,13 +96,17 @@ function DaOrdinareVista({ onCreato }: { onCreato: (ordineId: number) => void })
   const crea = async () => {
     setLavoro(true);
     try {
-      const esito = await api<{ ordine: Ordine | null; abbinati: number; ordinati: number }>("/libri/ordini", {
+      const esito = await api<{ ordine: Ordine | null; abbinati: number; ordinati: number; perNegozio: number }>("/libri/ordini", {
         method: "POST",
-        body: tutti ? {} : { isbn: scelti.map((l) => l.isbn) },
+        body: { ...(tutti ? {} : { isbn: scelti.map((l) => l.isbn) }), negozio: negozio.map(({ isbn, quantita }) => ({ isbn, quantita })) },
       });
+      setNegozio([]);
       const abbinati = esito.abbinati ? ` ${pluralize(esito.abbinati, "copia già in ordine assegnata", "copie già in ordine assegnate")}.` : "";
+      const delNegozio = esito.perNegozio ? `, di cui ${esito.perNegozio} per il negozio` : "";
       if (esito.ordine) {
-        toast.success(`Ordine n. ${esito.ordine.numero}: ${pluralize(esito.ordinati, "copia", "copie")}.${abbinati} Ora scarica il CSV per il fornitore.`);
+        toast.success(
+          `Ordine n. ${esito.ordine.numero}: ${pluralize(esito.ordinati + esito.perNegozio, "copia", "copie")}${delNegozio}.${abbinati} Ora scarica il CSV per il fornitore.`
+        );
         onCreato(esito.ordine.id);
       } else {
         toast.success(abbinati.trim());
@@ -124,80 +122,91 @@ function DaOrdinareVista({ onCreato }: { onCreato: (ordineId: number) => void })
   };
 
   return (
-    <div className="card overflow-hidden">
-      <div className="flex flex-wrap items-center gap-x-6 gap-y-3 border-b border-paper-line p-4 sm:px-5">
+    <div className="space-y-5">
+      <div className="card flex flex-wrap items-center gap-x-6 gap-y-3 p-4 sm:px-5">
         <p className="text-[15px]">
-          <strong className="text-2xl font-extrabold tabular-nums">{daOrdinare}</strong> copie da ordinare
+          <strong className="text-2xl font-extrabold tabular-nums">{copie}</strong> {copie === 1 ? "copia" : "copie"} da ordinare
+          {perNegozio > 0 && <span className="text-ink-muted"> · {perNegozio} per il negozio</span>}
           {giaInOrdine > 0 && <span className="text-ink-muted"> · {giaInOrdine} già in ordine, libere</span>}
           <span className="text-ink-muted"> · {formatPrice(totale)}</span>
         </p>
         <span className="flex-1" />
-        <Button size="lg" onClick={crea} disabled={lavoro || (!daOrdinare && !giaInOrdine)}>
+        <Button size="lg" onClick={crea} disabled={lavoro || (!copie && !giaInOrdine)}>
           <Truck className="h-5 w-5" />
-          {daOrdinare ? `Crea l'ordine (${daOrdinare} copie)` : `Assegna le copie già in ordine (${giaInOrdine})`}
+          {copie ? `Crea l'ordine (${pluralize(copie, "copia", "copie")})` : `Assegna le copie già in ordine (${giaInOrdine})`}
         </Button>
       </div>
-      <div className="overflow-x-auto">
-        <table className="w-full min-w-[1000px] text-left text-base">
-          <thead className="border-b border-paper-line bg-paper/60 text-sm font-bold uppercase tracking-wide text-ink-muted">
-            <tr>
-              <th scope="col" className="w-[60px] py-3 pl-5 pr-2">
-                <input
-                  type="checkbox"
-                  checked={tutti}
-                  onChange={() => setEsclusi(tutti ? new Set(libri.data!.map((l) => l.isbn)) : new Set())}
-                  aria-label={tutti ? "Togli tutti" : "Scegli tutti"}
-                  className="h-6 w-6 cursor-pointer accent-brand-600"
-                />
-              </th>
-              <th scope="col" className="px-2 py-3">Codice</th>
-              <th scope="col" className="px-2 py-3">Titolo e autori</th>
-              <th scope="col" className="px-2 py-3">Editore</th>
-              <th scope="col" className="px-2 py-3">Vol.</th>
-              <th scope="col" className="px-2 py-3 text-right">Prezzo</th>
-              <th scope="col" className="px-2 py-3 text-right">Prenotati</th>
-              <th scope="col" className="py-3 pl-2 pr-5 text-right">Da ordinare</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-paper-line">
-            {libri.data.map((l) => {
-              const scelto = !esclusi.has(l.isbn);
-              return (
-                <tr key={l.isbn} onClick={() => inverti(l.isbn)} className={cn("cursor-pointer align-top hover:bg-paper/60", !scelto && "text-ink-muted")}>
-                  <td className="py-3 pl-5 pr-2">
-                    <input
-                      type="checkbox"
-                      checked={scelto}
-                      onChange={() => inverti(l.isbn)}
-                      onClick={(e) => e.stopPropagation()}
-                      aria-label={`Ordina ${l.titolo}`}
-                      className="h-6 w-6 cursor-pointer accent-brand-600"
-                    />
-                  </td>
-                  <td className="whitespace-nowrap px-2 py-3 font-mono text-sm">{l.isbn}</td>
-                  <td className="px-2 py-3">
-                    <span className={cn("block font-semibold leading-snug", scelto && "text-ink")}>{l.titolo}</span>
-                    <span className="block text-sm text-ink-muted">{l.autori}</span>
-                  </td>
-                  <td className="w-[150px] px-2 py-3 text-sm">{l.editore}</td>
-                  <td className="px-2 py-3 text-lg font-bold">{l.volume}</td>
-                  <td className="whitespace-nowrap px-2 py-3 text-right tabular-nums">{formatPrice(l.prezzo)}</td>
-                  <td className="px-2 py-3 text-right tabular-nums">
-                    {l.prenotati}
-                    {l.giaInOrdine > 0 && <span className="block text-xs text-ink-muted">{l.giaInOrdine} già in ordine</span>}
-                    {l.inNegozio > 0 && (
-                      <span className="block text-xs font-bold text-leaf-ink" title="Dalli dalla scheda del cliente con «Dai dal negozio»">
-                        {l.inNegozio} in negozio
-                      </span>
-                    )}
-                  </td>
-                  <td className="py-3 pl-2 pr-5 text-right text-xl font-extrabold tabular-nums">{l.daOrdinare}</td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
+      {!libri.data.length ? (
+        <EmptyState
+          icon={<PackageCheck className="h-7 w-7" />}
+          title="Nessun libro prenotato da ordinare"
+          text="Tutti i libri prenotati sono già in un ordine. Quando un cliente prenota un libro, compare qui."
+          className="card"
+        />
+      ) : (
+        <div className="card overflow-x-auto">
+          <table className="w-full min-w-[1000px] text-left text-base">
+            <thead className="border-b border-paper-line bg-paper/60 text-sm font-bold uppercase tracking-wide text-ink-muted">
+              <tr>
+                <th scope="col" className="w-[60px] py-3 pl-5 pr-2">
+                  <input
+                    type="checkbox"
+                    checked={tutti}
+                    onChange={() => setEsclusi(tutti ? new Set(libri.data!.map((l) => l.isbn)) : new Set())}
+                    aria-label={tutti ? "Togli tutti" : "Scegli tutti"}
+                    className="h-6 w-6 cursor-pointer accent-brand-600"
+                  />
+                </th>
+                <th scope="col" className="px-2 py-3">Codice</th>
+                <th scope="col" className="px-2 py-3">Titolo e autori</th>
+                <th scope="col" className="px-2 py-3">Editore</th>
+                <th scope="col" className="px-2 py-3">Vol.</th>
+                <th scope="col" className="px-2 py-3 text-right">Prezzo</th>
+                <th scope="col" className="px-2 py-3 text-right">Prenotati</th>
+                <th scope="col" className="py-3 pl-2 pr-5 text-right">Da ordinare</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-paper-line">
+              {libri.data.map((l) => {
+                const scelto = !esclusi.has(l.isbn);
+                return (
+                  <tr key={l.isbn} onClick={() => inverti(l.isbn)} className={cn("cursor-pointer align-top hover:bg-paper/60", !scelto && "text-ink-muted")}>
+                    <td className="py-3 pl-5 pr-2">
+                      <input
+                        type="checkbox"
+                        checked={scelto}
+                        onChange={() => inverti(l.isbn)}
+                        onClick={(e) => e.stopPropagation()}
+                        aria-label={`Ordina ${l.titolo}`}
+                        className="h-6 w-6 cursor-pointer accent-brand-600"
+                      />
+                    </td>
+                    <td className="whitespace-nowrap px-2 py-3 font-mono text-sm">{l.isbn}</td>
+                    <td className="px-2 py-3">
+                      <span className={cn("block font-semibold leading-snug", scelto && "text-ink")}>{l.titolo}</span>
+                      <span className="block text-sm text-ink-muted">{l.autori}</span>
+                    </td>
+                    <td className="w-[150px] px-2 py-3 text-sm">{l.editore}</td>
+                    <td className="px-2 py-3 text-lg font-bold">{l.volume}</td>
+                    <td className="whitespace-nowrap px-2 py-3 text-right tabular-nums">{formatPrice(l.prezzo)}</td>
+                    <td className="px-2 py-3 text-right tabular-nums">
+                      {l.prenotati}
+                      {l.giaInOrdine > 0 && <span className="block text-xs text-ink-muted">{l.giaInOrdine} già in ordine</span>}
+                      {l.inNegozio > 0 && (
+                        <span className="block text-xs font-bold text-leaf-ink" title="Dalli dalla scheda del cliente con «Dai dal negozio»">
+                          {l.inNegozio} in negozio
+                        </span>
+                      )}
+                    </td>
+                    <td className="py-3 pl-2 pr-5 text-right text-xl font-extrabold tabular-nums">{l.daOrdinare}</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
+      <PerIlNegozio copie={negozio} onChange={setNegozio} />
     </div>
   );
 }
@@ -245,7 +254,7 @@ function OrdiniFatti({ onApri }: { onApri: (ordineId: number) => void }) {
                   <td className="px-2 py-3">{formatDate(o.data)}</td>
                   <td className="px-2 py-3 text-right tabular-nums">
                     {o.copie}
-                    {o.libere > 0 && <span className="block text-xs font-semibold text-orange-ink">{o.libere} libere</span>}
+                    {o.libere > 0 && <span className="block text-xs font-semibold text-orange-ink">{o.libere} per il negozio</span>}
                   </td>
                   <td className="px-2 py-3 text-right tabular-nums">{o.arrivate}</td>
                   <td className="whitespace-nowrap px-2 py-3 text-right font-bold tabular-nums">{formatPrice(o.totale)}</td>
@@ -331,7 +340,7 @@ function AncoraInOrdine() {
   );
 }
 
-/** I clienti a cui vanno le copie, con il link alla scheda; le copie senza cliente sono «libere». */
+/** I clienti a cui vanno le copie, con il link alla scheda; le copie senza cliente sono «per il negozio» (libere). */
 export function PerChi({ righe }: { righe: { id: number; libro: { scheda: { id: number; numero: number; cognome: string; nome: string } } | null }[] }) {
   const libere = righe.filter((r) => !r.libro).length;
   return (
@@ -345,7 +354,7 @@ export function PerChi({ righe }: { righe: { id: number; libro: { scheda: { id: 
             </Link>
           )
       )}
-      {libere > 0 && <span className="rounded-full bg-orange-soft px-2.5 py-0.5 font-bold text-orange-ink">{libere === 1 ? "1 libera" : `${libere} libere`}</span>}
+      {libere > 0 && <span className="rounded-full bg-orange-soft px-2.5 py-0.5 font-bold text-orange-ink">{libere} per il negozio</span>}
     </span>
   );
 }

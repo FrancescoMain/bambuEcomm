@@ -5,6 +5,7 @@ import { authenticateToken, authorizeRole } from "../middleware/auth.middleware"
 import { noStore } from "../lib/http";
 import { cercaScuolaMiur, libriAdottatiMiur, normalizzaCodiceScuola } from "../lib/miur";
 import { importaLibriMinistero, totaleScheda, validaLibro, validaScheda } from "../lib/libriScuole";
+import { datiLibri } from "../lib/libriCatalogo";
 
 // Gestionale libri scolastici (ex GS_MAG), sezione Scuole: anagrafica scuole e libri adottati per classe.
 // Ci entra solo l'account del gestionale (/scuole), non quello del negozio.
@@ -310,11 +311,17 @@ router.get("/catalogo/:isbn", async (req: Request, res: Response) => {
         consigliato: true,
       },
     });
-    if (!libro) {
+    if (libro) {
+      res.json(libro);
+      return;
+    }
+    // Non è in nessuna classe: magari è stato scritto a mano in una scheda o caricato in magazzino
+    const altrove = (await datiLibri([isbn])).get(isbn);
+    if (!altrove) {
       res.status(404).json({ message: "Libro mai inserito." });
       return;
     }
-    res.json(libro);
+    res.json({ ...altrove, nuovaAdozione: false, daAcquistare: false, consigliato: false });
   } catch (e) {
     errore(res, e, "Errore nella ricerca del libro.");
   }

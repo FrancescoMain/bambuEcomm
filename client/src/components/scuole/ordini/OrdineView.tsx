@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { ArrowLeft, Download, Printer, StickyNote, Trash2, X } from "lucide-react";
+import { ArrowLeft, Download, Printer, ScanLine, StickyNote, Store, Trash2, X } from "lucide-react";
 import { toast } from "sonner";
 import { Callout } from "@/components/admin/ops/Callout";
 import { useAsync } from "@/components/admin/ops/useAsync";
@@ -24,6 +24,9 @@ export function OrdineView({ ordineId, onBack }: { ordineId: number; onBack: () 
   const [aggiornato, setAggiornato] = useState<Ordine | null>(null);
   const ordine = aggiornato ?? caricato.data;
   const [appunti, setAppunti] = useState("");
+  const [codice, setCodice] = useState("");
+  const [quante, setQuante] = useState("1");
+  const [aggiungendo, setAggiungendo] = useState(false);
   const [nascoste, setNascoste] = useState<ReadonlySet<number>>(new Set());
   const [stampa, stampaOra] = useStampa();
   const [confirm, dialog] = useConfirm();
@@ -38,6 +41,24 @@ export function OrdineView({ ordineId, onBack }: { ordineId: number; onBack: () 
       toast.success("Appunti salvati.");
     } catch (e) {
       toast.error(errorMessage(e));
+    }
+  };
+
+  // Copie per il negozio dimenticate nell'ordine: senza cliente, una riga per copia
+  const aggiungiPerNegozio = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!codice.trim() || aggiungendo) return;
+    setAggiungendo(true);
+    try {
+      const o = await api<Ordine>(`/libri/ordini/${ordineId}/negozio`, { method: "POST", body: { isbn: codice, quantita: Number(quante) || 1 } });
+      toast.success(`${pluralize(Number(quante) || 1, "copia aggiunta", "copie aggiunte")} per il negozio.`);
+      setAggiornato(o);
+      setCodice("");
+      setQuante("1");
+    } catch (err) {
+      toast.error(errorMessage(err));
+    } finally {
+      setAggiungendo(false);
     }
   };
 
@@ -148,9 +169,40 @@ export function OrdineView({ ordineId, onBack }: { ordineId: number; onBack: () 
             />
           </label>
 
+          <form onSubmit={aggiungiPerNegozio} className="flex flex-wrap items-center gap-3 border-b border-paper-line px-4 py-3 sm:px-5">
+            <span className="flex items-center gap-2 text-[15px] font-bold">
+              <Store className="h-5 w-5 text-brand-600" /> Aggiungi per il negozio
+            </span>
+            <span className="relative w-full sm:w-64">
+              <ScanLine className="pointer-events-none absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-ink-muted" />
+              <input
+                value={codice}
+                onChange={(e) => setCodice(e.target.value)}
+                placeholder="Codice"
+                aria-label="Codice del libro per il negozio"
+                inputMode="numeric"
+                autoComplete="off"
+                className="w-full rounded-xl border border-paper-line bg-white py-2 pl-10 pr-3 font-mono text-base focus:border-brand-500 focus:outline-none"
+              />
+            </span>
+            <label className="flex items-center gap-2 text-sm font-semibold text-ink-soft">
+              Copie
+              <input
+                value={quante}
+                onChange={(e) => setQuante(e.target.value.replace(/\D/g, "").slice(0, 2))}
+                inputMode="numeric"
+                className="w-14 rounded-xl border border-paper-line bg-white px-2 py-2 text-center text-base font-bold tabular-nums focus:border-brand-500 focus:outline-none"
+              />
+            </label>
+            <Button type="submit" size="sm" variant="secondary" disabled={aggiungendo || !codice.trim()}>
+              Aggiungi
+            </Button>
+            <span className="text-sm text-ink-muted">Senza cliente: all&apos;arrivo vanno a chi le ha prenotate, altrimenti in Magazzino.</span>
+          </form>
+
           <div className="grid gap-px bg-paper-line sm:grid-cols-4">
             <Cifra label="Titoli" valore={String(gruppi.length)} />
-            <Cifra label="Copie" valore={String(righe.length)} nota={libere ? `${libere} libere` : undefined} />
+            <Cifra label="Copie" valore={String(righe.length)} nota={libere ? `${libere} per il negozio` : undefined} />
             <Cifra label="Arrivate" valore={`${arrivate} su ${righe.length}`} />
             <Cifra label="Totale a prezzo di copertina" valore={formatPrice(totale)} forte />
           </div>

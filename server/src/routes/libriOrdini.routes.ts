@@ -4,7 +4,8 @@ import prisma from "../lib/prisma";
 import { authenticateToken, authorizeRole } from "../middleware/auth.middleware";
 import { noStore } from "../lib/http";
 import { barcodeScheda } from "../lib/libriClienti";
-import { abbina, perCodice } from "../lib/libriOrdini";
+import { abbina, leggiCopieNegozio, perCodice } from "../lib/libriOrdini";
+import { datiLibri } from "../lib/libriCatalogo";
 import { blocca, Cambiati, CLIENTE, conferma, passaAlProssimo } from "../lib/libriTx";
 
 // Gestionale libri scolastici (ex GS_MAG), sezione Ordini: i libri prenotati dai clienti si ordinano al fornitore
@@ -24,6 +25,27 @@ function errore(res: Response, e: unknown, messaggio: string) {
 
 const CAMPI_LIBRO = { isbn: true, materia: true, autori: true, titolo: true, volume: true, editore: true, prezzo: true } as const;
 const copieLibere = { libroId: null, arrivatoAt: null } satisfies Prisma.OrdineRigaWhereInput;
+
+/** Codici per il negozio che il gestionale non ha mai visto: i dati del libro vanno scritti prima altrove. */
+class Sconosciuti extends Error {
+  constructor(readonly codici: string[]) {
+    super();
+  }
+}
+
+/**
+ * Righe d'ordine per il negozio: una per copia, senza cliente («libere»), con i dati del libro presi dalle classi,
+ * dalle schede o dal magazzino. All'arrivo vanno al primo che ha prenotato lo stesso libro, altrimenti in magazzino.
+ */
+async function righeNegozio(tx: Prisma.TransactionClient, copie: { isbn: string; quantita: number }[], ordineId: number) {
+  const dati = await datiLibri(copie.map((c) => c.isbn), tx);
+  const sconosciuti = copie.filter((c) => !dati.has(c.isbn)).map((c) => c.isbn);
+  if (sconosciuti.length) throw new Sconosciuti(sconosciuti);
+  return copie.flatMap((c) => Array.from({ length: c.quantita }, () => ({ ...dati.get(c.isbn)!, ordineId, libroId: null })));
+}
+
+const messaggioSconosciuti = (e: Sconosciuti) =>
+  `${e.codici.length === 1 ? "Il codice" : "I codici"} ${e.codici.join(", ")} non ${e.codici.length === 1 ? "è" : "sono"} in nessuna classe, scheda o magazzino: aggiungi prima il libro in Magazzino.`;
 
 async function leggiOrdine(ordineId: number) {
   const ordine = await prisma.ordineFornitore.findUnique({
@@ -72,11 +94,17 @@ router.get("/in-ordine", async (_req: Request, res: Response) => {
   }
 });
 
-// POST /api/libri/ordini { isbn?: string[] } — ordina i prenotati (tutti, o solo i codici scelti). Prima li
-// abbina alle copie libere già in ordine, poi crea l'ordine con il resto. Tutti diventano «Confermato».
+// POST /api/libri/ordini { isbn?: string[], negozio?: [{ isbn, quantita }] } — ordina i prenotati (tutti, o solo i
+// codici scelti). Prima li abbina alle copie libere già in ordine, poi crea l'ordine con il resto, che diventa
+// «Confermato», più le copie per il negozio (senza cliente, una per riga).
 router.post("/", async (req: Request, res: Response) => {
   const codici = Array.isArray(req.body?.isbn) ? req.body.isbn.map((c: unknown) => String(c).trim()).filter(Boolean) : null;
-  if (codici && (!codici.length || codici.length > 2000)) {
+  const negozio = leggiCopieNegozio(req.body?.negozio);
+  if (!negozio) {
+    res.status(400).json({ message: "Copie per il negozio non valide (da 1 a 99 per libro)." });
+    return;
+  }
+  if (codici && ((!codici.length && !negozio.length) || codici.length > 2000)) {
     res.status(400).json({ message: "Nessun libro scelto." });
     return;
   }
@@ -99,25 +127,27 @@ router.post("/", async (req: Request, res: Response) => {
         const { coppie, daOrdinare } = abbina(prenotati, libere);
         await conferma(tx, prenotati.map((l) => l.id), adesso);
         for (const c of coppie) await tx.ordineRiga.update({ where: { id: c.rigaId }, data: { libroId: c.libroId } });
-        if (!daOrdinare.length) return { ordineId: null, abbinati: coppie.length, ordinati: 0 };
+        if (!daOrdinare.length && !negozio.length) return { ordineId: null, abbinati: coppie.length, ordinati: 0, perNegozio: 0 };
 
         const anno = adesso.getFullYear();
         const ultimo = await tx.ordineFornitore.aggregate({ where: { anno }, _max: { numero: true } });
         const ordine = await tx.ordineFornitore.create({ data: { anno, numero: (ultimo._max.numero ?? 0) + 1, data: adesso, note } });
+        const perNegozio = await righeNegozio(tx, negozio, ordine.id);
         await tx.ordineRiga.createMany({
-          data: daOrdinare.map(({ id: libroId, ...l }) => ({ ...l, libroId, ordineId: ordine.id })),
+          data: [...daOrdinare.map(({ id: libroId, ...l }) => ({ ...l, libroId, ordineId: ordine.id })), ...perNegozio],
         });
-        return { ordineId: ordine.id, abbinati: coppie.length, ordinati: daOrdinare.length };
+        return { ordineId: ordine.id, abbinati: coppie.length, ordinati: daOrdinare.length, perNegozio: perNegozio.length };
       },
       { timeout: 30_000 }
     );
-    if (!esito.abbinati && !esito.ordinati) {
+    if (!esito.abbinati && !esito.ordinati && !esito.perNegozio) {
       res.status(409).json({ message: "Non ci sono libri prenotati da ordinare." });
       return;
     }
     res.status(esito.ordineId ? 201 : 200).json({ ...esito, ordine: esito.ordineId ? await leggiOrdine(esito.ordineId) : null });
   } catch (e) {
     if (e instanceof Cambiati) res.status(409).json({ message: "Un'altra postazione ha cambiato i libri prenotati: riprova." });
+    else if (e instanceof Sconosciuti) res.status(400).json({ message: messaggioSconosciuti(e) });
     else errore(res, e, "Non è stato possibile creare l'ordine.");
   }
 });
@@ -209,6 +239,29 @@ router.patch("/:id", async (req: Request, res: Response) => {
     res.json(await leggiOrdine(ordineId));
   } catch (e) {
     errore(res, e, "Non è stato possibile salvare l'ordine.");
+  }
+});
+
+// POST /api/libri/ordini/:id/negozio { isbn, quantita } — copie per il negozio aggiunte a un ordine già fatto
+router.post("/:id/negozio", async (req: Request, res: Response) => {
+  const ordineId = id(req.params.id);
+  const copie = leggiCopieNegozio([{ isbn: req.body?.isbn, quantita: req.body?.quantita ?? 1 }]);
+  if (!ordineId || !copie) {
+    res.status(400).json({ message: !ordineId ? "Ordine non valido." : "Scrivi il codice e da 1 a 99 copie." });
+    return;
+  }
+  try {
+    const trovato = await prisma.$transaction(async (tx) => {
+      await blocca(tx);
+      if (!(await tx.ordineFornitore.findUnique({ where: { id: ordineId }, select: { id: true } }))) return false;
+      await tx.ordineRiga.createMany({ data: await righeNegozio(tx, copie, ordineId) });
+      return true;
+    });
+    if (!trovato) res.status(404).json({ message: "Ordine non trovato." });
+    else res.status(201).json(await leggiOrdine(ordineId));
+  } catch (e) {
+    if (e instanceof Sconosciuti) res.status(400).json({ message: messaggioSconosciuti(e) });
+    else errore(res, e, "Non è stato possibile aggiungere le copie per il negozio.");
   }
 });
 

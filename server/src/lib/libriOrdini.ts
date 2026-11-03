@@ -36,3 +36,21 @@ export function perCodice<R extends RigaLibro>(righe: R[]) {
 
 /** CSV per il distributore come in GS_MAG: «codice;quantità», una riga per codice, niente intestazione. */
 export const csvOrdine = (righe: RigaLibro[]) => perCodice(righe).map((g) => `${g.isbn};${g.quantita}\n`).join("");
+
+/**
+ * Copie per il negozio (senza cliente) chieste nella richiesta: [{ isbn, quantita }], codici normalizzati e uniti,
+ * da 1 a 99 copie per codice. Restituisce null se la lista non è valida.
+ */
+export function leggiCopieNegozio(v: unknown): { isbn: string; quantita: number }[] | null {
+  if (v === undefined) return [];
+  if (!Array.isArray(v) || v.length > 500) return null;
+  const copie = new Map<string, number>();
+  for (const r of v) {
+    const isbn = String(r?.isbn ?? "").replace(/[\s-]/g, "").toUpperCase();
+    const quantita = Number(r?.quantita ?? 1);
+    if (!isbn || isbn.length > 30 || !Number.isInteger(quantita) || quantita < 1) return null;
+    copie.set(isbn, (copie.get(isbn) ?? 0) + quantita);
+  }
+  if ([...copie.values()].some((q) => q > 99)) return null;
+  return [...copie].map(([isbn, quantita]) => ({ isbn, quantita }));
+}
