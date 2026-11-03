@@ -5,6 +5,7 @@ import { authenticateToken, authorizeRole } from "../middleware/auth.middleware"
 import { noStore } from "../lib/http";
 import { barcodeScheda } from "../lib/libriClienti";
 import { abbina, perCodice } from "../lib/libriOrdini";
+import { blocca, Cambiati, CLIENTE, conferma, passaAlProssimo } from "../lib/libriTx";
 
 // Gestionale libri scolastici (ex GS_MAG), sezione Ordini: i libri prenotati dai clienti si ordinano al fornitore
 // e diventano «Confermato». Ogni riga d'ordine è una copia, legata al libro del cliente che la aspetta.
@@ -21,41 +22,8 @@ function errore(res: Response, e: unknown, messaggio: string) {
   res.status(500).json({ message: messaggio });
 }
 
-/** Un'altra postazione ha cambiato i libri mentre si ordinava: si annulla tutto e si riprova. */
-class Cambiati extends Error {}
-
-/**
- * Ordini e abbinamenti delle copie passano uno alla volta (tre postazioni insieme): così un libro non finisce
- * in due ordini e i numeri d'ordine non si ripetono.
- */
-const blocca = (tx: Prisma.TransactionClient) => tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext('ordini_libri'))`;
-
 const CAMPI_LIBRO = { isbn: true, materia: true, autori: true, titolo: true, volume: true, editore: true, prezzo: true } as const;
-const CLIENTE = { scheda: { select: { id: true, anno: true, numero: true, cognome: true, nome: true } } } as const;
 const copieLibere = { libroId: null, arrivatoAt: null } satisfies Prisma.OrdineRigaWhereInput;
-
-/** Libri da Prenotato a Confermato; se uno nel frattempo non è più prenotato si annulla tutto. */
-async function conferma(tx: Prisma.TransactionClient, libri: number[], adesso: Date) {
-  if (!libri.length) return;
-  const { count } = await tx.schedaClienteLibro.updateMany({
-    where: { id: { in: libri }, stato: "PRENOTATO" },
-    data: { stato: "CONFERMATO", confermatoAt: adesso },
-  });
-  if (count !== libri.length) throw new Cambiati();
-}
-
-/** La copia libera va al primo cliente che aspetta lo stesso libro; restituisce chi è, o null se resta libera. */
-async function passaAlProssimo(tx: Prisma.TransactionClient, riga: { id: number; isbn: string }) {
-  const prossimo = await tx.schedaClienteLibro.findFirst({
-    where: { isbn: riga.isbn, stato: "PRENOTATO" },
-    orderBy: [{ prenotatoAt: "asc" }, { id: "asc" }],
-    select: { id: true, ...CLIENTE },
-  });
-  if (!prossimo) return null;
-  await conferma(tx, [prossimo.id], new Date());
-  await tx.ordineRiga.update({ where: { id: riga.id }, data: { libroId: prossimo.id } });
-  return prossimo.scheda;
-}
 
 async function leggiOrdine(ordineId: number) {
   const ordine = await prisma.ordineFornitore.findUnique({
@@ -70,16 +38,19 @@ async function leggiOrdine(ordineId: number) {
 // GET /api/libri/ordini/da-ordinare — i libri prenotati non ancora ordinati, per codice, meno le copie libere
 router.get("/da-ordinare", async (_req: Request, res: Response) => {
   try {
-    const [prenotati, libere] = await Promise.all([
+    const [prenotati, libere, inNegozio] = await Promise.all([
       prisma.schedaClienteLibro.findMany({ where: { stato: "PRENOTATO" }, select: CAMPI_LIBRO }),
       prisma.ordineRiga.findMany({ where: copieLibere, select: { isbn: true } }),
+      prisma.giacenzaLibro.findMany({ where: { quantita: { gt: 0 } }, select: { isbn: true, quantita: true } }),
     ]);
     const nLibere = new Map<string, number>();
     for (const c of libere) nLibere.set(c.isbn, (nLibere.get(c.isbn) ?? 0) + 1);
+    const nNegozio = new Map(inNegozio.map((g) => [g.isbn, g.quantita]));
     res.json(
       perCodice(prenotati).map(({ quantita, ...g }) => {
         const giaInOrdine = Math.min(quantita, nLibere.get(g.isbn) ?? 0);
-        return { ...g, prenotati: quantita, giaInOrdine, daOrdinare: quantita - giaInOrdine };
+        // Copie già in negozio: si danno dalla scheda del cliente invece di ordinarle
+        return { ...g, prenotati: quantita, giaInOrdine, daOrdinare: quantita - giaInOrdine, inNegozio: nNegozio.get(g.isbn) ?? 0 };
       })
     );
   } catch (e) {

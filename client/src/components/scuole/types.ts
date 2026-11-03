@@ -87,7 +87,13 @@ export type SchedaClienteRiepilogo = {
   totali: TotaliCliente;
 };
 
-export type LibroCliente = LibroScheda & { stato: StatoLibro };
+export type LibroCliente = LibroScheda & {
+  stato: StatoLibro;
+  /** Copie libere in negozio dello stesso libro */
+  inNegozio: number;
+  /** La copia è stata data dal negozio: «Rimetti in negozio» la restituisce */
+  dalNegozioAt: string | null;
+};
 
 export type SchedaCliente = Omit<SchedaClienteRiepilogo, "conteggi" | "scuola"> & {
   scuola: { id: number; codice: string; nome: string; citta: string | null };
@@ -114,6 +120,8 @@ export type DaOrdinare = {
   /** Di queste, quante trovano già una copia libera in un ordine */
   giaInOrdine: number;
   daOrdinare: number;
+  /** Copie libere già in negozio: si danno dalla scheda del cliente invece di ordinarle */
+  inNegozio: number;
 };
 
 export type OrdineRiepilogo = {
@@ -145,3 +153,47 @@ export type RigaOrdine = {
 export type Ordine = Omit<OrdineRiepilogo, "copie" | "arrivate" | "libere"> & { righe: RigaOrdine[] };
 
 export type RigaInOrdine = RigaOrdine & { ordine: { id: number; anno: number; numero: number; data: string } };
+
+// ── Magazzino (libri già in negozio, senza cliente) ──
+
+export type Giacenza = {
+  id: number;
+  isbn: string;
+  materia: string;
+  autori: string;
+  titolo: string;
+  volume: string;
+  editore: string;
+  prezzo: string | number;
+  /** Copie libere in negozio */
+  quantita: number;
+  updatedAt: string;
+};
+
+export type GiacenzaRiepilogo = Giacenza & {
+  /** Clienti che aspettano il libro e non è ancora ordinato */
+  prenotati: number;
+  /** Copie ordinate al fornitore e non ancora arrivate */
+  inOrdine: number;
+  /** Copie dei clienti in negozio, da ritirare */
+  daRitirare: number;
+};
+
+export type CausaleGiacenza = "CARICO" | "RETTIFICA" | "DATO_AL_CLIENTE" | "RIENTRO";
+
+export const CAUSALI: Record<CausaleGiacenza, string> = {
+  CARICO: "Carico",
+  RETTIFICA: "Correzione a mano",
+  DATO_AL_CLIENTE: "Dato al cliente",
+  RIENTRO: "Rimesso in negozio",
+};
+
+export type MovimentoGiacenza = {
+  id: number;
+  delta: number;
+  causale: CausaleGiacenza;
+  createdAt: string;
+  cliente: ClienteCopia | null;
+};
+
+export type GiacenzaDettaglio = Giacenza & { movimenti: MovimentoGiacenza[] };

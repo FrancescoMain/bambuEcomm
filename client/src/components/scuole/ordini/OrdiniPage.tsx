@@ -185,6 +185,11 @@ function DaOrdinareVista({ onCreato }: { onCreato: (ordineId: number) => void })
                   <td className="px-2 py-3 text-right tabular-nums">
                     {l.prenotati}
                     {l.giaInOrdine > 0 && <span className="block text-xs text-ink-muted">{l.giaInOrdine} già in ordine</span>}
+                    {l.inNegozio > 0 && (
+                      <span className="block text-xs font-bold text-leaf-ink" title="Dalli dalla scheda del cliente con «Dai dal negozio»">
+                        {l.inNegozio} in negozio
+                      </span>
+                    )}
                   </td>
                   <td className="py-3 pl-2 pr-5 text-right text-xl font-extrabold tabular-nums">{l.daOrdinare}</td>
                 </tr>

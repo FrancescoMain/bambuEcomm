@@ -536,6 +536,8 @@ model SchedaClienteLibro {
   confermatoAt  DateTime?
   assegnatoAt   DateTime?
   ritiratoAt    DateTime?
+  /// La copia è stata presa dal negozio (Magazzino) invece che da un ordine: «Rimetti in negozio» la restituisce
+  dalNegozioAt  DateTime?
   createdAt     DateTime          @default(now())
   updatedAt     DateTime          @updatedAt
   rigaOrdine    OrdineRiga?
@@ -579,4 +581,44 @@ model OrdineRiga {
 
   @@index([ordineId])
   @@index([isbn, arrivatoAt])
+}
+
+/// Libri già in negozio senza cliente (ex Magazzino, «qta locale»): una riga per codice, caricata in anticipo e
+/// corretta a mano. Le copie dei clienti non ci sono: quelle stanno nelle schede (Assegnato).
+model GiacenzaLibro {
+  id        Int                 @id @default(autoincrement())
+  isbn      String              @unique
+  materia   String
+  autori    String
+  titolo    String
+  volume    String
+  editore   String
+  prezzo    Decimal             @db.Decimal(10, 2)
+  /// Copie libere in negozio, mai sotto zero (vincolo nel database)
+  quantita  Int                 @default(0)
+  createdAt DateTime            @default(now())
+  updatedAt DateTime            @updatedAt
+  movimenti MovimentoGiacenza[]
+}
+
+enum CausaleGiacenza {
+  CARICO
+  RETTIFICA
+  DATO_AL_CLIENTE
+  RIENTRO
+}
+
+/// Registro dei movimenti della giacenza: in GS_MAG c'erano solo i contatori, senza storia.
+model MovimentoGiacenza {
+  id          Int             @id @default(autoincrement())
+  giacenzaId  Int
+  giacenza    GiacenzaLibro   @relation(fields: [giacenzaId], references: [id], onDelete: Cascade)
+  /// +1 carico, −1 dato al cliente, ± rettifica
+  delta       Int
+  causale     CausaleGiacenza
+  /// Il libro della scheda cliente, per «Dato al cliente» e «Rientro»
+  libroId     Int?
+  createdAt   DateTime        @default(now())
+
+  @@index([giacenzaId, createdAt])
 }

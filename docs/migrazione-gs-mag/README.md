@@ -211,6 +211,15 @@ Dalla chat WhatsApp con Alessandro (committente), 30 ott 2026: vuole lavorare **
   - Non fatte, di GS_MAG: le righe aggiunte a mano senza cliente (scorte per il negozio), che aspettano la domanda 7 sul magazzino.
   - Le Bolle segneranno `arrivatoAt` sulla copia e il libro come Assegnato.
 
+- **Magazzino: fatto** (3 nov 2026, non committato). Modelli `GiacenzaLibro` (una riga per codice, copie libere in negozio, mai sotto zero per vincolo del database) e `MovimentoGiacenza` (registro: carico, correzione a mano, dato al cliente, rimesso in negozio), campo `dalNegozioAt` sul libro del cliente. Migrazione `gestionale_libri_magazzino`, rotte `/api/libri/magazzino`, pagina `/scuole/magazzino`.
+  - **Carico col lettore**: si legge il codice e si preme Invio, +1 copia. Un codice nuovo prende i dati dalle classi (o dalle schede dei clienti); se non c'è da nessuna parte si apre il modulo da compilare.
+  - **Correzione a mano**: − e + nella tabella, oppure nel libro si scrive quante copie ci sono davvero (il registro tiene la differenza). Un libro si toglie dal magazzino solo a zero copie.
+  - In tabella, per ogni libro: copie in negozio, prenotati in attesa, in ordine, da ritirare. Se un libro è in negozio e qualcuno lo aspetta, «Prenotati» è in evidenza.
+  - **Dai dal negozio** (risposta 7) nella scheda del cliente, sui libri In lista, Prenotato o Confermato con copie in negozio: il libro diventa **Assegnato** e poi si ritira come gli altri. Se era Confermato, la copia in ordine passa al primo che aspetta lo stesso libro (come «Annulla ordine»), altrimenti resta libera. **Rimetti in negozio** lo annulla: la copia torna in negozio e il libro torna Prenotato.
+  - In Ordini, «Da ordinare» mostra quante copie dello stesso libro ci sono già in negozio.
+  - Stesso lock di Ordini: l'ultima copia non va a due clienti (provato con due postazioni insieme).
+  - GS_MAG distingueva «prenotato» e «locale» con quattro contatori: qui «prenotato» sono le copie dei clienti (Assegnato nelle schede), «locale» la giacenza.
+
 ## Prossimi passi
 
 1. Modello Prisma definitivo con le risposte sopra. Il magazzino resta provvisorio finché non arriva la risposta alla domanda 7.

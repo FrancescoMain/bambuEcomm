@@ -71,7 +71,18 @@ async function leggiScheda(schedaId: number) {
     },
   });
   if (!scheda) return null;
-  return { ...scheda, barcode: barcodeScheda(scheda.anno, scheda.numero), totali: totaliCliente(scheda.libri, scheda.acconto) };
+  // Copie libere in negozio per ogni libro: se ci sono, il libro si dà subito al cliente (risposta 7)
+  const giacenze = await prisma.giacenzaLibro.findMany({
+    where: { isbn: { in: scheda.libri.map((l) => l.isbn) }, quantita: { gt: 0 } },
+    select: { isbn: true, quantita: true },
+  });
+  const inNegozio = new Map(giacenze.map((g) => [g.isbn, g.quantita]));
+  return {
+    ...scheda,
+    libri: scheda.libri.map((l) => ({ ...l, inNegozio: inNegozio.get(l.isbn) ?? 0 })),
+    barcode: barcodeScheda(scheda.anno, scheda.numero),
+    totali: totaliCliente(scheda.libri, scheda.acconto),
+  };
 }
 
 async function rispondiScheda(res: Response, schedaId: number, stato = 200) {

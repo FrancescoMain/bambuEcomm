@@ -20,6 +20,8 @@ import { SchedaClienteModal } from "./SchedaClienteModal";
 import { StampaScheda, type TipoStampa } from "./StampaScheda";
 
 const modificabile = (l: LibroCliente) => l.stato === "IN_LISTA" || l.stato === "PRENOTATO";
+/** Libri che il cliente non ha ancora in mano e che ci sono in negozio: si danno subito (risposta 7) */
+const daDare = (l: LibroCliente) => l.inNegozio > 0 && (modificabile(l) || l.stato === "CONFERMATO");
 
 /** Scheda di prenotazione di un alunno (ex scheda cliente di GS_MAG). */
 export function SchedaClienteView({
@@ -109,6 +111,45 @@ export function SchedaClienteView({
           : `«${l.titolo}» annullato. La copia resta libera nell'ordine n. ${esito.ordine?.numero}: andrà al prossimo che lo prenota.`,
         { duration: 8000 }
       );
+      caricata.reload();
+      onChanged();
+    } catch (e) {
+      toast.error(errorMessage(e));
+    } finally {
+      setLavoro(false);
+    }
+  };
+
+  // Il libro c'è già in negozio: diventa «Assegnato» senza aspettare l'ordine. Se era già ordinato, la copia
+  // in ordine passa al primo che aspetta lo stesso libro.
+  const daiDalNegozio = async (l: LibroCliente) => {
+    setLavoro(true);
+    try {
+      const esito = await api<{ passatoA: ClienteCopia | null; ordine: { numero: number } | null }>("/libri/magazzino/dai", {
+        method: "POST",
+        body: { libroId: l.id },
+      });
+      const copia = esito.ordine
+        ? esito.passatoA
+          ? ` La copia in ordine va a ${esito.passatoA.cognome} ${esito.passatoA.nome} (scheda n. ${esito.passatoA.numero}).`
+          : ` La copia resta libera nell'ordine n. ${esito.ordine.numero}.`
+        : "";
+      toast.success(`«${l.titolo}» dato dal negozio.${copia}`, { duration: copia ? 8000 : 4000 });
+      caricata.reload();
+      onChanged();
+    } catch (e) {
+      toast.error(errorMessage(e));
+      caricata.reload();
+    } finally {
+      setLavoro(false);
+    }
+  };
+
+  const rimettiInNegozio = async (l: LibroCliente) => {
+    setLavoro(true);
+    try {
+      await api("/libri/magazzino/rimetti", { method: "POST", body: { libroId: l.id } });
+      toast.success(`«${l.titolo}» rimesso in negozio: per il cliente torna «Prenotato».`);
       caricata.reload();
       onChanged();
     } catch (e) {
@@ -374,8 +415,15 @@ export function SchedaClienteView({
                         <td className="whitespace-nowrap px-2 py-3 text-right tabular-nums">{formatPrice(l.prezzo)}</td>
                         <td className="whitespace-nowrap px-2 py-3">
                           <span className={cn("rounded-full px-3 py-1 text-sm font-bold", STATI[l.stato].classe)}>{STATI[l.stato].label}</span>
+                          {l.dalNegozioAt && l.stato !== "IN_LISTA" && <span className="mt-1 block text-xs text-ink-muted">dal negozio</span>}
+                          {daDare(l) && <span className="mt-1 block text-xs font-bold text-leaf-ink">{l.inNegozio} in negozio</span>}
                         </td>
                         <td className="whitespace-nowrap py-2 pl-2 pr-5 text-right">
+                          {daDare(l) && (
+                            <Button size="sm" variant="secondary" onClick={() => daiDalNegozio(l)} disabled={lavoro}>
+                              Dai dal negozio
+                            </Button>
+                          )}
                           {l.stato === "CONFERMATO" && (
                             <Button
                               size="sm"
@@ -384,6 +432,11 @@ export function SchedaClienteView({
                               disabled={lavoro}
                             >
                               {daAnnullare === l.id ? "Sì, annulla" : "Annulla ordine"}
+                            </Button>
+                          )}
+                          {l.stato === "ASSEGNATO" && l.dalNegozioAt && (
+                            <Button size="sm" variant="ghost" onClick={() => rimettiInNegozio(l)} disabled={lavoro}>
+                              Rimetti in negozio
                             </Button>
                           )}
                           {l.stato === "ASSEGNATO" && (
