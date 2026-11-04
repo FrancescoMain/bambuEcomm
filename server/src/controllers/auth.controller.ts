@@ -1,15 +1,13 @@
 import { Request, Response, NextFunction } from "express";
 import bcrypt from "bcryptjs";
 import { signToken } from "../lib/jwt";
+import { normalizeEmail } from "../lib/email";
 import emailService from "../services/emailService";
 import { AuthRequest } from "../middleware/auth.middleware";
 
 import prisma from "../lib/prisma";
 
 const MIN_PASSWORD = 8;
-
-/** Email confrontate senza distinzione tra maiuscole e minuscole */
-const normalizeEmail = (value: unknown) => String(value ?? "").trim().toLowerCase();
 
 const findUserByEmail = (email: unknown) =>
   prisma.user.findFirst({
